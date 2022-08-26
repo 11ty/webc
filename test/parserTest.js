@@ -10,6 +10,15 @@ test("Raw Input", async t => {
 	t.is(html.trim(), `<div class="red"></div>`);
 });
 
+test("No Quirks mode default", async t => {
+	let component = new WebC();
+	component.setInput(`<div class="red"></div>`);
+
+	let ast = await component.getAST();
+
+	t.is("no-quirks", ast.mode);
+});
+
 const fileInputStubs = {
 	"./test/stubs/empty.webc": {
 		description: "Empty file",
@@ -181,101 +190,7 @@ for(let filename in pageStubs) {
 	});
 }
 
-const nestedStubs = {
-	"Using a web component": {
-		filename: "./test/stubs/nested.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child.webc",
-		},
-		content: `Before
-<web-component>SSR content</web-component>
-After`,
-	},
-
-	"Using a web component with a default slot": {
-		filename: "./test/stubs/nested-twice.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child.webc",
-		},
-		content: `Before
-<web-component>SSR content</web-component>
-After`,
-	},
-
-	"Using a web component without any shadow dom/foreshadowing": {
-		filename: "./test/stubs/nested-no-shadowdom.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child.webc",
-			"web-component-no-foreshadowing": "./test/stubs/nested-child-empty.webc",
-		},
-		content: `Before
-<web-component-no-foreshadowing>
-	Child content
-	<web-component-no-foreshadowing></web-component-no-foreshadowing>
-</web-component-no-foreshadowing>
-After`,
-	},
-
-	"Using a web component with a slot": {
-		filename: "./test/stubs/nested-content.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child-slot.webc",
-		},
-		content: `Before
-<web-component>SSR contentChild contentAfter slot content</web-component>
-After`,
-	},
-
-	"Using a web component with two slots and default content": {
-		filename: "./test/stubs/nested-multiple-slots.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child-namedslot.webc",
-		},
-		content: `Before
-<web-component name="World">SSR content<p>Slot 1 content</p>After slot content
-	<p>Before slot content!</p>
-	
-	
-	<p>After slot content!</p>
-</web-component>
-After`,
-	},
-
-	"Using a web component with two slots but child has no shadow dom": {
-		filename: "./test/stubs/nested-multiple-slots.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child-empty.webc",
-		},
-		content: `Before
-<web-component name="World">
-	<p>Before slot content!</p>
-	
-	
-	<p>After slot content!</p>
-</web-component>
-After`,
-	},
-
-	"Using a web component with webc:raw to allow client component slots": {
-		filename: "./test/stubs/nested-multiple-slots-raw.webc",
-		components: {
-			"web-component": "./test/stubs/nested-child-empty.webc",
-		},
-		content: `Before
-<web-component name="World">
-	<p>Before slot content!</p>
-	<div slot="slot1"><p>Slot 1 content</p></div>
-	<div slot="slot2">
-		<!-- ignored -->
-		<p>Slot 2 content</p>
-	</div>
-	<p>After slot content!</p>
-</web-component>
-After`,
-	},
-};
-
-async function getComponents(map) {
+async function testGetComponents(map) {
 	let components = {};
 	for(let name in map) {
 		components[name] = await WebC.getASTFromFilePath(map[name]);
@@ -283,20 +198,213 @@ async function getComponents(map) {
 	return components;
 }
 
-for(let description in nestedStubs) {
-	let stub = nestedStubs[description];
-	test(description || stub.filename, async t => {
-		let component = new WebC();
+async function testGetHtmlFor(filename, components, slots) {
+	let component = new WebC();
 
-		component.setInputPath(stub.filename);
+	component.setInputPath(filename);
 
-		let components = await getComponents(stub.components);
-
-		let html = await component.toHtml({
-			slots: stub.slots,
-			components,
-		});
-
-		t.is(html.trim(), stub.content);
+	let html = await component.toHtml({
+		slots,
+		components: await testGetComponents(components),
 	});
+
+	return html.trim();
 }
+
+test("Using a web component (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/nested-child.webc"
+	});
+
+	t.is(html, `Before
+SSR content
+After`);
+});
+
+test("Using a web component (use webc:keep to force keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-webc-keep.webc", {
+		"web-component": "./test/stubs/nested-child.webc"
+	});
+
+	t.is(html, `Before
+<web-component>SSR content</web-component>
+After`);
+});
+
+test("Using a web component (skip parent for empty style and empty script)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/nested-child-style-script-both-empty.webc"
+	});
+
+	t.is(html, `Before
+<style></style><script></script>
+After`);
+});
+
+test("Using a web component (keep parent: style)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/nested-child-style.webc"
+	});
+
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component (keep parent: script)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/nested-child-script.webc"
+	});
+
+	t.is(html, `Before
+<web-component>SSR content<script>alert("test");</script></web-component>
+After`);
+});
+
+test("Using a web component with a slot (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-content.webc", {
+		"web-component": "./test/stubs/nested-child-slot.webc"
+	});
+
+	t.is(html, `Before
+SSR contentChild contentAfter slot content
+After`);
+});
+
+test("Using a web component with a slot (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-content.webc", {
+		"web-component": "./test/stubs/nested-child-slot-style.webc"
+	});
+
+	t.is(html, `Before
+<web-component>SSR contentChild contentAfter slot content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with a default slot (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-twice.webc", {
+		"web-component": "./test/stubs/nested-child.webc"
+	});
+
+	t.is(html, `Before
+SSR content
+After`);
+});
+
+test("Using a web component with a default slot (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-twice.webc", {
+		"web-component": "./test/stubs/nested-child-style.webc"
+	});
+
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component without any shadow dom/foreshadowing (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-no-shadowdom.webc", {
+		"web-component": "./test/stubs/nested-child.webc",
+		"web-component-no-foreshadowing": "./test/stubs/nested-child-empty.webc",
+	});
+
+	t.is(html, `Before
+
+	Child content
+	
+
+After`);
+});
+
+test("Using a web component without any shadow dom/foreshadowing (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-no-shadowdom.webc", {
+		"web-component": "./test/stubs/nested-child-style.webc",
+		"web-component-no-foreshadowing": "./test/stubs/nested-child-style-only.webc",
+	});
+
+	t.is(html, `Before
+<web-component-no-foreshadowing><style>p { color: red; }</style></web-component-no-foreshadowing>
+After`);
+});
+
+test("Using a web component with two slots but child has no shadow dom (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots.webc", {
+		"web-component": "./test/stubs/nested-child-empty.webc",
+	});
+
+	t.is(html, `Before
+
+	<p>Before slot content!</p>
+	
+	
+	<p>After slot content!</p>
+
+After`);
+});
+
+test("Using a web component with two slots but child has no shadow dom (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots.webc", {
+		"web-component": "./test/stubs/nested-child-style-only.webc",
+	});
+
+	t.is(html, `Before
+<web-component name="World"><style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with two slots and default content (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots.webc", {
+		"web-component": "./test/stubs/nested-child-namedslot.webc",
+	});
+
+	t.is(html, `Before
+SSR content<p>Slot 1 content</p>After slot content
+	<p>Before slot content!</p>
+	
+	
+	<p>After slot content!</p>
+
+After`);
+});
+
+test("Using a web component with two slots and default content (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots.webc", {
+		"web-component": "./test/stubs/nested-child-namedslot-style.webc",
+	});
+
+	t.is(html, `Before
+<web-component name="World">SSR content<p>Slot 1 content</p>After slot content
+	<p>Before slot content!</p>
+	
+	
+	<p>After slot content!</p>
+<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with webc:raw to allow client component slots (skip parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots-raw.webc", {
+		"web-component": "./test/stubs/nested-child-empty.webc",
+	});
+
+	t.is(html, `Before
+
+	<p>Before slot content!</p>
+	<div slot="slot1"><p>Slot 1 content</p></div>
+	<div slot="slot2">
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
+	<p>After slot content!</p>
+
+After`);
+});
+
+test("Using a web component with webc:raw to allow client component slots (keep parent)", async t => {
+	let html = await testGetHtmlFor("./test/stubs/nested-multiple-slots-raw.webc", {
+		"web-component": "./test/stubs/nested-child-style-only.webc",
+	});
+
+	t.is(html, `Before
+<web-component name="World"><style>p { color: red; }</style></web-component>
+After`);
+});

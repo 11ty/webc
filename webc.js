@@ -53,8 +53,83 @@ class AstToHtml {
 		return attrs.filter(({name}) => !name.startsWith("webc:")).map(({name, value}) => ` ${name}="${value}"`).join("");
 	}
 
+	hasAttribute(node, attributeName) {
+		return !!(node.attrs || []).find(({name}) => name === attributeName);
+	}
+
+	getAttributeValue(node, attributeName) {
+		let nameAttr = (node.attrs || []).find(({name}) => name === attributeName);
+
+		if(!nameAttr) {
+			// Same as Element.getAttribute
+			// https://developer.mozilla.org/en-US/docs/Web/API/Element/getAttribute
+			return null;
+		}
+
+		return nameAttr?.value;
+	}
+
+	findElement(root, tagName) {
+		if(root.tagName === tagName) {
+			return root;
+		}
+		for(let child of root.childNodes || []) {
+			let node = this.findElement(child, tagName);
+			if(node) {
+				return node;
+			}
+		}
+	}
+
+	hasTextContent(node) {
+		for(let child of node.childNodes || []) {
+			if(child.nodeName === "#text" && (child.value || "").trim().length > 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	hasNonEmptyChildren(parentNode, tagNames) {
+		if(!parentNode) {
+			return false;
+		}
+		if(!tagNames || Array.isArray(tagNames)) {
+			tagNames = new Set(tagNames);
+		}
+
+		for(let child of parentNode.childNodes || []) {
+			if(tagNames.has(child.tagName) && this.hasTextContent(child)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	ignoreComponentParentTag(component) {
+		let body = this.findElement(component, "body");
+
+		// do not ignore if <style> or <script> in component definition
+		// TODO(v2): link[rel="stylesheet"]
+		if(this.hasNonEmptyChildren(body, ["style", "script"])) {
+			return false;
+		}
+		return true;
+	}
+
 	isIgnored(node) {
 		let { tagName } = node;
+		
+		// TODO override here to always include the parent node
+		let component = this.components[node.tagName];
+		if(component) {
+			if(this.hasAttribute(node, "webc:keep")) {
+				return false;
+			} else if(this.componentIgnoreParentTag[node.tagName]) {
+				// do not include the parent element if this component has no styles or script associated with it
+				return true;
+			}
+		}
 
 		if(tagName === "head" || tagName === "body" || tagName === "html") {
 			if(this.mode === "component") {
@@ -75,33 +150,13 @@ class AstToHtml {
 		return slot;
 	}
 
-	getAttributeValue(node, attributeName) {
-		let nameAttr = (node.attrs || []).find(({name}) => name === attributeName);
-
-		if(!nameAttr) {
-			// Same as Element.getAttribute
-			// https://developer.mozilla.org/en-US/docs/Web/API/Element/getAttribute
-			return null;
-		}
-
-		return nameAttr?.value;
-	}
-
 	setComponents(components = {}) {
 		this.components = components || {};
-	}
 
-	hasChildren(parentNode, tagNames) {
-		if(!tagNames || Array.isArray(tagNames)) {
-			tagNames = new Set(tagNames);
+		this.componentIgnoreParentTag = {};
+		for(let name in components) {
+			this.componentIgnoreParentTag[name] = this.ignoreComponentParentTag(components[name]);
 		}
-
-		for(let child of parentNode.childNodes || []) {
-			if(tagNames.has(child.tagName)) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	async getChildContent(parentNode, slots, options) {
@@ -110,7 +165,7 @@ class AstToHtml {
 			promises.push(this.toHtml(child, slots, options))
 		}
 		let p = await Promise.all(promises);
-		return p.join("")
+		return p.join("");
 	}
 
 	getSlotNodes(node, slots = {}) {
@@ -128,6 +183,7 @@ class AstToHtml {
 		return slots;
 	}
 
+	// TODO delete
 	logNode(node) {
 		let copy = structuredClone(node);
 		delete copy.parentNode;
@@ -136,18 +192,16 @@ class AstToHtml {
 
 	async toHtml(node, slots = {}, options = {}) {
 		options = Object.assign({
-			rawMode: false
+			rawMode: false,
 		}, options);
 
 		let content = "";
 
-		let rawMode = this.getAttributeValue(node, "webc:raw") !== null;
+		let rawMode = this.hasAttribute(node, "webc:raw");
 		if(rawMode) {
 			options.rawMode = rawMode;
 		}
 
-		let isComponent = !!this.components[node.tagName];
-		let hasStyleOrScript = this.hasChildren(node, ["style", "script"])
 		let slotSource = this.getAttributeValue(node, "slot");
 
 		// Start tag
@@ -157,23 +211,23 @@ class AstToHtml {
 				content += `\n`;
 			}
 
-			if(options.rawMode || !this.isIgnored(node) && !slotSource) {
+			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
 				content += `<${node.tagName}${this.getAttributesString(node.tagName, node.attrs)}>`;
 			}
 		}
 
 		// Content
-		let componentHasForeshadowDom = false;
-		if(!options.rawMode && isComponent) {
+		let componentHasContent = false;
+		if(!options.rawMode && this.components[node.tagName]) {
 			let slots = this.getSlotNodes(node);
 			let foreshadowDom = await this.toHtml(this.components[node.tagName], slots, options);
-			componentHasForeshadowDom = foreshadowDom.trim().length > 0;
+			componentHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;
 		}
 
 		// Skip the remaining content is we have foreshadow dom!
-		if(!componentHasForeshadowDom) {
+		if(!componentHasContent) {
 			if(node.nodeName === "#text") {
 				content += node.value;
 			} else if(node.nodeName === "#comment") {
@@ -203,7 +257,7 @@ class AstToHtml {
 
 		// End tag
 		if(node.tagName) {
-			if(!this.isVoidElement(node.tagName) && (options.rawMode || !this.isIgnored(node) && !slotSource)) {
+			if(!this.isVoidElement(node.tagName) && (options.rawMode || !this.isIgnored(node, options) && !slotSource)) {
 				content += `</${node.tagName}>`;
 			}
 			if(this.mode === "page" && node.tagName === "body") {
@@ -226,10 +280,9 @@ class WebC {
 			this.rawInput = input;
 		}
 
-		this.astOptions = {};
-		if(mode) {
-			this.astOptions.mode = mode;
-		}
+		this.astOptions = {
+			mode: mode || "component"
+		};
 	}
 
 	setInputPath(file) {
@@ -256,19 +309,21 @@ class WebC {
 		let wc = new WebC({
 			input: string
 		});
-		let input = wc.getInput();
-		return wc.getAST(input);
+		return wc.getAST();
 	}
 
 	static async getASTFromFilePath(filePath) {
 		let wc = new WebC({
 			file: filePath
 		});
-		let input = wc.getInput();
-		return wc.getAST(input);
+		return wc.getAST();
 	}
 
 	async getAST(inputStream) {
+		if(!inputStream) {
+			inputStream = this.getInput();
+		}
+
 		// TODO reject and "error"
 		return new Promise((resolve, reject) => {
 			let parser = new ParserStream({
@@ -276,7 +331,7 @@ class WebC {
 			});
 
 			// Content should have no-quirks-mode nested in <body> semantics
-			if(this.mode === "component") {
+			if(this.astOptions.mode === "component") {
 				parser.once("pipe", function() {
 					this.write(`<!doctype html><body>`);
 				});
@@ -291,8 +346,7 @@ class WebC {
 	}
 
 	async toHtml(options = {}) {
-		let input = this.getInput();
-		let rawAst = await this.getAST(input);
+		let rawAst = await this.getAST();
 
 		let ast = new AstToHtml(this.astOptions);
 		ast.setComponents(options.components);

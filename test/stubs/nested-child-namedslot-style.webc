@@ -1,0 +1,1 @@
+SSR content<slot name="slot1"></slot>After slot content<slot></slot><style>p { color: red; }</style>
