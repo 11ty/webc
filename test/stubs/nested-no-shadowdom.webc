@@ -1,0 +1,6 @@
+Before
+<web-component-no-foreshadowing>
+	Child content
+	<web-component-no-foreshadowing></web-component-no-foreshadowing>
+</web-component-no-foreshadowing>
+After

@@ -1,0 +1,11 @@
+Before
+<web-component name="World">
+	<p>Before slot content!</p>
+	<div slot="slot1" webc:raw><p>Slot 1 content</p></div>
+	<div slot="slot2" webc:raw>
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
+	<p>After slot content!</p>
+</web-component>
+After

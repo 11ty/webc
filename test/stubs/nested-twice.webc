@@ -1,0 +1,6 @@
+Before
+<web-component>
+  Child content
+  <web-component></web-component>
+</web-component>
+After
