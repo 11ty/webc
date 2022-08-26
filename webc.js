@@ -3,7 +3,7 @@ import { ParserStream } from "parse5-parser-stream";
 import { Readable } from "stream";
 // import * as parse5 from "parse5";
 
-class AstToHtml {
+class AstSerializer {
 	constructor(options = {}) {
 		let { mode } = Object.assign({
 			mode: "component", // or "page"
@@ -11,6 +11,13 @@ class AstToHtml {
 
 		// controls whether or not doctype, html, body are prepended to content
 		this.mode = mode;
+	}
+
+	/* Custom HTML attributes */
+	static attrs = {
+		TYPE: "webc:type",
+		KEEP: "webc:keep",
+		RAW: "webc:raw",
 	}
 
 	// List from the parse5 serializer
@@ -37,7 +44,7 @@ class AstToHtml {
 	};
 
 	isVoidElement(tagName) {
-		return AstToHtml.voidElements[tagName] || false;
+		return AstSerializer.voidElements[tagName] || false;
 	}
 
 	getAttributesString(tagName, attrs) {
@@ -119,13 +126,18 @@ class AstToHtml {
 
 	isIgnored(node) {
 		let { tagName } = node;
-		
+
+		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+			return false;
+		}
+		if(this.getAttributeValue(node, AstSerializer.attrs.TYPE)) { // Must come after webc:keep (takes precedence)
+			return true;
+		}
+
 		// TODO override here to always include the parent node
 		let component = this.components[node.tagName];
 		if(component) {
-			if(this.hasAttribute(node, "webc:keep")) {
-				return false;
-			} else if(this.componentIgnoreParentTag[node.tagName]) {
+			if(this.componentIgnoreRootTag[node.tagName]) {
 				// do not include the parent element if this component has no styles or script associated with it
 				return true;
 			}
@@ -135,7 +147,8 @@ class AstToHtml {
 			if(this.mode === "component") {
 				return true;
 			}
-		} else if(tagName === "slot") {
+		}
+		if(tagName === "slot") {
 			return true;
 		}
 
@@ -153,19 +166,23 @@ class AstToHtml {
 	setComponents(components = {}) {
 		this.components = components || {};
 
-		this.componentIgnoreParentTag = {};
+		this.componentIgnoreRootTag = {};
 		for(let name in components) {
-			this.componentIgnoreParentTag[name] = this.ignoreComponentParentTag(components[name]);
+			this.componentIgnoreRootTag[name] = this.ignoreComponentParentTag(components[name]);
 		}
 	}
 
 	async getChildContent(parentNode, slots, options) {
 		let promises = [];
 		for(let child of parentNode.childNodes || []) {
-			promises.push(this.toHtml(child, slots, options))
+			promises.push(this.compile(child, slots, options))
 		}
 		let p = await Promise.all(promises);
-		return p.join("");
+		let html = p.map(entry => entry.html).join("");
+
+		return {
+			html
+		};
 	}
 
 	getSlotNodes(node, slots = {}) {
@@ -183,21 +200,21 @@ class AstToHtml {
 		return slots;
 	}
 
-	// TODO delete
-	logNode(node) {
-		let copy = structuredClone(node);
-		delete copy.parentNode;
-		return copy;
-	}
-
-	async toHtml(node, slots = {}, options = {}) {
+	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false,
+			transforms: {},
 		}, options);
 
 		let content = "";
 
-		let rawMode = this.hasAttribute(node, "webc:raw");
+		// Transforms can alter HTML content e.g. <template webc:type="markdown">
+		let transformType = this.getAttributeValue(node, AstSerializer.attrs.TYPE);
+		if(transformType && !!options.transforms[transformType]) {
+			options.currentTransformType = transformType;
+		}
+
+		let rawMode = this.hasAttribute(node, AstSerializer.attrs.RAW);
 		if(rawMode) {
 			options.rawMode = rawMode;
 		}
@@ -220,7 +237,7 @@ class AstToHtml {
 		let componentHasContent = false;
 		if(!options.rawMode && this.components[node.tagName]) {
 			let slots = this.getSlotNodes(node);
-			let foreshadowDom = await this.toHtml(this.components[node.tagName], slots, options);
+			let { html: foreshadowDom } = await this.compile(this.components[node.tagName], slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;
@@ -241,37 +258,51 @@ class AstToHtml {
 
 				if(slots[slotName]) {
 					let slotAst = await this.getSlotAst(slots[slotName]);
-					content += await this.getChildContent(slotAst, null, options);
+					let { html: slotHtml } = await this.getChildContent(slotAst, null, options);
+					content += slotHtml;
 				} else {
 					// Use fallback content in <slot> if no slot source exists to fill it
-					content += await this.getChildContent(node, null, options);
+					let { html: slotFallbackHtml } = await this.getChildContent(node, null, options);
+					content += slotFallbackHtml;
 				}
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to content
 			} else if(node.content) {
-				content += await this.toHtml(node.content, slots, options);
+				let { html: rawContent } = await this.compile(node.content, slots, options);
+				if(options.currentTransformType) {
+					rawContent = await options.transforms[options.currentTransformType](rawContent);
+				}
+				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
-				content += await this.getChildContent(node, slots, options);
+				let { html: childContent } = await this.getChildContent(node, slots, options);
+				content += childContent;
 			}
 		}
 
 		// End tag
 		if(node.tagName) {
-			if(!this.isVoidElement(node.tagName) && (options.rawMode || !this.isIgnored(node, options) && !slotSource)) {
+			if(this.isVoidElement(node.tagName)) {
+				// do nothing: void elements don’t have closing tags
+			} else if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
 				content += `</${node.tagName}>`;
 			}
+
 			if(this.mode === "page" && node.tagName === "body") {
 				content += `\n`;
 			}
 		}
 
-		return content;
+		return {
+			html: content
+		};
 	}
 }
 
 class WebC {
 	constructor(options = {}) {
 		let { file, input, mode } = options;
+
+		this.customTransforms = {};
 
 		if(file) {
 			this.filePath = file;
@@ -345,13 +376,19 @@ class WebC {
 		});
 	}
 
-	async toHtml(options = {}) {
+	addCustomTransform(key, callback) {
+		this.customTransforms[key] = callback;
+	}
+
+	async compile(options = {}) {
 		let rawAst = await this.getAST();
 
-		let ast = new AstToHtml(this.astOptions);
+		let ast = new AstSerializer(this.astOptions);
 		ast.setComponents(options.components);
 
-		return ast.toHtml(rawAst, options.slots);
+		return ast.compile(rawAst, options.slots, {
+			transforms: this.customTransforms
+		});
 	}
 }
 

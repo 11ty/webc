@@ -17,7 +17,7 @@
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
-* Option to compile away the parent element (automatic when no style or script)
+* ~~Option to compile away the parent element (automatic when no style or script)~~
 
 ## Notes
 

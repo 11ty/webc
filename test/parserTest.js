@@ -1,11 +1,12 @@
 import test from "ava";
 import { WebC } from "../webc.js";
+import MarkdownIt from "markdown-it";
 
 test("Raw Input", async t => {
 	let component = new WebC();
 	component.setInput(`<div class="red"></div>`);
 
-	let html = await component.toHtml();
+	let { html } = await component.compile();
 
 	t.is(html.trim(), `<div class="red"></div>`);
 });
@@ -29,13 +30,6 @@ const fileInputStubs = {
 	"./test/stubs/no-template.webc": {
 		description: "No top level <template> required",
 		content: `<div class="test"></div>`,
-	},
-
-	"./test/stubs/template.webc": {
-		description: "Using a top level <template>",
-		content: `<template>
-	<div class="test"></div>
-</template>`,
 	},
 
 	"./test/stubs/img.webc": {
@@ -72,11 +66,52 @@ for(let filename in fileInputStubs) {
 		
 		component.setInputPath(filename);
 		
-		let html = await component.toHtml();
+		let { html } = await component.compile();
 		
 		t.is(html.trim(), stub.content);
 	});
 }
+
+test("Using a top level <template>", async t => {
+	let component = new WebC();
+	
+	component.setInputPath("./test/stubs/template.webc");
+	
+	let { html } = await component.compile();
+	
+	t.is(html.trim(), `<template>
+	<div class="test"></div>
+</template>`);
+});
+
+test("Using a custom <template> type", async t => {
+	let component = new WebC();
+	let md = new MarkdownIt();
+	
+	component.setInputPath("./test/stubs/template-custom.webc");
+	component.addCustomTransform("md", (content) => {
+		return md.render(content);
+	});
+
+	let { html } = await component.compile();
+	
+	t.is(html.trim(), `<h1>Header</h1>`);
+});
+
+test("Using a custom <template> type with webc:keep", async t => {
+	let component = new WebC();
+	let md = new MarkdownIt();
+	
+	component.setInputPath("./test/stubs/template-custom-keep.webc");
+	component.addCustomTransform("md", (content) => {
+		return md.render(content);
+	});
+
+	let { html } = await component.compile();
+	
+	t.is(html.trim(), `<template><h1>Header</h1>
+</template>`);
+});
 
 const slotsStubs = {
 	"./test/stubs/slot.webc": {
@@ -139,7 +174,7 @@ for(let filename in slotsStubs) {
 
 		component.setInputPath(filename);
 		
-		let html = await component.toHtml({
+		let { html } = await component.compile({
 			slots: stub.slots
 		});
 
@@ -182,7 +217,7 @@ for(let filename in pageStubs) {
 
 		page.setInputPath(filename);
 		
-		let html = await page.toHtml({
+		let { html } = await page.compile({
 			slots: stub.slots
 		});
 
@@ -203,7 +238,7 @@ async function testGetHtmlFor(filename, components, slots) {
 
 	component.setInputPath(filename);
 
-	let html = await component.toHtml({
+	let { html } = await component.compile({
 		slots,
 		components: await testGetComponents(components),
 	});
