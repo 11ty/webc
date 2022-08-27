@@ -48,15 +48,6 @@ class AstSerializer {
 	}
 
 	getAttributesString(tagName, attrs) {
-		if(tagName === "style") {
-			attrs = attrs.filter(({name, value}) => {
-				if(name === "type" && value === "text/css") {
-					return false;
-				}
-				return true;
-			});
-		}
-
 		return attrs.filter(({name}) => !name.startsWith("webc:")).map(({name, value}) => ` ${name}="${value}"`).join("");
 	}
 
@@ -151,6 +142,9 @@ class AstSerializer {
 		if(tagName === "slot") {
 			return true;
 		}
+		if(tagName === "style") {
+			return true;
+		}
 
 		return false;
 	}
@@ -200,10 +194,17 @@ class AstSerializer {
 		return slots;
 	}
 
+	log(node, ...args) {
+		let c = structuredClone(node);
+		delete c.parentNode;
+		console.log( c, ...args );
+	}
+
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false,
 			transforms: {},
+			css: new Set(),
 		}, options);
 
 		let content = "";
@@ -245,6 +246,7 @@ class AstSerializer {
 
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
+			// this.log( node, { options } );
 			if(node.nodeName === "#text") {
 				content += node.value;
 			} else if(node.nodeName === "#comment") {
@@ -275,7 +277,11 @@ class AstSerializer {
 				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
 				let { html: childContent } = await this.getChildContent(node, slots, options);
-				content += childContent;
+				if(node.tagName === "style") {
+					options.css.add( childContent );
+				} else {
+					content += childContent;
+				}
 			}
 		}
 
@@ -293,7 +299,8 @@ class AstSerializer {
 		}
 
 		return {
-			html: content
+			html: content,
+			css: Array.from(options.css).join(""),
 		};
 	}
 }
