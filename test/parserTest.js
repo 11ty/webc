@@ -6,9 +6,11 @@ test("Raw Input", async t => {
 	let component = new WebC();
 	component.setInput(`<div class="red"></div>`);
 
-	let { html, css } = await component.compile();
+	let { html, css, js, components } = await component.compile();
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html, `<div class="red"></div>`);
 });
 
@@ -67,10 +69,12 @@ for(let filename in fileInputStubs) {
 		
 		component.setInputPath(filename);
 		
-		let { html, css } = await component.compile();
+		let { html, css, js, components } = await component.compile();
 
-		t.is(css, "");
-		
+		t.deepEqual(js, []);
+		t.deepEqual(css, []);
+		t.deepEqual(components, []);
+
 		t.is(html.trim(), stub.content);
 	});
 }
@@ -80,9 +84,11 @@ test("Using a top level <template>", async t => {
 	
 	component.setInputPath("./test/stubs/template.webc");
 
-	let { html, css } = await component.compile();
+	let { html, css, js, components } = await component.compile();
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html.trim(), `<template>
 	<div class="test"></div>
 </template>`);
@@ -97,9 +103,11 @@ test("Using a custom <template> type", async t => {
 		return md.render(content);
 	});
 
-	let { html, css } = await component.compile();
+	let { html, css, js, components } = await component.compile();
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html.trim(), `<h1>Header</h1>`);
 });
 
@@ -112,8 +120,11 @@ test("Using a custom <template> type with webc:keep", async t => {
 		return md.render(content);
 	});
 
-	let { html, css } = await component.compile();
-	t.is(css, "");
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html.trim(), `<template><h1>Header</h1>
 </template>`);
 });
@@ -179,11 +190,13 @@ for(let filename in slotsStubs) {
 
 		component.setInputPath(filename);
 		
-		let { html, css } = await component.compile({
+		let { html, css, js, components } = await component.compile({
 			slots: stub.slots
 		});
 
-		t.is(css, "");
+		t.deepEqual(js, []);
+		t.deepEqual(css, []);
+		t.deepEqual(components, []);
 		t.is(html, stub.content);
 	});
 }
@@ -194,9 +207,11 @@ test("Full page", async t => {
 
 	page.setInputPath("./test/stubs/page.webc");
 	
-	let { html, css } = await page.compile();
+	let { html, css, js, components } = await page.compile();
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html, `<!doctype html>
 <html lang="en">
 <head>
@@ -218,9 +233,11 @@ test("Component in page mode (error case)", async t => {
 
 	page.setInputPath("./test/stubs/component-in-page-mode.webc");
 	
-	let { html, css } = await page.compile();
+	let { html, css, js, components } = await page.compile();
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
 	t.is(html, `<html>
 <head></head><body><div>Test</div></body>
 </html>`);
@@ -245,123 +262,156 @@ async function testGetResultFor(filename, components, slots) {
 	});
 }
 
+test("Using a web component without it being declared", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `Before
+<web-component></web-component>
+After`);
+});
+
 test("Using a web component (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 SSR content
 After`);
 });
 
 test("Using a web component (use webc:keep to force keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-webc-keep.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-webc-keep.webc", {
 		"web-component": "./test/stubs/nested-child.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
 
 test("Using a web component (skip parent for empty style and empty script)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-style-script-both-empty.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
-<script></script>
+
 After`);
 });
 
 test("Using a web component (keep parent: style)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-style.webc"
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
 
 test("Using a web component with <style webc:keep>", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-style-keep.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component>SSR content<style>p { color: red; }</style></web-component>
 After`);
 });
 
 test("Using a web component (keep parent: script)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-script.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, [`alert("test");`]);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
-<web-component>SSR content<script>alert("test");</script></web-component>
+<web-component>SSR content</web-component>
 After`);
 });
 
 test("Using a web component with a slot (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-content.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
 		"web-component": "./test/stubs/nested-child-slot.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 SSR contentChild contentAfter slot content
 After`);
 });
 
 test("Using a web component with a slot (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-content.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
 		"web-component": "./test/stubs/nested-child-slot-style.webc"
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component>SSR contentChild contentAfter slot content</web-component>
 After`);
 });
 
 test("Using a web component with a default slot (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-twice.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-twice.webc", {
 		"web-component": "./test/stubs/nested-child.webc"
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 SSR content
 After`);
 });
 
 test("Using a web component with a default slot (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-twice.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-twice.webc", {
 		"web-component": "./test/stubs/nested-child-style.webc"
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
 
 test("Using a web component without any shadow dom/foreshadowing (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
 		"web-component": "./test/stubs/nested-child.webc",
 		"web-component-no-foreshadowing": "./test/stubs/nested-child-empty.webc",
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component-no-foreshadowing"]);
 	t.is(html, `Before
 
 	Child content
@@ -371,12 +421,14 @@ After`);
 });
 
 test("Using a web component without any shadow dom/foreshadowing (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
 		"web-component": "./test/stubs/nested-child-style.webc",
 		"web-component-no-foreshadowing": "./test/stubs/nested-child-style-only.webc",
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component-no-foreshadowing"]);
 	t.is(html, `Before
 <web-component-no-foreshadowing>
 	Child content
@@ -386,11 +438,13 @@ After`);
 });
 
 test("Using a web component with two slots but child has no shadow dom (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
 		"web-component": "./test/stubs/nested-child-empty.webc",
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 
 	<p>Before slot content!</p>
@@ -402,11 +456,13 @@ After`);
 });
 
 test("Using a web component with two slots but child has no shadow dom (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
 		"web-component": "./test/stubs/nested-child-style-only.webc",
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
@@ -418,11 +474,13 @@ After`);
 });
 
 test("Using a web component with two slots and default content (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
 		"web-component": "./test/stubs/nested-child-namedslot.webc",
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 SSR content<p>Slot 1 content</p>After slot content
 	<p>Before slot content!</p>
@@ -434,11 +492,13 @@ After`);
 });
 
 test("Using a web component with two slots and default content (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
 		"web-component": "./test/stubs/nested-child-namedslot-style.webc",
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component name="World">SSR content<p>Slot 1 content</p>After slot content
 	<p>Before slot content!</p>
@@ -450,11 +510,13 @@ After`);
 });
 
 test("Using a web component with webc:raw to allow client component slots (skip parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
 		"web-component": "./test/stubs/nested-child-empty.webc",
 	});
 
-	t.is(css, "");
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
 	// TODO should this opt-in to keeping the <web-component> parent around?
 	// Note the slots are using webc:raw
 	t.is(html, `Before
@@ -471,11 +533,13 @@ After`);
 });
 
 test("Using a web component with webc:raw to allow client component slots (keep parent)", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
 		"web-component": "./test/stubs/nested-child-style-only.webc",
 	});
 
-	t.is(css, `p { color: red; }`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, ["p { color: red; }"]);
+	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>

@@ -29,6 +29,8 @@
 * Components are compiled to server and/or client modes (or mix and match both)
 * Component name is implied from the file name (override)
 * Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
+* How to assign top-level component attributes from inside the component definition?
+	* I want a `class` attribute added from inside the component, maybe `<div webc:root class="">`?
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~

@@ -115,6 +115,15 @@ class AstSerializer {
 		return true;
 	}
 
+	getAggregateKey(node) {
+		if(node.tagName === "style") {
+			return "css";
+		}
+		if(node.tagName === "script") {
+			return "js";
+		}
+	}
+
 	isKeep(node) {
 		return this.hasAttribute(node, AstSerializer.attrs.KEEP);
 	}
@@ -148,7 +157,8 @@ class AstSerializer {
 		if(tagName === "slot") {
 			return true;
 		}
-		if(tagName === "style") {
+		// aggregation tags
+		if(tagName === "style" || tagName === "script") {
 			// ignore
 			return true;
 		}
@@ -212,6 +222,8 @@ class AstSerializer {
 			rawMode: false,
 			transforms: {},
 			css: new Set(),
+			js: new Set(),
+			components: new Set(),
 		}, options);
 
 		let content = "";
@@ -244,6 +256,8 @@ class AstSerializer {
 		// Content
 		let componentHasContent = false;
 		if(!options.rawMode && this.components[node.tagName]) {
+			options.components.add(node.tagName);
+
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compile(this.components[node.tagName], slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
@@ -284,8 +298,11 @@ class AstSerializer {
 				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
 				let { html: childContent } = await this.getChildContent(node, slots, options);
-				if(node.tagName === "style" && !this.isKeep(node)) {
-					options.css.add( childContent );
+				let key = this.getAggregateKey(node);
+
+				// TODO dependency graph for ordering the CSS! (and JS?)
+				if(key && !this.isKeep(node)) {
+					options[key].add( childContent );
 				} else {
 					content += childContent;
 				}
@@ -307,7 +324,9 @@ class AstSerializer {
 
 		return {
 			html: content,
-			css: Array.from(options.css).join(""),
+			css: Array.from(options.css),
+			js: Array.from(options.js),
+			components: Array.from(options.components),
 		};
 	}
 }
