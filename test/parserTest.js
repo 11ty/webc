@@ -552,3 +552,27 @@ test("Using a web component with webc:raw to allow client component slots (keep 
 </web-component>
 After`);
 });
+
+test("Components dependency graph ordering", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/components-order.webc", {
+		"my-grandparent": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-parent": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-me": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-child": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-aunt": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-sibling": "./test/stubs/nested-child-slot-before-after.webc",
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["my-grandparent", "my-aunt", "my-parent", "my-sibling", "my-me", "my-child"]);
+	t.is(html, `Before
+	Before
+		Before
+			BeforeCHILD CONTENTAfter
+		After
+		BeforeSIBLING CONTENTAfter
+	After
+	BeforeAUNT CONTENTAfter
+After`);
+});

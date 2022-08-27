@@ -1,7 +1,7 @@
 import fs from "fs";
 import { ParserStream } from "parse5-parser-stream";
 import { Readable } from "stream";
-// import * as parse5 from "parse5";
+import { DepGraph } from "dependency-graph";
 
 class AstSerializer {
 	constructor(options = {}) {
@@ -223,7 +223,7 @@ class AstSerializer {
 			transforms: {},
 			css: new Set(),
 			js: new Set(),
-			components: new Set(),
+			components: new DepGraph({ circular: true }),
 		}, options);
 
 		let content = "";
@@ -256,7 +256,14 @@ class AstSerializer {
 		// Content
 		let componentHasContent = false;
 		if(!options.rawMode && this.components[node.tagName]) {
-			options.components.add(node.tagName);
+			if(!options.components.hasNode(node.tagName)) {
+				options.components.addNode(node.tagName);
+			}
+			if(options._parentComponent) {
+				options.components.addDependency(options._parentComponent, node.tagName);
+			}
+			// reset for next time
+			options._parentComponent = node.tagName;
 
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compile(this.components[node.tagName], slots, options);
@@ -326,7 +333,7 @@ class AstSerializer {
 			html: content,
 			css: Array.from(options.css),
 			js: Array.from(options.js),
-			components: Array.from(options.components),
+			components: options.components.overallOrder().reverse(),
 		};
 	}
 }
