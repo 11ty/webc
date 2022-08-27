@@ -115,13 +115,19 @@ class AstSerializer {
 		return true;
 	}
 
+	isKeep(node) {
+		return this.hasAttribute(node, AstSerializer.attrs.KEEP);
+	}
+
 	isIgnored(node) {
 		let { tagName } = node;
 
-		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		if(this.isKeep(node)) {
+			// do not ignore
 			return false;
 		}
 		if(this.getAttributeValue(node, AstSerializer.attrs.TYPE)) { // Must come after webc:keep (takes precedence)
+			// ignore
 			return true;
 		}
 
@@ -143,6 +149,7 @@ class AstSerializer {
 			return true;
 		}
 		if(tagName === "style") {
+			// ignore
 			return true;
 		}
 
@@ -277,7 +284,7 @@ class AstSerializer {
 				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
 				let { html: childContent } = await this.getChildContent(node, slots, options);
-				if(node.tagName === "style") {
+				if(node.tagName === "style" && !this.isKeep(node)) {
 					options.css.add( childContent );
 				} else {
 					content += childContent;

@@ -289,6 +289,17 @@ test("Using a web component (keep parent: style)", async t => {
 After`);
 });
 
+test("Using a web component with <style webc:keep>", async t => {
+	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/nested-child-style-keep.webc"
+	});
+
+	t.is(css, "");
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
 test("Using a web component (keep parent: script)", async t => {
 	let { html, css } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-script.webc"
