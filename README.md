@@ -2,22 +2,29 @@
 
 ## Requirements
 
-* Main goal: Using <my-web-component/> compiles to light dom HTML
 
+* Web components compiler, using <my-web-component/> compiles to HTML with defined conventions from web standards.
 * Streamable.
 * Parse with the same rules as browsers https://twitter.com/DasSurma/status/1559159122964127744
-
-* Syntax goals should appear as if baseline webc component does not require compilation (but components _are_ compiled).
-* Components are compiled to server and/or client modes (or mix and match both)
-* Component name is implied from the file name (override)
-* Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
+* Syntax should appear as if baseline webc component does not require compilation (but components _are_ compiled).
+* HTML
+	* `<template>` semantics are not overridden (nor is a template required for markup). Just put the HTML in the thing (a la Svelte, not Vue).
+	* Use `<template webc:type>` to replace itself with the output from any custom external template syntax engine (async-friendly)
+	* Use `<template webc:type webc:keep>` to replace the contents (not itself)
+* CSS
+	* Use `<style>` for CSS
+	* Styles are extracted from component definition and rolled up for re-use.
 
 ## TODOs
 
+* Components are compiled to server and/or client modes (or mix and match both)
+* Component name is implied from the file name (override)
+* Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
 * ~~Option to compile away the parent element (automatic when no style or script)~~
+* What’s the difference between `webc:keep` and `webc: raw` Can we combine them??
 
 ## Notes
 
@@ -28,7 +35,6 @@ Marketing ideas:
 
 ## HTML
 
-* Template is not required by default: just put the HTML in the thing (a la Svelte, not Vue).
 * TODO: default syntax is controlled by file extension: e.g. `.webc.html`, `.webc.liquid`, `.webc.md`
 * Using raw `<template>` has no special behavior, it will output `<template>`.
 * Compilation via `<template type>`: e.g. `<template type="md">`
@@ -37,7 +43,7 @@ Marketing ideas:
 
 ## Style
 
-* Use `<style>` for CSS
+
 * Use `<link rel="stylesheet" href>` for remote CSS
 * Compilation via `<style type>`: e.g. `<style type="sass">` to another not-CSS language
   * maybe also support `text/sass`?
