@@ -456,6 +456,7 @@ test("Using a web component with webc:raw to allow client component slots (skip 
 
 	t.is(css, "");
 	// TODO should this opt-in to keeping the <web-component> parent around?
+	// Note the slots are using webc:raw
 	t.is(html, `Before
 
 	<p>Before slot content!</p>

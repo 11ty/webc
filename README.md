@@ -8,15 +8,24 @@
 * Parse with the same rules as browsers https://twitter.com/DasSurma/status/1559159122964127744
 * Syntax should appear as if baseline webc component does not require compilation (but components _are_ compiled).
 * HTML
-	* `<template>` semantics are not overridden (nor is a template required for markup). Just put the HTML in the thing (a la Svelte, not Vue).
+	* Just put the HTML in the thing, no `<template>` required (a la Svelte, not Vue).
+	* Using raw `<template>` has no special behavior, it outputs a `<template>`.
 	* Use `<template webc:type>` to replace itself with the output from any custom external template syntax engine (async-friendly)
 	* Use `<template webc:type webc:keep>` to replace the contents (not itself)
+	* Apply `[slot]` (attribute) sources to `<slot>` elements in components.
+		* Use `[slot][webc:raw]` to opt-out and keep a slot for clientside use.
+	* Component tags are excluded from client output for HTML-only components (no CSS or JS)
+		* Opt out with `webc:keep` attribute
+		* If component contains `<style>` or `<script>`, tag *is* included (for client component behavior/styling)
+	* Server components can be used on the client
 * CSS
 	* Use `<style>` for CSS
 	* Styles are extracted from component definition and rolled up for re-use.
 
 ## TODOs
 
+* What’s the difference between `webc:keep` and `webc:raw` Can we combine them??
+* Allow using is="" for component redefinition
 * Components are compiled to server and/or client modes (or mix and match both)
 * Component name is implied from the file name (override)
 * Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
@@ -24,7 +33,6 @@
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
 * ~~Option to compile away the parent element (automatic when no style or script)~~
-* What’s the difference between `webc:keep` and `webc: raw` Can we combine them??
 
 ## Notes
 
@@ -32,24 +40,24 @@
 
 Marketing ideas:
 * Tired of waiting for browser support for Declarative Shadow DOM? Don’t want the performance/functionality fallbacks from the polyfill?
+* Show a component with clientside support and registration
+* Show an example of using declarative shadow DOM with this.
 
 ## HTML
 
-* TODO: default syntax is controlled by file extension: e.g. `.webc.html`, `.webc.liquid`, `.webc.md`
-* Using raw `<template>` has no special behavior, it will output `<template>`.
-* Compilation via `<template type>`: e.g. `<template type="md">`
-* TODO `<slot>` for server slots (maintain `<slot>` as is)
+* ~Version 2: preprocess using another file extension? e.g. `.webc.html`, `.webc.liquid`, `.webc.md`
+* ~~TODO `<slot>` for server slots (maintain `<slot>` as is)~~
 * ~~TODO? compilation: how to use template literals in `<template>`~~ instead use `<script type="webc/render">`
 
 ## Style
-
 
 * Use `<link rel="stylesheet" href>` for remote CSS
 * Compilation via `<style type>`: e.g. `<style type="sass">` to another not-CSS language
   * maybe also support `text/sass`?
   * Ignoring `type="text/css"`
-* TODO Compilation: automatically bundle away `<style>`? Or use `<style bundle>` aggregates to page bundle
+~~* TODO Compilation: automatically bundle away `<style>`? Or use `<style bundle>` aggregates to page bundle~~
 * Compilation: `<style webc:scoped>` adds a svelte-style prefix to styles based on a hash of the style content!
+* If styles are NOT scoped include a unique component classname checker with error messaging for duplicate classname re-use.
 
 * ~Version 2: Compilation: `<style webc:src>` inlines the thing
 * ~Version 2: Compilation: `<link rel="stylesheet" href webc:scoped>`
