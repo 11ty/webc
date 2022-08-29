@@ -312,6 +312,19 @@ test("Using a web component (use webc:raw to keep parent)", async t => {
 After`);
 });
 
+test("Using a web component (alias using `web:is` attribute)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-alias.webc", {
+		"web-component": "./test/stubs/nested-child.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
+	t.is(html, `Before
+SSR content
+After`);
+});
+
 test("Using a web component (skip parent for empty style and empty script)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/nested-child-style-script-both-empty.webc"

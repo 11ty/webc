@@ -47,7 +47,7 @@ class AstSerializer {
 		return AstSerializer.voidElements[tagName] || false;
 	}
 
-	getAttributesString(tagName, attrs) {
+	getAttributesString(attrs) {
 		return attrs.filter(({name}) => !name.startsWith("webc:")).map(({name, value}) => ` ${name}="${value}"`).join("");
 	}
 
@@ -68,7 +68,8 @@ class AstSerializer {
 	}
 
 	findElement(root, tagName) {
-		if(root.tagName === tagName) {
+		let rootTagName = this.getTagName(root);
+		if(rootTagName === tagName) {
 			return root;
 		}
 		for(let child of root.childNodes || []) {
@@ -97,7 +98,8 @@ class AstSerializer {
 		}
 
 		for(let child of parentNode.childNodes || []) {
-			if(tagNames.has(child.tagName) && this.hasTextContent(child)) {
+			let tagName = this.getTagName(child);
+			if(tagNames.has(tagName) && this.hasTextContent(child)) {
 				return true;
 			}
 		}
@@ -120,7 +122,7 @@ class AstSerializer {
 	}
 
 	isIgnored(node) {
-		let { tagName } = node;
+		let tagName = this.getTagName(node);
 
 		if(this.isKeep(node)) {
 			// do not ignore
@@ -131,10 +133,8 @@ class AstSerializer {
 			return true;
 		}
 
-		// TODO override here to always include the parent node
-		let component = this.components[node.tagName];
-		if(component) {
-			if(this.componentIgnoreRootTag[node.tagName]) {
+		if(this.components[tagName]) {
+			if(this.componentIgnoreRootTag[tagName]) {
 				// do not include the parent element if this component has no styles or script associated with it
 				return true;
 			}
@@ -220,6 +220,11 @@ class AstSerializer {
 		return Array.from(assets);
 	}
 
+	getTagName(node) {
+		let is = this.getAttributeValue(node, "webc:is");
+		return is || node.tagName;
+	}
+
 	async compileNode(node, slots = {}, options = {}) {
 		options = Object.assign({}, options);
 
@@ -235,34 +240,35 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
+		let tagName = this.getTagName(node);
 		let slotSource = this.getAttributeValue(node, "slot");
 
 		// Start tag
-		if(node.tagName) {
+		if(tagName) {
 			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
-			if(this.mode === "page" && node.tagName === "head") {
+			if(this.mode === "page" && tagName === "head") {
 				content += `\n`;
 			}
 
 			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
-				content += `<${node.tagName}${this.getAttributesString(node.tagName, node.attrs)}>`;
+				content += `<${tagName}${this.getAttributesString(node.attrs)}>`;
 			}
 		}
 
 		// Content
 		let componentHasContent = false;
-		if(!options.rawMode && this.components[node.tagName]) {
-			if(!options.components.hasNode(node.tagName)) {
-				options.components.addNode(node.tagName);
+		if(!options.rawMode && this.components[tagName]) {
+			if(!options.components.hasNode(tagName)) {
+				options.components.addNode(tagName);
 			}
 			if(options._parentComponent) {
-				options.components.addDependency(options._parentComponent, node.tagName);
+				options.components.addDependency(options._parentComponent, tagName);
 			}
 			// reset for next time
-			options._parentComponent = node.tagName;
+			options._parentComponent = tagName;
 
 			let slots = this.getSlotNodes(node);
-			let { html: foreshadowDom } = await this.compileNode(this.components[node.tagName], slots, options);
+			let { html: foreshadowDom } = await this.compileNode(this.components[tagName], slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;
@@ -279,7 +285,7 @@ class AstSerializer {
 				content += `<!doctype ${node.name}>\n`;
 			}
 
-			if(!options.rawMode && node.tagName === "slot") { // <slot> node
+			if(!options.rawMode && tagName === "slot") { // <slot> node
 				let slotName = this.getAttributeValue(node, "name") || "default"
 
 				if(slots[slotName]) {
@@ -304,7 +310,7 @@ class AstSerializer {
 				let key = {
 					style: "css",
 					script: "js",
-				}[ node.tagName ];
+				}[ tagName ];
 
 				if(key && !this.isKeep(node)) {
 					if(!options[key][options._parentComponent]) {
@@ -318,17 +324,16 @@ class AstSerializer {
 		}
 
 		// End tag
-		if(node.tagName) {
-			if(this.isVoidElement(node.tagName)) {
+		if(tagName) {
+			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
 			} else if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
-				content += `</${node.tagName}>`;
+				content += `</${tagName}>`;
 			}
 
-			if(this.mode === "page" && node.tagName === "body") {
+			if(this.mode === "page" && tagName === "body") {
 				content += `\n`;
 			}
-
 		}
 
 		// Disable raw mode again
@@ -431,10 +436,6 @@ class WebC {
 			if(this.astOptions.mode === "component") {
 				parser.write(`<!doctype html><body>`);
 			}
-
-			parser.on("data", function(chunk) {
-				console.log( { chunk } );
-			});
 
 			parser.once("finish", function() {
 				resolve(parser.document);
