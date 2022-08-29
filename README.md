@@ -33,6 +33,7 @@
 * How to assign top-level component attributes from inside the component definition?
 	* I want a `class` attribute added from inside the component, maybe `<div webc:root class="">`?
 * Output to stream?
+* Option to bundle style/script to defer/async bundles `<style webc:async>`
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
