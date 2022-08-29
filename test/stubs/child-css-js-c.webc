@@ -1,0 +1,1 @@
+Before<slot></slot>After<style>/* component-c css */</style><script>/* component-c js */</script>

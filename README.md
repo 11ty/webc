@@ -5,7 +5,9 @@
 
 * Web components compiler, using <my-web-component/> compiles to HTML with defined conventions from web standards.
 * Streamable.
-* Parse with the same rules as browsers https://twitter.com/DasSurma/status/1559159122964127744
+* Parse with the same rules as browsers
+	* https://twitter.com/DasSurma/status/1559159122964127744
+	* https://twitter.com/patak_dev/status/1564265006627176449
 * Syntax should appear as if baseline webc component does not require compilation (but components _are_ compiled).
 * HTML
 	* Just put the HTML in the thing, no `<template>` required (a la Svelte, not Vue).
@@ -26,15 +28,19 @@
 
 * What’s the difference between `webc:keep` and `webc:raw` Can we combine them??
 * Allow using is="" for component redefinition
-* Components are compiled to server and/or client modes (or mix and match both)
 * Component name is implied from the file name (override)
 * Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
 * How to assign top-level component attributes from inside the component definition?
 	* I want a `class` attribute added from inside the component, maybe `<div webc:root class="">`?
+* Output to stream?
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
 * ~~Option to compile away the parent element (automatic when no style or script)~~
+
+## Idea graveyard
+
+~~* Components are compiled to server and/or client modes (or mix and match both)~~
 
 ## Notes
 
@@ -122,3 +128,11 @@ https://docs.astro.build/en/reference/directives-reference/
 [is:raw]
 [client:only]
 
+
+
+
+
+---
+SFC inspiration
+
+https://dotnet.microsoft.com/en-us/learn/aspnet/blazor-tutorial/add

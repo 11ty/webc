@@ -115,15 +115,6 @@ class AstSerializer {
 		return true;
 	}
 
-	getAggregateKey(node) {
-		if(node.tagName === "style") {
-			return "css";
-		}
-		if(node.tagName === "script") {
-			return "js";
-		}
-	}
-
 	isKeep(node) {
 		return this.hasAttribute(node, AstSerializer.attrs.KEEP);
 	}
@@ -217,12 +208,24 @@ class AstSerializer {
 		console.log( c, ...args );
 	}
 
+	getOrderedAssets(componentList, assetObject) {
+		let assets = new Set();
+		for(let component of componentList) {
+			if(assetObject[component]) {
+				for(let entry of assetObject[component]) {
+					assets.add(entry);
+				}
+			}
+		}
+		return Array.from(assets);
+	}
+
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false,
 			transforms: {},
-			css: new Set(),
-			js: new Set(),
+			css: {},
+			js: {},
 			components: new DepGraph({ circular: true }),
 		}, options);
 
@@ -305,11 +308,16 @@ class AstSerializer {
 				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
 				let { html: childContent } = await this.getChildContent(node, slots, options);
-				let key = this.getAggregateKey(node);
+				let key = {
+					style: "css",
+					script: "js",
+				}[ node.tagName ];
 
-				// TODO dependency graph for ordering the CSS! (and JS?)
 				if(key && !this.isKeep(node)) {
-					options[key].add( childContent );
+					if(!options[key][options._parentComponent]) {
+						options[key][options._parentComponent] = new Set();
+					}
+					options[key][options._parentComponent].add( childContent );
 				} else {
 					content += childContent;
 				}
@@ -329,11 +337,13 @@ class AstSerializer {
 			}
 		}
 
+		let componentOrder = options.components.overallOrder().reverse();
+
 		return {
 			html: content,
-			css: Array.from(options.css),
-			js: Array.from(options.js),
-			components: options.components.overallOrder().reverse(),
+			css: this.getOrderedAssets(componentOrder, options.css),
+			js: this.getOrderedAssets(componentOrder, options.js),
+			components: componentOrder,
 		};
 	}
 }
@@ -403,10 +413,12 @@ class WebC {
 
 			// Content should have no-quirks-mode nested in <body> semantics
 			if(this.astOptions.mode === "component") {
-				parser.once("pipe", function() {
-					this.write(`<!doctype html><body>`);
-				});
+				parser.write(`<!doctype html><body>`);
 			}
+
+			parser.on("data", function(chunk) {
+				console.log( { chunk } );
+			});
 
 			parser.once("finish", function() {
 				resolve(parser.document);

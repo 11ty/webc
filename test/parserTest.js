@@ -576,3 +576,27 @@ test("Components dependency graph ordering", async t => {
 	BeforeAUNT CONTENTAfter
 After`);
 });
+
+test("Components dependency graph ordering (with CSS/JS)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/components-order.webc", {
+		"my-grandparent": "./test/stubs/child-css-js-a.webc",
+		"my-parent": "./test/stubs/child-css-js-c.webc",
+		"my-me": "./test/stubs/child-css-js-e.webc",
+		"my-child": "./test/stubs/child-css-js-f.webc",
+		"my-aunt": "./test/stubs/child-css-js-b.webc",
+		"my-sibling": "./test/stubs/child-css-js-d.webc",
+	});
+
+	t.deepEqual(js, ["/* component-a js */", "/* component-b js */", "/* component-c js */", "/* component-d js */", "/* component-e js */", "/* component-f js */"]);
+	t.deepEqual(css, ["/* component-a css */", "/* component-b css */", "/* component-c css */", "/* component-d css */", "/* component-e css */", "/* component-f css */"]);
+	t.deepEqual(components, ["my-grandparent", "my-aunt", "my-parent", "my-sibling", "my-me", "my-child"]);
+	t.is(html, `<my-grandparent>Before
+	<my-parent>Before
+		<my-me>Before
+			<my-child>BeforeCHILD CONTENTAfter</my-child>
+		After</my-me>
+		<my-sibling>BeforeSIBLING CONTENTAfter</my-sibling>
+	After</my-parent>
+	<my-aunt>BeforeAUNT CONTENTAfter</my-aunt>
+After</my-grandparent>`);
+});
