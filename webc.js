@@ -177,7 +177,7 @@ class AstSerializer {
 	async getChildContent(parentNode, slots, options) {
 		let promises = [];
 		for(let child of parentNode.childNodes || []) {
-			promises.push(this.compile(child, slots, options))
+			promises.push(this.compileNode(child, slots, options))
 		}
 		let p = await Promise.all(promises);
 		let html = p.map(entry => entry.html).join("");
@@ -202,10 +202,10 @@ class AstSerializer {
 		return slots;
 	}
 
-	log(node, ...args) {
+	logNode(node) {
 		let c = structuredClone(node);
 		delete c.parentNode;
-		console.log( c, ...args );
+		return c;
 	}
 
 	getOrderedAssets(componentList, assetObject) {
@@ -220,14 +220,8 @@ class AstSerializer {
 		return Array.from(assets);
 	}
 
-	async compile(node, slots = {}, options = {}) {
-		options = Object.assign({
-			rawMode: false,
-			transforms: {},
-			css: {},
-			js: {},
-			components: new DepGraph({ circular: true }),
-		}, options);
+	async compileNode(node, slots = {}, options = {}) {
+		options = Object.assign({}, options);
 
 		let content = "";
 
@@ -237,9 +231,8 @@ class AstSerializer {
 			options.currentTransformType = transformType;
 		}
 
-		let rawMode = this.hasAttribute(node, AstSerializer.attrs.RAW);
-		if(rawMode) {
-			options.rawMode = rawMode;
+		if(this.hasAttribute(node, AstSerializer.attrs.RAW)) {
+			options.rawMode = true;
 		}
 
 		let slotSource = this.getAttributeValue(node, "slot");
@@ -269,7 +262,7 @@ class AstSerializer {
 			options._parentComponent = node.tagName;
 
 			let slots = this.getSlotNodes(node);
-			let { html: foreshadowDom } = await this.compile(this.components[node.tagName], slots, options);
+			let { html: foreshadowDom } = await this.compileNode(this.components[node.tagName], slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;
@@ -301,7 +294,7 @@ class AstSerializer {
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to content
 			} else if(node.content) {
-				let { html: rawContent } = await this.compile(node.content, slots, options);
+				let { html: rawContent } = await this.compileNode(node.content, slots, options);
 				if(options.currentTransformType) {
 					rawContent = await options.transforms[options.currentTransformType](rawContent);
 				}
@@ -335,16 +328,39 @@ class AstSerializer {
 			if(this.mode === "page" && node.tagName === "body") {
 				content += `\n`;
 			}
+
 		}
 
-		let componentOrder = options.components.overallOrder().reverse();
+		// Disable raw mode again
+		if(this.hasAttribute(node, AstSerializer.attrs.RAW)) {
+			options.rawMode = false;
+		}
 
 		return {
+			html: content,
+		}
+	}
+
+	async compile(node, slots = {}, options = {}) {
+		options = Object.assign({
+			rawMode: false,
+			transforms: {},
+			css: {},
+			js: {},
+			components: new DepGraph({ circular: true }),
+		}, options);
+
+		let compiled = await this.compileNode(node, slots, options);
+		let content = compiled.html;
+		let componentOrder = options.components.overallOrder().reverse();
+
+		let ret = {
 			html: content,
 			css: this.getOrderedAssets(componentOrder, options.css),
 			js: this.getOrderedAssets(componentOrder, options.js),
 			components: componentOrder,
 		};
+		return ret;
 	}
 }
 
