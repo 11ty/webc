@@ -268,6 +268,8 @@ test("Using a web component without it being declared", async t => {
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 	t.deepEqual(components, []);
+
+	// Same output as `webc:raw`
 	t.is(html, `Before
 <web-component></web-component>
 After`);
@@ -322,6 +324,42 @@ test("Using a web component (alias using `web:is` attribute)", async t => {
 	t.deepEqual(components, ["web-component"]);
 	t.is(html, `Before
 SSR content
+After`);
+});
+
+test("Circular dependencies check (pass)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/child-circular.webc",
+		"other-component": "./test/stubs/nested-child.webc",
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component", "other-component"]);
+	t.is(html, `Before
+SSR content
+After`);
+});
+
+test("Circular dependencies check (fail)", async t => {
+	await t.throwsAsync(testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/child-circular.webc",
+		"other-component": "./test/stubs/child-circular2.webc",
+	}));
+});
+
+test("Using a web component (class attribute mixins)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
+		"web-component": "./test/stubs/child-root.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
+	t.is(html, `Before
+<web-component class="class-a class-b class1 class2">
+	SSR content
+</web-component>
 After`);
 });
 
@@ -431,7 +469,6 @@ After`);
 
 test("Using a web component without any shadow dom/foreshadowing (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
-		"web-component": "./test/stubs/nested-child.webc",
 		"web-component-no-foreshadowing": "./test/stubs/nested-child-empty.webc",
 	});
 
@@ -448,7 +485,6 @@ After`);
 
 test("Using a web component without any shadow dom/foreshadowing (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
-		"web-component": "./test/stubs/nested-child-style.webc",
 		"web-component-no-foreshadowing": "./test/stubs/nested-child-style-only.webc",
 	});
 

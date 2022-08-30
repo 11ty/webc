@@ -5,12 +5,16 @@ import { DepGraph } from "dependency-graph";
 
 class AstSerializer {
 	constructor(options = {}) {
-		let { mode } = Object.assign({
+		let { mode, filePath } = Object.assign({
 			mode: "component", // or "page"
+			filePath: undefined,
 		}, options);
 
 		// controls whether or not doctype, html, body are prepended to content
 		this.mode = mode;
+
+		// for error messaging
+		this.filePath = filePath;
 	}
 
 	/* Custom HTML attributes */
@@ -18,7 +22,9 @@ class AstSerializer {
 		TYPE: "webc:type",
 		KEEP: "webc:keep",
 		RAW: "webc:raw",
-	}
+		IS: "webc:is",
+		ROOT: "webc:root",
+	};
 
 	// List from the parse5 serializer
 	// https://github.com/inikulin/parse5/blob/3955dcc158031cc773a18517d2eabe8b17107aa3/packages/parse5/lib/serializer/index.ts
@@ -48,11 +54,39 @@ class AstSerializer {
 	}
 
 	getAttributesString(attrs) {
-		return attrs.filter(({name}) => !name.startsWith("webc:")).map(({name, value}) => ` ${name}="${value}"`).join("");
+		// Merge multiple class attributes into a single one
+		let merged = {
+			class: {
+				value: [],
+				delimiter: " ",
+			}
+		};
+
+		for(let j = 0, k = attrs.length; j<k; j++) {
+			let {name, value} = attrs[j];
+			if(merged[name]) {
+				// set skipped for 2nd+ dupes
+				if(merged[name].value.length > 0) {
+					attrs[j].skipped = true;
+				}
+				merged[name].value.push(value);
+			}
+		}
+
+		let filteredAttrs = attrs.filter(({name, skipped}) => {
+			return !skipped && !name.startsWith("webc:");
+		}).map(({name, value}) => {
+			// Used merged values
+			if(merged[name]) {
+				value = merged[name].value.join(merged[name].delimiter);
+			}
+			return ` ${name}="${value}"`;
+		});
+		return filteredAttrs.join("");
 	}
 
 	hasAttribute(node, attributeName) {
-		return !!(node.attrs || []).find(({name}) => name === attributeName);
+		return (node.attrs || []).find(({name}) => name === attributeName) !== undefined;
 	}
 
 	getAttributeValue(node, attributeName) {
@@ -106,9 +140,22 @@ class AstSerializer {
 		return false;
 	}
 
-	ignoreComponentParentTag(component) {
-		let body = this.findElement(component, "body");
+	getWebcRootAttributes(component) {
+		let tmpl = this.findElement(component, "template");
+		if(tmpl && this.hasAttribute(tmpl, AstSerializer.attrs.ROOT)) {
+			return tmpl.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
+		}
+		return [];
+	}
 
+	ignoreComponentParentTag(component) {
+		// First <template>
+		let root = this.findElement(component, "template");
+		if(root && this.hasAttribute(root, AstSerializer.attrs.ROOT)) {
+			return false;
+		}
+
+		let body = this.findElement(component, "body");
 		// do not ignore if <style> or <script> in component definition
 		// TODO(v2): link[rel="stylesheet"]
 		if(this.hasNonEmptyChildren(body, ["style", "script"])) {
@@ -117,19 +164,20 @@ class AstSerializer {
 		return true;
 	}
 
-	isKeep(node) {
-		return this.hasAttribute(node, AstSerializer.attrs.KEEP);
-	}
-
 	isIgnored(node) {
 		let tagName = this.getTagName(node);
 
-		if(this.isKeep(node)) {
+		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
 			// do not ignore
 			return false;
 		}
-		if(this.getAttributeValue(node, AstSerializer.attrs.TYPE)) { // Must come after webc:keep (takes precedence)
-			// ignore
+
+		if(this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
+			return true;
+		}
+
+		// Must come after webc:keep (takes precedence)
+		if(this.hasAttribute(node, AstSerializer.attrs.TYPE)) {
 			return true;
 		}
 
@@ -140,17 +188,18 @@ class AstSerializer {
 			}
 		}
 
-		if(tagName === "head" || tagName === "body" || tagName === "html") {
-			if(this.mode === "component") {
+		if(this.mode === "component") {
+			if(tagName === "head" || tagName === "body" || tagName === "html") {
 				return true;
 			}
 		}
+
 		if(tagName === "slot") {
 			return true;
 		}
+
 		// aggregation tags
 		if(tagName === "style" || tagName === "script") {
-			// ignore
 			return true;
 		}
 
@@ -172,6 +221,11 @@ class AstSerializer {
 		for(let name in components) {
 			this.componentIgnoreRootTag[name] = this.ignoreComponentParentTag(components[name]);
 		}
+
+		this.webcRootAttributes = {};
+		for(let name in components) {
+			this.webcRootAttributes[name] = this.getWebcRootAttributes(components[name]);
+		}
 	}
 
 	async getChildContent(parentNode, slots, options) {
@@ -183,7 +237,7 @@ class AstSerializer {
 		let html = p.map(entry => entry.html).join("");
 
 		return {
-			html
+			html,
 		};
 	}
 
@@ -221,8 +275,44 @@ class AstSerializer {
 	}
 
 	getTagName(node) {
-		let is = this.getAttributeValue(node, "webc:is");
+		let is = this.getAttributeValue(node, AstSerializer.attrs.IS);
 		return is || node.tagName;
+	}
+
+	renderStartTag(node, tagName, slotSource, options) {
+		let content = "";
+
+		if(tagName) {
+			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
+			if(this.mode === "page" && tagName === "head") {
+				content += `\n`;
+			}
+
+			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
+				let attrs = node.attrs.slice(0);
+				if(this.webcRootAttributes[tagName]) {
+					attrs.push(...this.webcRootAttributes[tagName]);
+				}
+				content += `<${tagName}${this.getAttributesString(attrs)}>`;
+			}
+		}
+		return content;
+	}
+
+	renderEndTag(node, tagName, slotSource, options) {
+		let content = "";
+		if(tagName) {
+			if(this.isVoidElement(tagName)) {
+				// do nothing: void elements don’t have closing tags
+			} else if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
+				content += `</${tagName}>`;
+			}
+
+			if(this.mode === "page" && tagName === "body") {
+				content += `\n`;
+			}
+		}
+		return content;
 	}
 
 	async compileNode(node, slots = {}, options = {}) {
@@ -242,30 +332,33 @@ class AstSerializer {
 
 		let tagName = this.getTagName(node);
 		let slotSource = this.getAttributeValue(node, "slot");
-
-		// Start tag
-		if(tagName) {
-			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
-			if(this.mode === "page" && tagName === "head") {
-				content += `\n`;
-			}
-
-			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
-				content += `<${tagName}${this.getAttributesString(node.attrs)}>`;
-			}
+		if(slotSource) {
+			options.isSlotContent = true;
 		}
 
-		// Content
-		let componentHasContent = false;
+		// Start tag
+		content += this.renderStartTag(node, tagName, slotSource, options);
+
+		// light dom content
+		let componentHasContent = null;
 		if(!options.rawMode && this.components[tagName]) {
 			if(!options.components.hasNode(tagName)) {
 				options.components.addNode(tagName);
 			}
-			if(options._parentComponent) {
-				options.components.addDependency(options._parentComponent, tagName);
+
+			if(options.closestParentComponent) {
+				// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
+				// <web-component><child/></web-component>
+				if(!options.isSlotContent) {
+					if(options.closestParentComponent === tagName || options.components.dependenciesOf(options.closestParentComponent).find(entry => entry === tagName) !== undefined) {
+						throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for <${options.closestParentComponent}>${this.filePath ? ` (${this.filePath})` : ""}`);
+					}
+				}
+				options.components.addDependency(options.closestParentComponent, tagName);
 			}
+
 			// reset for next time
-			options._parentComponent = tagName;
+			options.closestParentComponent = tagName;
 
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(this.components[tagName], slots, options);
@@ -286,7 +379,7 @@ class AstSerializer {
 			}
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
-				let slotName = this.getAttributeValue(node, "name") || "default"
+				let slotName = this.getAttributeValue(node, "name") || "default";
 
 				if(slots[slotName]) {
 					let slotAst = await this.getSlotAst(slots[slotName]);
@@ -298,25 +391,31 @@ class AstSerializer {
 					content += slotFallbackHtml;
 				}
 			} else if(!options.rawMode && slotSource) {
-				// do nothing if this is a <tag slot=""> attribute source: do not add to content
+				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) {
 				let { html: rawContent } = await this.compileNode(node.content, slots, options);
+
 				if(options.currentTransformType) {
 					rawContent = await options.transforms[options.currentTransformType](rawContent);
 				}
+
 				content += rawContent;
 			} else if(node.childNodes?.length > 0) {
+				if(componentHasContent === false) {
+					options.isSlotContent = true;
+				}
 				let { html: childContent } = await this.getChildContent(node, slots, options);
+
 				let key = {
 					style: "css",
 					script: "js",
 				}[ tagName ];
 
-				if(key && !this.isKeep(node)) {
-					if(!options[key][options._parentComponent]) {
-						options[key][options._parentComponent] = new Set();
+				if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+					if(!options[key][options.closestParentComponent]) {
+						options[key][options.closestParentComponent] = new Set();
 					}
-					options[key][options._parentComponent].add( childContent );
+					options[key][options.closestParentComponent].add( childContent );
 				} else {
 					content += childContent;
 				}
@@ -324,17 +423,7 @@ class AstSerializer {
 		}
 
 		// End tag
-		if(tagName) {
-			if(this.isVoidElement(tagName)) {
-				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
-				content += `</${tagName}>`;
-			}
-
-			if(this.mode === "page" && tagName === "body") {
-				content += `\n`;
-			}
-		}
+		content += this.renderEndTag(node, tagName, slotSource, options);
 
 		// Disable raw mode again
 		if(this.hasAttribute(node, AstSerializer.attrs.RAW)) {
@@ -349,6 +438,7 @@ class AstSerializer {
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false,
+			isSlotContent: false,
 			transforms: {},
 			css: {},
 			js: {},
@@ -383,12 +473,14 @@ class WebC {
 		}
 
 		this.astOptions = {
-			mode: mode || "component"
+			mode: mode || "component",
+			filePath: file,
 		};
 	}
 
 	setInputPath(file) {
 		this.filePath = file;
+		this.astOptions.filePath = file;
 	}
 
 	setInput(input) {

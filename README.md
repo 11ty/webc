@@ -13,27 +13,27 @@
 	* Just put the HTML in the thing, no `<template>` required (a la Svelte, not Vue).
 	* Using raw `<template>` has no special behavior, it outputs a `<template>`.
 	* Use `<template webc:type>` to replace itself with the output from any custom external template syntax engine (async-friendly)
-	* Use `<template webc:type webc:keep>` to replace the contents (not itself)
+	* Use `<template webc:type webc:keep>` to replace just the child content (not itself)
 	* Apply `[slot]` (attribute) sources to `<slot>` elements in components.
 		* Use `[slot][webc:raw]` to opt-out and keep a slot for clientside use.
 	* Component tags are excluded from client output for HTML-only components (no CSS or JS)
 		* Opt out with `webc:keep` attribute
 		* If component contains `<style>` or `<script>`, tag *is* included (for client component behavior/styling)
 	* Server components can be used on the client
+	* Allow using `webc:is` attribute for component redefinition
+	* Handle circular dependencies (can’t use `<web-component>` inside of shadow dom for `<web-component>`)
 * CSS
 	* Use `<style>` for CSS
 	* Styles are extracted from component definition and rolled up for re-use.
 
 ## TODOs
 
-* What’s the difference between `webc:keep` and `webc:raw` Can we combine them??
-* Allow using is="" for component redefinition
 * Component name is implied from the file name (override)
-* Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
 * How to assign top-level component attributes from inside the component definition?
 	* I want a `class` attribute added from inside the component, maybe `<div webc:root class="">`?
 * Output to stream?
 * Option to bundle style/script to defer/async bundles `<style webc:async>`
+* Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
 * ~~single tags e.g. <img>~~
 * ~~Use <body> and <html> in the content~~
 * ~~Use a doctype~~
@@ -42,6 +42,7 @@
 ## Idea graveyard
 
 ~~* Components are compiled to server and/or client modes (or mix and match both)~~
+~~* What’s the difference between `webc:keep` and `webc:raw` Can we combine them??~~
 
 ## Notes
 
