@@ -155,7 +155,7 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		// First <template>
+		// First <template> has a webc:root
 		let root = this.findElement(component, "template");
 		if(root && this.hasAttribute(root, AstSerializer.attrs.ROOT)) {
 			return false;
@@ -167,6 +167,7 @@ class AstSerializer {
 		if(this.hasNonEmptyChildren(body, ["style", "script"])) {
 			return false;
 		}
+
 		return true;
 	}
 
@@ -187,7 +188,9 @@ class AstSerializer {
 			return true;
 		}
 
-		if(this.getComponent(tagName)?.ignoreRootTag) {
+		
+		let component = this.getComponent(tagName);
+		if(component?.ignoreRootTag) {
 			// do not include the parent element if this component has no styles or script associated with it
 			return true;
 		}
@@ -389,23 +392,24 @@ class AstSerializer {
 		let componentHasContent = null;
 		let component = this.getComponent(tagName);
 		if(!options.rawMode && component) {
-			if(!options.components.hasNode(tagName)) {
-				options.components.addNode(tagName);
+			let componentFilePath = this.componentMap[tagName];
+			if(!options.components.hasNode(componentFilePath)) {
+				options.components.addNode(componentFilePath);
 			}
 
 			if(options.closestParentComponent) {
 				// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
 				// <web-component><child/></web-component>
 				if(!options.isSlotContent) {
-					if(options.closestParentComponent === tagName || options.components.dependenciesOf(options.closestParentComponent).find(entry => entry === tagName) !== undefined) {
-						throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for <${options.closestParentComponent}>${this.filePath ? ` (${this.filePath})` : ""}`);
+					if(options.closestParentComponent === componentFilePath || options.components.dependenciesOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
+						throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for ${options.closestParentComponent}`);
 					}
 				}
-				options.components.addDependency(options.closestParentComponent, tagName);
+				options.components.addDependency(options.closestParentComponent, componentFilePath);
 			}
 
 			// reset for next time
-			options.closestParentComponent = tagName;
+			options.closestParentComponent = componentFilePath;
 
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
@@ -426,8 +430,9 @@ class AstSerializer {
 			}
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
-				let slotName = this.getAttributeValue(node, "name") || "default";
+				options.isSlotContent = true;
 
+				let slotName = this.getAttributeValue(node, "name") || "default";
 				if(slots[slotName]) {
 					let slotAst = await this.getSlotAst(slots[slotName]);
 					let { html: slotHtml } = await this.getChildContent(slotAst, null, options);

@@ -1,0 +1,3 @@
+Before
+<p webc:import="./components/child-root.webc">This is a paragraph—we still cool?</p>
+After

@@ -274,7 +274,7 @@ test("Using a web component (skip parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
 After`);
@@ -287,7 +287,7 @@ test("Using a web component (use webc:keep to force keep parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
@@ -313,9 +313,22 @@ test("Using a web component (alias using `web:is` attribute)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
+After`);
+});
+
+test("Using a web component (use a <p> with `web:import`)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/alias-paragraph.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["./test/stubs/components/child-root.webc"]);
+	t.is(html, `Before
+<p class="class1 class2">
+	SSR content
+</p>
 After`);
 });
 
@@ -324,7 +337,7 @@ test("Using a web component (reference via `web:import` attribute)", async t => 
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
 After`);
@@ -335,7 +348,7 @@ test("Using a web component (reference via `web:import` and use webc:keep to for
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
@@ -346,7 +359,7 @@ test("Using a web component (reference via `web:import` attribute, aliased using
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
 After`);
@@ -361,7 +374,7 @@ test("Circular dependencies check (pass)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component", "other-component"]);
+	t.deepEqual(components, ["./test/stubs/components/child-circular.webc", "./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
 After`);
@@ -381,7 +394,7 @@ test("Using a web component (class attribute mixins)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/child-root.webc"]);
 	t.is(html, `Before
 <web-component class="class-a class-b class1 class2">
 	SSR content
@@ -396,7 +409,7 @@ test("Using a web component (skip parent for empty style and empty script)", asy
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style-script-both-empty.webc"]);
 	t.is(html, `Before
 
 After`);
@@ -409,7 +422,7 @@ test("Using a web component (keep parent: style)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style.webc"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
@@ -422,7 +435,7 @@ test("Using a web component with <style webc:keep>", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style-keep.webc"]);
 	t.is(html, `Before
 <web-component>SSR content<style>p { color: red; }</style></web-component>
 After`);
@@ -435,7 +448,7 @@ test("Using a web component (keep parent: script)", async t => {
 
 	t.deepEqual(js, [`alert("test");`]);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-script.webc"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
@@ -448,7 +461,7 @@ test("Using a web component with a slot (skip parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-slot.webc"]);
 	t.is(html, `Before
 SSR contentChild contentAfter slot content
 After`);
@@ -461,7 +474,7 @@ test("Using a web component with a slot (keep parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-slot-style.webc"]);
 	t.is(html, `Before
 <web-component>SSR contentChild contentAfter slot content</web-component>
 After`);
@@ -474,7 +487,7 @@ test("Using a web component with a default slot (skip parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child.webc"]);
 	t.is(html, `Before
 SSR content
 After`);
@@ -487,7 +500,7 @@ test("Using a web component with a default slot (keep parent)", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style.webc"]);
 	t.is(html, `Before
 <web-component>SSR content</web-component>
 After`);
@@ -500,7 +513,7 @@ test("Using a web component without any shadow dom/foreshadowing (skip parent)",
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component-no-foreshadowing"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-empty.webc"]);
 	t.is(html, `Before
 
 	Child content
@@ -516,7 +529,7 @@ test("Using a web component without any shadow dom/foreshadowing (keep parent)",
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component-no-foreshadowing"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style-only.webc"]);
 	t.is(html, `Before
 <web-component-no-foreshadowing>
 	Child content
@@ -532,7 +545,7 @@ test("Using a web component with two slots but child has no shadow dom (skip par
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-empty.webc"]);
 	t.is(html, `Before
 
 	<p>Before slot content!</p>
@@ -550,7 +563,7 @@ test("Using a web component with two slots but child has no shadow dom (keep par
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style-only.webc"]);
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
@@ -568,7 +581,7 @@ test("Using a web component with two slots and default content (skip parent)", a
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-namedslot.webc"]);
 	t.is(html, `Before
 SSR content<p>Slot 1 content</p>After slot content
 	<p>Before slot content!</p>
@@ -586,7 +599,7 @@ test("Using a web component with two slots and default content (keep parent)", a
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-namedslot-style.webc"]);
 	t.is(html, `Before
 <web-component name="World">SSR content<p>Slot 1 content</p>After slot content
 	<p>Before slot content!</p>
@@ -604,7 +617,7 @@ test("Using a web component with webc:raw to allow client component slots (skip 
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-empty.webc"]);
 	// TODO should this opt-in to keeping the <web-component> parent around?
 	// Note the slots are using webc:raw
 	t.is(html, `Before
@@ -627,7 +640,7 @@ test("Using a web component with webc:raw to allow client component slots (keep 
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, ["web-component"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-style-only.webc"]);
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
@@ -653,7 +666,7 @@ test("Components dependency graph ordering", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["my-grandparent", "my-aunt", "my-parent", "my-sibling", "my-me", "my-child"]);
+	t.deepEqual(components, ["./test/stubs/components/nested-child-slot-before-after.webc"]);
 	t.is(html, `Before
 	Before
 		Before
@@ -677,7 +690,14 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 
 	t.deepEqual(js, ["/* component-a js */", "/* component-b js */", "/* component-c js */", "/* component-d js */", "/* component-e js */", "/* component-f js */"]);
 	t.deepEqual(css, ["/* component-a css */", "/* component-b css */", "/* component-c css */", "/* component-d css */", "/* component-e css */", "/* component-f css */"]);
-	t.deepEqual(components, ["my-grandparent", "my-aunt", "my-parent", "my-sibling", "my-me", "my-child"]);
+	t.deepEqual(components, [
+		"./test/stubs/components/child-css-js-a.webc",
+		"./test/stubs/components/child-css-js-b.webc",
+		"./test/stubs/components/child-css-js-c.webc",
+		"./test/stubs/components/child-css-js-d.webc",
+		"./test/stubs/components/child-css-js-e.webc",
+		"./test/stubs/components/child-css-js-f.webc",
+	]);
 	t.is(html, `<my-grandparent>Before
 	<my-parent>Before
 		<my-me>Before
