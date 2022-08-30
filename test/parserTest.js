@@ -277,7 +277,7 @@ After`);
 
 test("Using a web component (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/nested-child.webc"
+		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -290,7 +290,7 @@ After`);
 
 test("Using a web component (use webc:keep to force keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-webc-keep.webc", {
-		"web-component": "./test/stubs/nested-child.webc"
+		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -303,7 +303,7 @@ After`);
 
 test("Using a web component (use webc:raw to keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-webc-raw.webc", {
-		"web-component": "./test/stubs/nested-child.webc"
+		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -316,7 +316,7 @@ After`);
 
 test("Using a web component (alias using `web:is` attribute)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-alias.webc", {
-		"web-component": "./test/stubs/nested-child.webc"
+		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -329,8 +329,8 @@ After`);
 
 test("Circular dependencies check (pass)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/child-circular.webc",
-		"other-component": "./test/stubs/nested-child.webc",
+		"web-component": "./test/stubs/components/child-circular.webc",
+		"other-component": "./test/stubs/components/nested-child.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -343,14 +343,14 @@ After`);
 
 test("Circular dependencies check (fail)", async t => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/child-circular.webc",
-		"other-component": "./test/stubs/child-circular2.webc",
+		"web-component": "./test/stubs/components/child-circular.webc",
+		"other-component": "./test/stubs/components/child-circular2.webc",
 	}));
 });
 
 test("Using a web component (class attribute mixins)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
-		"web-component": "./test/stubs/child-root.webc"
+		"web-component": "./test/stubs/components/child-root.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -365,7 +365,7 @@ After`);
 
 test("Using a web component (skip parent for empty style and empty script)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/nested-child-style-script-both-empty.webc"
+		"web-component": "./test/stubs/components/nested-child-style-script-both-empty.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -378,7 +378,7 @@ After`);
 
 test("Using a web component (keep parent: style)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/nested-child-style.webc"
+		"web-component": "./test/stubs/components/nested-child-style.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -391,7 +391,7 @@ After`);
 
 test("Using a web component with <style webc:keep>", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/nested-child-style-keep.webc"
+		"web-component": "./test/stubs/components/nested-child-style-keep.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -404,7 +404,7 @@ After`);
 
 test("Using a web component (keep parent: script)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/nested-child-script.webc"
+		"web-component": "./test/stubs/components/nested-child-script.webc"
 	});
 
 	t.deepEqual(js, [`alert("test");`]);
@@ -417,7 +417,7 @@ After`);
 
 test("Using a web component with a slot (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
-		"web-component": "./test/stubs/nested-child-slot.webc"
+		"web-component": "./test/stubs/components/nested-child-slot.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -430,7 +430,7 @@ After`);
 
 test("Using a web component with a slot (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
-		"web-component": "./test/stubs/nested-child-slot-style.webc"
+		"web-component": "./test/stubs/components/nested-child-slot-style.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -443,7 +443,7 @@ After`);
 
 test("Using a web component with a default slot (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-twice.webc", {
-		"web-component": "./test/stubs/nested-child.webc"
+		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -456,7 +456,7 @@ After`);
 
 test("Using a web component with a default slot (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-twice.webc", {
-		"web-component": "./test/stubs/nested-child-style.webc"
+		"web-component": "./test/stubs/components/nested-child-style.webc"
 	});
 
 	t.deepEqual(js, []);
@@ -469,7 +469,7 @@ After`);
 
 test("Using a web component without any shadow dom/foreshadowing (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
-		"web-component-no-foreshadowing": "./test/stubs/nested-child-empty.webc",
+		"web-component-no-foreshadowing": "./test/stubs/components/nested-child-empty.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -485,7 +485,7 @@ After`);
 
 test("Using a web component without any shadow dom/foreshadowing (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-no-shadowdom.webc", {
-		"web-component-no-foreshadowing": "./test/stubs/nested-child-style-only.webc",
+		"web-component-no-foreshadowing": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -501,7 +501,7 @@ After`);
 
 test("Using a web component with two slots but child has no shadow dom (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
-		"web-component": "./test/stubs/nested-child-empty.webc",
+		"web-component": "./test/stubs/components/nested-child-empty.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -519,7 +519,7 @@ After`);
 
 test("Using a web component with two slots but child has no shadow dom (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
-		"web-component": "./test/stubs/nested-child-style-only.webc",
+		"web-component": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -537,7 +537,7 @@ After`);
 
 test("Using a web component with two slots and default content (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
-		"web-component": "./test/stubs/nested-child-namedslot.webc",
+		"web-component": "./test/stubs/components/nested-child-namedslot.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -555,7 +555,7 @@ After`);
 
 test("Using a web component with two slots and default content (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots.webc", {
-		"web-component": "./test/stubs/nested-child-namedslot-style.webc",
+		"web-component": "./test/stubs/components/nested-child-namedslot-style.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -573,7 +573,7 @@ After`);
 
 test("Using a web component with webc:raw to allow client component slots (skip parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
-		"web-component": "./test/stubs/nested-child-empty.webc",
+		"web-component": "./test/stubs/components/nested-child-empty.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -596,7 +596,7 @@ After`);
 
 test("Using a web component with webc:raw to allow client component slots (keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-multiple-slots-raw.webc", {
-		"web-component": "./test/stubs/nested-child-style-only.webc",
+		"web-component": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -617,12 +617,12 @@ After`);
 
 test("Components dependency graph ordering", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/components-order.webc", {
-		"my-grandparent": "./test/stubs/nested-child-slot-before-after.webc",
-		"my-parent": "./test/stubs/nested-child-slot-before-after.webc",
-		"my-me": "./test/stubs/nested-child-slot-before-after.webc",
-		"my-child": "./test/stubs/nested-child-slot-before-after.webc",
-		"my-aunt": "./test/stubs/nested-child-slot-before-after.webc",
-		"my-sibling": "./test/stubs/nested-child-slot-before-after.webc",
+		"my-grandparent": "./test/stubs/components/nested-child-slot-before-after.webc",
+		"my-parent": "./test/stubs/components/nested-child-slot-before-after.webc",
+		"my-me": "./test/stubs/components/nested-child-slot-before-after.webc",
+		"my-child": "./test/stubs/components/nested-child-slot-before-after.webc",
+		"my-aunt": "./test/stubs/components/nested-child-slot-before-after.webc",
+		"my-sibling": "./test/stubs/components/nested-child-slot-before-after.webc",
 	});
 
 	t.deepEqual(js, []);
@@ -641,12 +641,12 @@ After`);
 
 test("Components dependency graph ordering (with CSS/JS)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/components-order.webc", {
-		"my-grandparent": "./test/stubs/child-css-js-a.webc",
-		"my-parent": "./test/stubs/child-css-js-c.webc",
-		"my-me": "./test/stubs/child-css-js-e.webc",
-		"my-child": "./test/stubs/child-css-js-f.webc",
-		"my-aunt": "./test/stubs/child-css-js-b.webc",
-		"my-sibling": "./test/stubs/child-css-js-d.webc",
+		"my-grandparent": "./test/stubs/components/child-css-js-a.webc",
+		"my-parent": "./test/stubs/components/child-css-js-c.webc",
+		"my-me": "./test/stubs/components/child-css-js-e.webc",
+		"my-child": "./test/stubs/components/child-css-js-f.webc",
+		"my-aunt": "./test/stubs/components/child-css-js-b.webc",
+		"my-sibling": "./test/stubs/components/child-css-js-d.webc",
 	});
 
 	t.deepEqual(js, ["/* component-a js */", "/* component-b js */", "/* component-c js */", "/* component-d js */", "/* component-e js */", "/* component-f js */"]);
