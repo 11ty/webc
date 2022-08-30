@@ -319,6 +319,40 @@ SSR content
 After`);
 });
 
+test("Using a web component (reference via `web:import` attribute)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-reference.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
+	t.is(html, `Before
+SSR content
+After`);
+});
+
+test("Using a web component (reference via `web:import` and use webc:keep to force keep parent)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/import-keep.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
+	t.is(html, `Before
+<web-component>SSR content</web-component>
+After`);
+});
+
+test("Using a web component (reference via `web:import` attribute, aliased using `web:is` attribute)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-alias-reference.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["web-component"]);
+	t.is(html, `Before
+SSR content
+After`);
+});
+
+
 test("Circular dependencies check (pass)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/components/child-circular.webc",

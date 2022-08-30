@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { ParserStream } from "parse5-parser-stream";
 import { Readable } from "stream";
 import { DepGraph } from "dependency-graph";
@@ -17,6 +18,7 @@ class AstSerializer {
 		this.filePath = filePath;
 
 		// Component cache
+		this.componentMap = {};
 		this.components = {};
 	}
 
@@ -27,6 +29,7 @@ class AstSerializer {
 		RAW: "webc:raw",
 		IS: "webc:is",
 		ROOT: "webc:root",
+		IMPORT: "webc:import",
 	};
 
 	// List from the parse5 serializer
@@ -242,10 +245,10 @@ class AstSerializer {
 		}
 		return this.components[filePath];
 	}
-	
+
 	// `components` object maps from component name => filename
 	async setComponents(components = {}) {
-		this.componentMap = components || {};
+		Object.assign(this.componentMap, components || {});
 
 		// precompile components
 		let promises = [];
@@ -343,6 +346,16 @@ class AstSerializer {
 		return content;
 	}
 
+	async importComponent(tagName, filePath) {
+		let parsed = path.parse(this.filePath);
+		let relativeFromRoot = path.join(parsed.dir, filePath);
+		let finalFilePath = `.${path.sep}${relativeFromRoot}`;
+
+		this.componentMap[tagName] = finalFilePath;
+
+		await this.precompileComponent(finalFilePath);
+	}
+
 	async compileNode(node, slots = {}, options = {}) {
 		options = Object.assign({}, options);
 
@@ -359,6 +372,11 @@ class AstSerializer {
 		}
 
 		let tagName = this.getTagName(node);
+		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
+		if(importSource) {
+			await this.importComponent(tagName, importSource);
+		}
+
 		let slotSource = this.getAttributeValue(node, "slot");
 		if(slotSource) {
 			options.isSlotContent = true;

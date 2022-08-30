@@ -1,0 +1,3 @@
+Before
+<web-component webc:import="./components/nested-child.webc"></web-component>
+After
