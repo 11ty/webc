@@ -243,14 +243,6 @@ test("Component in page mode (error case)", async t => {
 </html>`);
 });
 
-async function testGetComponents(map) {
-	let components = {};
-	for(let name in map) {
-		components[name] = await WebC.getASTFromFilePath(map[name]);
-	}
-	return components;
-}
-
 async function testGetResultFor(filename, components, slots) {
 	let component = new WebC();
 
@@ -258,7 +250,7 @@ async function testGetResultFor(filename, components, slots) {
 
 	return component.compile({
 		slots,
-		components: await testGetComponents(components),
+		components,
 	});
 }
 

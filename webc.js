@@ -15,6 +15,9 @@ class AstSerializer {
 
 		// for error messaging
 		this.filePath = filePath;
+
+		// Component cache
+		this.components = {};
 	}
 
 	/* Custom HTML attributes */
@@ -181,11 +184,9 @@ class AstSerializer {
 			return true;
 		}
 
-		if(this.components[tagName]) {
-			if(this.componentIgnoreRootTag[tagName]) {
-				// do not include the parent element if this component has no styles or script associated with it
-				return true;
-			}
+		if(this.getComponent(tagName)?.ignoreRootTag) {
+			// do not include the parent element if this component has no styles or script associated with it
+			return true;
 		}
 
 		if(this.mode === "component") {
@@ -214,18 +215,44 @@ class AstSerializer {
 		return slot;
 	}
 
-	setComponents(components = {}) {
-		this.components = components || {};
+	async precompileComponent(filePath) {
+		// component cache
+		if(!this.components[filePath]) {
+			// this is async—caches the promise
+			let ast = await WebC.getASTFromFilePath(filePath);
 
-		this.componentIgnoreRootTag = {};
-		for(let name in components) {
-			this.componentIgnoreRootTag[name] = this.ignoreComponentParentTag(components[name]);
+			this.components[filePath] = {
+				ast,
+				ignoreRootTag: this.ignoreComponentParentTag(ast),
+				rootAttributes: this.getWebcRootAttributes(ast)
+			};
+		}
+	}
+
+	// synchronous (components should already be cached)
+	getComponent(name) {
+		if(!name || !this.componentMap[name]) {
+			// render as a plain-ol-tag
+			return false;
 		}
 
-		this.webcRootAttributes = {};
-		for(let name in components) {
-			this.webcRootAttributes[name] = this.getWebcRootAttributes(components[name]);
+		let filePath = this.componentMap[name];
+		if(!this.components[filePath]) {
+			throw new Error(`Component at "${filePath}" not found in the component registry.`);
 		}
+		return this.components[filePath];
+	}
+	
+	// `components` object maps from component name => filename
+	async setComponents(components = {}) {
+		this.componentMap = components || {};
+
+		// precompile components
+		let promises = [];
+		for(let name in components) {
+			promises.push(this.precompileComponent(components[name]));
+		}
+		await Promise.all(promises);
 	}
 
 	async getChildContent(parentNode, slots, options) {
@@ -290,8 +317,9 @@ class AstSerializer {
 
 			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
 				let attrs = node.attrs.slice(0);
-				if(this.webcRootAttributes[tagName]) {
-					attrs.push(...this.webcRootAttributes[tagName]);
+				let component = this.getComponent(tagName);
+				if(component && Array.isArray(component.rootAttributes)) {
+					attrs.push(...component.rootAttributes);
 				}
 				content += `<${tagName}${this.getAttributesString(attrs)}>`;
 			}
@@ -341,7 +369,8 @@ class AstSerializer {
 
 		// light dom content
 		let componentHasContent = null;
-		if(!options.rawMode && this.components[tagName]) {
+		let component = this.getComponent(tagName);
+		if(!options.rawMode && component) {
 			if(!options.components.hasNode(tagName)) {
 				options.components.addNode(tagName);
 			}
@@ -361,7 +390,7 @@ class AstSerializer {
 			options.closestParentComponent = tagName;
 
 			let slots = this.getSlotNodes(node);
-			let { html: foreshadowDom } = await this.compileNode(this.components[tagName], slots, options);
+			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;
@@ -545,7 +574,7 @@ class WebC {
 		let rawAst = await this.getAST();
 
 		let ast = new AstSerializer(this.astOptions);
-		ast.setComponents(options.components);
+		await ast.setComponents(options.components);
 
 		return ast.compile(rawAst, options.slots, {
 			transforms: this.customTransforms
