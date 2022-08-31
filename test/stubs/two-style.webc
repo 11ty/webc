@@ -1,0 +1,2 @@
+<web-component webc:import="./components/nested-child-style.webc">Light dom content</web-component>
+<web-component webc:import="./components/nested-child-style.webc">Light dom content</web-component>

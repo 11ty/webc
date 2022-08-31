@@ -22,15 +22,17 @@
 	* Server components can be used on the client
 	* Allow using `webc:is` attribute for component redefinition
 	* Handle circular dependencies (can’t use `<web-component>` inside of shadow dom for `<web-component>`)
+	* Use `<template webc:root>` to merge attributes with the outer tag (e.g. adding `class` entries via a child component)
 * CSS
 	* Use `<style>` for CSS
+	* Use one or more CSS nodes.
 	* Styles are extracted from component definition and rolled up for re-use.
+	* Use `<style webc:scoped>` to add a hash class prefix to the start of each selector for scoping. Hashes are calculated based on the CSS content of the component.
+		* Use `<style webc:scoped="my-prefix">` to specify your own prefix (we’ll throw an error if you duplicate one already in use in this component tree)
 
 ## TODOs
 
-* Component name is implied from the file name (override)
-* How to assign top-level component attributes from inside the component definition?
-	* I want a `class` attribute added from inside the component, maybe `<div webc:root class="">`?
+* CSS: error/warn when a CSS selector was not used via https://github.com/Polymer/css-select-parse5-adapter
 * Output to stream?
 * Option to bundle style/script to defer/async bundles `<style webc:async>`
 * Options to set override default formats for `<template type>`, `<style type>`, and `<script type>`
@@ -66,7 +68,6 @@ Marketing ideas:
   * maybe also support `text/sass`?
   * Ignoring `type="text/css"`
 ~~* TODO Compilation: automatically bundle away `<style>`? Or use `<style bundle>` aggregates to page bundle~~
-* Compilation: `<style webc:scoped>` adds a svelte-style prefix to styles based on a hash of the style content!
 * If styles are NOT scoped include a unique component classname checker with error messaging for duplicate classname re-use.
 
 * ~Version 2: Compilation: `<style webc:src>` inlines the thing

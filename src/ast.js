@@ -2,6 +2,7 @@ import path from "path";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
 import { WebC } from "../webc.js";
+import { CssPrefixer } from "./css.js";
 
 class AstSerializer {
 	constructor(options = {}) {
@@ -18,6 +19,13 @@ class AstSerializer {
 
 		// content transforms
 		this.transforms = {};
+
+		// default does nothing
+		this.addTransform(AstSerializer.typeAliases.SCOPED, (content, component) => {
+			let prefixer = new CssPrefixer(component.styleHash);
+			prefixer.setFilePath(component.filePath);
+			return prefixer.process(content);
+		});
 
 		// Component cache
 		this.componentMap = {};
@@ -197,6 +205,7 @@ class AstSerializer {
 			}
 			hash.update(this.getTextContent(node).toString());
 		}
+
 		if(styleNodes.length) { // don’t return a hash if empty
 			return hash.digest("base64url").toLowerCase().slice(0, hashLength);
 		}
@@ -269,14 +278,13 @@ class AstSerializer {
 		return slot;
 	}
 
-	getRootAttributes(component, filePath) {
+	getRootAttributes(component, styleHash) {
 		let attrs = [];
 		let tmpl = this.findElement(component, "template");
 		if(tmpl && this.hasAttribute(tmpl, AstSerializer.attrs.ROOT)) {
 			attrs = tmpl.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
 		}
 
-		let styleHash = this.getStyleHash(component, filePath);
 		if(styleHash) {
 			// it’s okay if there are other `class` attributes, we merge them later
 			attrs.push({ name: "class", value: styleHash });
@@ -285,17 +293,24 @@ class AstSerializer {
 		return attrs;
 	}
 
-	async precompileComponent(filePath) {
-		// component cache
-		if(!this.components[filePath]) {
-			let ast = await WebC.getASTFromFilePath(filePath);
-
-			this.components[filePath] = {
-				ast,
-				ignoreRootTag: this.ignoreComponentParentTag(ast),
-				rootAttributes: this.getRootAttributes(ast, filePath)
-			};
+	async precompileComponent(filePath, ast) {
+		// Async-caching here could be better?
+		if(this.components[filePath]) {
+			return;
 		}
+
+		if(!ast) {
+			ast = await WebC.getASTFromFilePath(filePath);
+		}
+		let styleHash = this.getStyleHash(ast, filePath);
+
+		this.components[filePath] = {
+			filePath,
+			ast,
+			ignoreRootTag: this.ignoreComponentParentTag(ast),
+			styleHash,
+			rootAttributes: this.getRootAttributes(ast, styleHash),
+		};
 	}
 
 	// synchronous (components should already be cached)
@@ -387,6 +402,12 @@ class AstSerializer {
 			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
 				let attrs = node.attrs.slice(0);
 				let component = this.getComponent(tagName);
+
+				// Top level page-component, make sure we get the top level attributes here
+				if(!component && this.filePath === options.closestParentComponent && this.components[this.filePath]) {
+					component = this.components[this.filePath];
+				}
+
 				if(component && Array.isArray(component.rootAttributes)) {
 					attrs.push(...component.rootAttributes);
 				}
@@ -412,9 +433,9 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformType) {
+	async transformContent(content, transformType, parentComponent) {
 		if(transformType) {
-			return this.transforms[transformType](content);
+			return this.transforms[transformType](content, parentComponent);
 		}
 		return content;
 	}
@@ -496,7 +517,7 @@ class AstSerializer {
 		if(!componentHasContent) {
 			// this.log( node, { options } );
 			if(node.nodeName === "#text") {
-				content += await this.transformContent(node.value, options.currentTransformType);
+				content += await this.transformContent(node.value, options.currentTransformType, this.components[options.closestParentComponent]);
 			} else if(node.nodeName === "#comment") {
 				content += `<!--${node.data}-->`;
 			} else if(this.mode === "page" && node.nodeName === "#documentType") {
@@ -562,7 +583,12 @@ class AstSerializer {
 			closestParentComponent: this.filePath,
 		}, options);
 
+		// Precompile the top level component
 		if(this.filePath) {
+			if(!this.components[this.filePath]) {
+				await this.precompileComponent(this.filePath, node);
+			}
+
 			options.components.addNode(this.filePath);
 		}
 

@@ -153,22 +153,33 @@ test("Using a async custom <template> type with webc:keep", async t => {
 </template>`);
 });
 
-test("<style webc:scoped>", async t => {
+test("Two components using identical <style>", async t => {
 	let component = new WebC();
 
-	component.setInputPath("./test/stubs/scoped.webc");
-	component.addCustomTransform("internal:css/scoped", (content) => {
-		return `div.hukf8ig4dx {
-	color: purple;
-}`;
-	});
+	component.setInputPath("./test/stubs/two-style.webc");
 
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`div.hukf8ig4dx {
-	color: purple;
-}`]);
+	t.is(css.length, 1); // dedupes these: only one CSS entry
+	t.deepEqual(css, [`p { color: red; }`]);
+	t.deepEqual(components, [
+		"./test/stubs/two-style.webc",
+		"./test/stubs/components/nested-child-style.webc",
+	]);
+	t.is(html.trim(), `<web-component>SSR content</web-component>
+<web-component>SSR content</web-component>`);
+});
+
+test("<style webc:scoped>", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/scoped.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.hukf8ig4dx div{color:purple}`]);
 	t.deepEqual(components, [
 		"./test/stubs/scoped.webc",
 		"./test/stubs/components/scoped-style.webc",
@@ -177,22 +188,29 @@ test("<style webc:scoped>", async t => {
 Light dom content</web-component>`);
 });
 
-test("<style webc:scoped=\"hashOverride\">", async t => {
+test("<style webc:scoped> selector tests", async t => {
 	let component = new WebC();
 
-	component.setInputPath("./test/stubs/scoped-override.webc");
-	component.addCustomTransform("internal:css/scoped", (content) => {
-		return `div.hashOverride {
-	color: purple;
-}`;
-	});
+	component.setInputPath("./test/stubs/scoped-top.webc");
 
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`div.hashOverride {
-	color: purple;
-}`]);
+	t.deepEqual(css, [`@font-face{src:url(test.woff)}.4yaok8y2nj div{}.4yaok8y2nj #test{}.4yaok8y2nj :after{}.4yaok8y2nj div:before{}.4yaok8y2nj .class1{}.4yaok8y2nj .class1.class2{}.4yaok8y2nj .class1.class2:after{}`]);
+	t.deepEqual(components, [
+		"./test/stubs/scoped-top.webc",
+	]);
+	t.is(html.trim(), `<div class="4yaok8y2nj">Testing testing</div>`);
+});
+
+test("<style webc:scoped=\"hashOverride\">", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/scoped-override.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.hashOverride div{color:purple}`]);
 	t.deepEqual(components, [
 		"./test/stubs/scoped-override.webc",
 		"./test/stubs/components/scoped-override.webc",

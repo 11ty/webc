@@ -11,6 +11,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",
 		"parse5-parser-stream": "^7.0.0"
 	},
