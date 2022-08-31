@@ -92,9 +92,9 @@ test("@font-face", t => {
 	let c = new CssPrefixer("my-prefix");
 
 	t.is(c.process(`@font-face {
-	src: url('test.woff');
-	font-family: familyName;
-}`), `@font-face{src:url(test.woff);font-family:familyName}`);
+	font-family: "Open Sans";
+	src: url("/fonts/OpenSans-Regular-webfont.woff2") format("woff2");
+}`), `@font-face{font-family:"Open Sans";src:url(/fonts/OpenSans-Regular-webfont.woff2)format("woff2")}`);
 });
 
 test("@media (min-width)", t => {
