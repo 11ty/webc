@@ -16,6 +16,9 @@ class AstSerializer {
 		// for error messaging
 		this.filePath = filePath;
 
+		// content transforms
+		this.transforms = {};
+
 		// Component cache
 		this.componentMap = {};
 		this.components = {};
@@ -60,6 +63,10 @@ class AstSerializer {
 		track: true,
 		wbr: true,
 	};
+
+	addTransform(name, callback) {
+		this.transforms[name] = callback;
+	}
 
 	isVoidElement(tagName) {
 		return AstSerializer.voidElements[tagName] || false;
@@ -405,9 +412,9 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformType, transforms) {
+	async transformContent(content, transformType) {
 		if(transformType) {
-			return transforms[transformType](content);
+			return this.transforms[transformType](content);
 		}
 		return content;
 	}
@@ -432,7 +439,7 @@ class AstSerializer {
 		if(this.hasAttribute(node, AstSerializer.attrs.SCOPED)) {
 			transformType = AstSerializer.typeAliases.SCOPED;
 		}
-		if(transformType && !!options.transforms[transformType]) {
+		if(transformType && !!this.transforms[transformType]) {
 			options.currentTransformType = transformType;
 		}
 
@@ -489,7 +496,7 @@ class AstSerializer {
 		if(!componentHasContent) {
 			// this.log( node, { options } );
 			if(node.nodeName === "#text") {
-				content += await this.transformContent(node.value, options.currentTransformType, options.transforms);
+				content += await this.transformContent(node.value, options.currentTransformType);
 			} else if(node.nodeName === "#comment") {
 				content += `<!--${node.data}-->`;
 			} else if(this.mode === "page" && node.nodeName === "#documentType") {
@@ -549,7 +556,6 @@ class AstSerializer {
 		options = Object.assign({
 			rawMode: false,
 			isSlotContent: false,
-			transforms: {},
 			css: {},
 			js: {},
 			components: new DepGraph({ circular: true }),

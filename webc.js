@@ -89,11 +89,12 @@ class WebC {
 		let rawAst = await this.getAST();
 
 		let ast = new AstSerializer(this.astOptions);
+		for(let name in this.customTransforms) {
+			ast.addTransform(name, this.customTransforms[name]);
+		}
 		await ast.setComponents(options.components);
 
-		return ast.compile(rawAst, options.slots, {
-			transforms: this.customTransforms
-		});
+		return ast.compile(rawAst, options.slots);
 	}
 }
 
