@@ -1,0 +1,2 @@
+<web-component webc:import="./components/scoped-override-collision-a.webc">Light dom content</web-component>
+<other-web-component webc:import="./components/scoped-override-collision-b.webc">Light dom content</other-web-component>

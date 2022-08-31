@@ -1,0 +1,6 @@
+<style webc:scoped>
+div {
+	color: purple;
+}
+</style>
+<slot></slot>

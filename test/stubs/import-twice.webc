@@ -1,0 +1,4 @@
+Before
+<web-component webc:import="./components/nested-child.webc">Light dom content</web-component>
+<web-component webc:import="./components/nested-child.webc">Light dom content</web-component>
+After

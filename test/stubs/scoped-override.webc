@@ -1,0 +1,1 @@
+<web-component webc:import="./components/scoped-override.webc">Light dom content</web-component>

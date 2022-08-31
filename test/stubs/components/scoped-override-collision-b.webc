@@ -1,0 +1,6 @@
+<style webc:scoped="hashOverride">
+  div {
+    color: red;
+  }
+  </style>
+  <slot></slot>
