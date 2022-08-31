@@ -99,7 +99,7 @@ test("Using a custom <template> type", async t => {
 	let md = new MarkdownIt();
 
 	component.setInputPath("./test/stubs/template-custom.webc");
-	component.addCustomTransform("md", (content) => {
+	component.setTransform("md", (content) => {
 		return md.render(content);
 	});
 
@@ -116,7 +116,7 @@ test("Using a custom <template> type with webc:keep", async t => {
 	let md = new MarkdownIt();
 
 	component.setInputPath("./test/stubs/template-custom-keep.webc");
-	component.addCustomTransform("md", (content) => {
+	component.setTransform("md", (content) => {
 		return md.render(content);
 	});
 
@@ -134,7 +134,7 @@ test("Using a async custom <template> type with webc:keep", async t => {
 	let md = new MarkdownIt();
 
 	component.setInputPath("./test/stubs/template-custom-keep.webc");
-	component.addCustomTransform("md", async (content) => {
+	component.setTransform("md", async (content) => {
 		return new Promise(resolve => {
 			setTimeout(() => {
 				resolve(md.render(content));
@@ -201,6 +201,24 @@ test("<style webc:scoped> selector tests", async t => {
 		"./test/stubs/scoped-top.webc",
 	]);
 	t.is(html.trim(), `<div class="4yaok8y2nj">Testing testing</div>`);
+});
+
+test("<style webc:type> instead of webc:scoped", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/style-override.webc");
+	component.setTransform("override", (content) => {
+		return `/* This is an override */`;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`/* This is an override */`]);
+	t.deepEqual(components, [
+		"./test/stubs/style-override.webc",
+	]);
+	t.is(html.trim(), `<div>Testing testing</div>`);
 });
 
 test("<style webc:scoped=\"hashOverride\">", async t => {

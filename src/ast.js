@@ -20,9 +20,9 @@ class AstSerializer {
 		// content transforms
 		this.transforms = {};
 
-		// default does nothing
+		// transform scoped CSS with a hash prefix
 		this.addTransform(AstSerializer.typeAliases.SCOPED, (content, component) => {
-			let prefixer = new CssPrefixer(component.styleHash);
+			let prefixer = new CssPrefixer(component.scopedStyleHash);
 			prefixer.setFilePath(component.filePath);
 			return prefixer.process(content);
 		});
@@ -184,7 +184,7 @@ class AstSerializer {
 		return false;
 	}
 
-	getStyleHash(component, filePath) {
+	getScopedStyleHash(component, filePath) {
 		let hashLength = 10;
 		let hash = createHash("sha256");
 		let body = this.findElement(component, "body");
@@ -278,16 +278,16 @@ class AstSerializer {
 		return slot;
 	}
 
-	getRootAttributes(component, styleHash) {
+	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
 		let tmpl = this.findElement(component, "template");
 		if(tmpl && this.hasAttribute(tmpl, AstSerializer.attrs.ROOT)) {
 			attrs = tmpl.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
 		}
 
-		if(styleHash) {
+		if(scopedStyleHash) {
 			// it’s okay if there are other `class` attributes, we merge them later
-			attrs.push({ name: "class", value: styleHash });
+			attrs.push({ name: "class", value: scopedStyleHash });
 		}
 
 		return attrs;
@@ -302,14 +302,14 @@ class AstSerializer {
 		if(!ast) {
 			ast = await WebC.getASTFromFilePath(filePath);
 		}
-		let styleHash = this.getStyleHash(ast, filePath);
+		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
 
 		this.components[filePath] = {
 			filePath,
 			ast,
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
-			styleHash,
-			rootAttributes: this.getRootAttributes(ast, styleHash),
+			scopedStyleHash,
+			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
 		};
 	}
 

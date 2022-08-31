@@ -81,7 +81,7 @@ class WebC {
 		});
 	}
 
-	addCustomTransform(key, callback) {
+	setTransform(key, callback) {
 		this.customTransforms[key] = callback;
 	}
 

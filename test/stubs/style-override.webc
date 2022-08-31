@@ -1,0 +1,13 @@
+<style webc:type="override">
+@font-face {
+	src: url("test.woff");
+}
+div {}
+#test {}
+:after {}
+div:before {}
+.class1 {}
+.class1.class2 {}
+.class1.class2:after {}
+</style>
+<div>Testing testing</div>
