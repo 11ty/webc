@@ -24,8 +24,10 @@ class CssPrefixer {
 		walk(ast, {
 			visit: "Selector",
 			enter: (node, item, list) => {
-				if(skipLevel === 0) {
-					let first = node.children.first;
+				let first = node.children.first;
+				if(skipLevel > 0 || first.type === "TypeSelector" && (first.name === "from" || first.name === "to")) {
+					// do nothing
+				} else {
 					if(first.type === "PseudoClassSelector" && first.name === "root") {
 						// replace :root with prefix class
 						node.children.shift();

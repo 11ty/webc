@@ -2,7 +2,6 @@
 
 ## Requirements
 
-
 * Web components compiler, using <my-web-component/> compiles to HTML with defined conventions from web standards.
 * Streamable.
 * Parse with the same rules as browsers
@@ -29,6 +28,10 @@
 	* Styles are extracted from component definition and rolled up for re-use.
 	* Use `<style webc:scoped>` to add a hash class prefix to the start of each selector for scoping. Hashes are calculated based on the CSS content of the component.
 		* Use `<style webc:scoped="my-prefix">` to specify your own prefix (we’ll throw an error if you duplicate one already in use in this component tree)
+
+## Tips
+
+Use `Files: Associations` to add a mapping for `*.webc` to `html`.
 
 ## TODOs
 

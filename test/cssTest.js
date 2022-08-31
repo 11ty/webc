@@ -73,3 +73,34 @@ test("Pseudo elements", t => {
 	t.is(c.process(`:before {}`), `.my-prefix :before{}`);
 	t.is(c.process(`::before {}`), `.my-prefix ::before{}`);
 });
+
+test("@keyframes", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.is(c.process(`@keyframes slidein {
+	from {
+		transform: translateX(0%);
+	}
+
+	to {
+		transform: translateX(100%);
+	}
+}`), `@keyframes slidein{from{transform:translateX(0%)}to{transform:translateX(100%)}}`);
+});
+
+test("@font-face", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.is(c.process(`@font-face {
+	src: url('test.woff');
+	font-family: familyName;
+}`), `@font-face{src:url(test.woff);font-family:familyName}`);
+});
+
+test("@media (min-width)", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.is(c.process(`@media (min-width: 20em) {
+	div { color: red; }
+}`), `@media (min-width:20em){.my-prefix div{color:red}}`);
+});
