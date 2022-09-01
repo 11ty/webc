@@ -1,0 +1,3 @@
+<script webc:type="ts">
+let x: string = "string";
+</script>

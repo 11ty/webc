@@ -1,6 +1,7 @@
 import test from "ava";
 import { WebC } from "../webc.js";
 import MarkdownIt from "markdown-it";
+import typescript from "typescript";
 
 test("Raw Input", async t => {
 	let component = new WebC();
@@ -226,6 +227,18 @@ test("<style webc:type> instead of webc:scoped", async t => {
 
 	component.setInputPath("./test/stubs/style-override.webc");
 	component.setTransform("override", (content) => {
+		t.is(content, `
+@font-face {
+	src: url("test.woff");
+}
+div {}
+#test {}
+:after {}
+div:before {}
+.class1 {}
+.class1.class2 {}
+.class1.class2:after {}
+`)
 		return `/* This is an override */`;
 	});
 
@@ -966,4 +979,29 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 	After</my-parent>
 	<my-aunt>BeforeAUNT CONTENTAfter</my-aunt>
 After</my-grandparent>`);
+});
+
+test("<script webc:type> with Typescript", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/script-type.webc");
+	component.setTransform("ts", async (content) => {
+		t.is(content, `
+let x: string = "string";
+`);
+		let ret = typescript.transpileModule(content, {
+			compilerOptions: {}
+		});
+		return ret.outputText;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, [`var x = "string";
+`]);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/script-type.webc",
+	]);
+	t.is(html.trim(), ``);
 });
