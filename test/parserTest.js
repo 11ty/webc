@@ -551,7 +551,7 @@ test("Using a web component (use a <p> with `webc:import`)", async t => {
 		"./test/stubs/components/child-root.webc"
 	]);
 	t.is(html, `Before
-<p class="class1 class2">
+<p class="class-a class-b class1 class2">
 	SSR content
 </p>
 After`);
