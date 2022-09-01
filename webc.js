@@ -92,9 +92,12 @@ class WebC {
 		for(let name in this.customTransforms) {
 			ast.addTransform(name, this.customTransforms[name]);
 		}
+
 		await ast.setComponents(options.components);
 
-		return ast.compile(rawAst, options.slots);
+		return ast.compile(rawAst, options.slots, {
+			data: options.data
+		});
 	}
 }
 

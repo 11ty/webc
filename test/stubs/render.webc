@@ -1,0 +1,7 @@
+<div>
+<script webc:render>
+module.exports = function(data) {
+	return JSON.stringify(data);
+}
+</script>
+</div>
