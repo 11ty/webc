@@ -1,0 +1,3 @@
+<template webc:root style="font-weight: bold; font-style: italic;">
+	SSR content
+</template>

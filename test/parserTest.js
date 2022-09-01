@@ -640,7 +640,7 @@ test("Circular dependencies check (fail)", async t => {
 	}));
 });
 
-test("Using a web component (class attribute mixins)", async t => {
+test("Using a web component (class attribute merging)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
 		"web-component": "./test/stubs/components/child-root.webc"
 	});
@@ -657,6 +657,25 @@ test("Using a web component (class attribute mixins)", async t => {
 </web-component>
 After`);
 });
+
+test("Using a web component (style attribute merging)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/style-merge.webc", {
+		"web-component": "./test/stubs/components/root-style.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/style-merge.webc",
+		"./test/stubs/components/root-style.webc",
+	]);
+	t.is(html, `Before
+<web-component style="font-weight: normal;font-weight: bold;font-style: italic">
+	SSR content
+</web-component>
+After`);
+});
+
 
 test("Using a web component (skip parent for empty style and empty script)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {

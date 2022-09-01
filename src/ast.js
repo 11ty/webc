@@ -83,9 +83,14 @@ class AstSerializer {
 	getAttributesString(attrs) {
 		// Merge multiple class attributes into a single one
 		let merged = {
+			style: {
+				value: [],
+				delimiter: ";",
+			},
 			class: {
-				value: new Set(),
+				value: [], // de-dupe individual classes
 				delimiter: " ",
+				deduplicate: true
 			}
 		};
 
@@ -93,11 +98,14 @@ class AstSerializer {
 			let {name, value} = attrs[j];
 			if(merged[name]) {
 				// set skipped for 2nd+ dupes
-				if(merged[name].value.size > 0) {
+				if(merged[name].value.length > 0) {
 					attrs[j].skipped = true;
 				}
 				for(let splitVal of value.split(merged[name].delimiter)) {
-					merged[name].value.add(splitVal);
+					let trimmed = splitVal.trim();
+					if(trimmed) {
+						merged[name].value.push(trimmed);
+					}
 				}
 			}
 		}
@@ -107,7 +115,11 @@ class AstSerializer {
 		}).map(({name, value}) => {
 			// Used merged values
 			if(merged[name]) {
-				value = Array.from(merged[name].value).join(merged[name].delimiter);
+				let set = merged[name].value;
+				if(merged[name].deduplicate) {
+					set = Array.from(new Set(set));
+				}
+				value = set.join(merged[name].delimiter);
 			}
 			return ` ${name}="${value}"`;
 		});
