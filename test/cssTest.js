@@ -63,8 +63,17 @@ test("Pseudo classes", t => {
 	t.is(c.process(`:hover {}`), `.my-prefix :hover{}`);
 	t.is(c.process(`:lang(en-US) {}`), `.my-prefix :lang(en-US){}`);
 	t.is(c.process(`:empty {}`), `.my-prefix :empty{}`);
-	t.is(c.process(`:root {}`), `.my-prefix{}`);
-	t.is(c.process(`:root:not(p) div {}`), `.my-prefix:not(p) div{}`);
+	t.is(c.process(`a:has(> img) {}`), `.my-prefix a:has(>img){}`);
+
+	t.is(c.process(`:host {}`), `.my-prefix{}`);
+	t.is(c.process(`:host:not(p) div {}`), `.my-prefix:not(p) div{}`);
+	t.is(c.process(`:host.footer div {}`), `.my-prefix.footer div{}`); // same as :host(.footer)
+
+	// TODO :host(.footer) should be `.my-prefix.footer` but we can use `:host.footer` for now
+	t.is(c.process(`:host(.footer) div {}`), `.my-prefix div{}`);
+
+	// TODO host-context(html body) should be `html body .my-prefix`
+	t.is(c.process(`:host-context(html) div {}`), `:host-context(html) div{}`);
 });
 
 test("Pseudo elements", t => {
