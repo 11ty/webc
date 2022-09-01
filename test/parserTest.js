@@ -198,12 +198,12 @@ test("<style webc:scoped>", async t => {
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.hukf8ig4dx div{color:purple}`]);
+	t.deepEqual(css, [`.whukf8ig4 div{color:purple}`]);
 	t.deepEqual(components, [
 		"./test/stubs/scoped.webc",
 		"./test/stubs/components/scoped-style.webc",
 	]);
-	t.is(html.trim(), `<web-component class="hukf8ig4dx">
+	t.is(html.trim(), `<web-component class="whukf8ig4">
 Light dom content</web-component>`);
 });
 
@@ -215,11 +215,11 @@ test("<style webc:scoped> selector tests", async t => {
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`@font-face{src:url(test.woff)}.4yaok8y2nj div{}.4yaok8y2nj #test{}.4yaok8y2nj :after{}.4yaok8y2nj div:before{}.4yaok8y2nj .class1{}.4yaok8y2nj .class1.class2{}.4yaok8y2nj .class1.class2:after{}`]);
+	t.deepEqual(css, [`@font-face{src:url(test.woff)}.w4yaok8y2 div{}.w4yaok8y2 #test{}.w4yaok8y2 :after{}.w4yaok8y2 div:before{}.w4yaok8y2 .class1{}.w4yaok8y2 .class1.class2{}.w4yaok8y2 .class1.class2:after{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/scoped-top.webc",
 	]);
-	t.is(html.trim(), `<div class="4yaok8y2nj">Testing testing</div>`);
+	t.is(html.trim(), `<div class="w4yaok8y2">Testing testing</div>`);
 });
 
 test("<style webc:type> instead of webc:scoped", async t => {
@@ -1059,4 +1059,35 @@ let x: string = "string";
 		"./test/stubs/script-type.webc",
 	]);
 	t.is(html.trim(), ``);
+});
+
+test("Scoped styles with :host and :defined", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/defined-style.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.deepEqual(components, [
+		"./test/stubs/defined-style.webc",
+	]);
+	// Scoped class is added to top level node (if one exists)
+	t.is(html.trim(), `<div class="wkkjq9gk1">This will be green at first and then switch to red when JS has registered the component.</div>`);
+});
+
+test("Scoped styles with :host and :defined (child component)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/defined-style.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/defined-style.webc",
+	]);
+
+	// Scoped class is added to host element
+	t.is(html, `Before
+<web-component class="wkkjq9gk1">
+<div>This will be green at first and then switch to red when JS has registered the component.</div></web-component>
+After`);
 });

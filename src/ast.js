@@ -201,7 +201,8 @@ class AstSerializer {
 	}
 
 	getScopedStyleHash(component, filePath) {
-		let hashLength = 10;
+		let prefix = "w";
+		let hashLength = 8;
 		let hash = createHash("sha256");
 		let body = this.findElement(component, "body");
 
@@ -225,7 +226,7 @@ class AstSerializer {
 		}
 
 		if(styleNodes.length) { // don’t return a hash if empty
-			return hash.digest("base64url").toLowerCase().slice(0, hashLength);
+			return prefix + hash.digest("base64url").toLowerCase().slice(0, hashLength);
 		}
 	}
 
@@ -429,6 +430,7 @@ class AstSerializer {
 				if(component && Array.isArray(component.rootAttributes)) {
 					attrs.push(...component.rootAttributes);
 				}
+
 				content += `<${tagName}${this.getAttributesString(attrs)}>`;
 			}
 		}
@@ -530,9 +532,8 @@ class AstSerializer {
 	async compileNode(node, slots = {}, options = {}) {
 		options = Object.assign({}, options);
 
-		let content = "";
-
 		let tagName = this.getTagName(node);
+		let content = "";
 
 		let transformType = this.getTransformType(node);
 		if(transformType) {
@@ -552,6 +553,8 @@ class AstSerializer {
 		if(slotSource) {
 			options.isSlotContent = true;
 		}
+
+		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
 		content += this.renderStartTag(node, tagName, slotSource, options);

@@ -1,0 +1,9 @@
+<style webc:scoped>
+:host {
+	color: green;
+}
+:host:defined {
+	color: red;
+}
+</style>
+<div>This will be green at first and then switch to red when JS has registered the component.</div>
