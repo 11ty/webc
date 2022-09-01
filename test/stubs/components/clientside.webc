@@ -1,0 +1,8 @@
+This is the web component content.
+<script webc:keep>
+customElements.define('web-component', class extends HTMLElement {
+	connectedCallback() {
+		console.log( "Connected!" );
+	}
+});
+</script>

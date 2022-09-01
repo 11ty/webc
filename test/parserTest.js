@@ -1106,3 +1106,28 @@ test("Scoped styles with :host and :defined (child component)", async t => {
 <div>This will be green at first and then switch to red when JS has registered the component.</div></web-component>
 After`);
 });
+
+test("Client-side JS on child component", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/components/clientside.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/clientside.webc",
+	]);
+
+	// Note the <script> here is using webc:keep to stay on the client without aggregating back up to the JS
+	t.is(html, `Before
+<web-component>This is the web component content.
+<script>
+customElements.define('web-component', class extends HTMLElement {
+	connectedCallback() {
+		console.log( "Connected!" );
+	}
+});
+</script></web-component>
+After`);
+});
