@@ -1073,6 +1073,21 @@ test("Scoped styles with :host and :defined", async t => {
 	t.is(html.trim(), `<div class="wkkjq9gk1">This will be green at first and then switch to red when JS has registered the component.</div>`);
 });
 
+// TODO this should throw an error or warning
+test.skip("Scoped styles with :host and :defined (no root element)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/defined-style-noroot.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.deepEqual(components, [
+		"./test/stubs/defined-style-noroot.webc",
+	]);
+
+	// No scoped class is added here!
+	t.is(html, `
+This will be green at first and then switch to red when JS has registered the component.`);
+});
+
 test("Scoped styles with :host and :defined (child component)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/defined-style.webc"
