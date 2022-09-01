@@ -349,6 +349,42 @@ for(let filename in slotsStubs) {
 	});
 }
 
+test("<slot webc:raw>", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/slot-raw.webc");
+	
+	let { html, css, js, components } = await component.compile({
+		slots: {
+			name1: "Hello",
+			default: "Goodbye"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [ "./test/stubs/slot-raw.webc" ]);
+	t.is(html, `<div><slot name="name1">Fallback content</slot></div>`);
+});
+
+test("<slot webc:keep>", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/slot-keep.webc");
+	
+	let { html, css, js, components } = await component.compile({
+		slots: {
+			name1: "Hello",
+			default: "Goodbye",
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [ "./test/stubs/slot-keep.webc" ]);
+	t.is(html, `<div><slot name="name1">Hello</slot></div>`);
+});
+
 // Note that parse5 returns an extra \n at the end of the <body> element
 test("Full page", async t => {
 	let page = new WebC({ mode: "page" });
