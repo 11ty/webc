@@ -96,7 +96,7 @@ test("Using a top level <template>", async t => {
 
 test("Using a custom <template> type", async t => {
 	let component = new WebC();
-	let md = new MarkdownIt();
+	let md = new MarkdownIt({ html: true });
 
 	component.setInputPath("./test/stubs/template-custom.webc");
 	component.setTransform("md", (content) => {
@@ -111,9 +111,27 @@ test("Using a custom <template> type", async t => {
 	t.is(html.trim(), `<h1>Header</h1>`);
 });
 
+test("Using a custom <template> type (<template><div>)", async t => {
+	let component = new WebC();
+	let md = new MarkdownIt({ html: true });
+
+	component.setInputPath("./test/stubs/template-custom-nested.webc");
+	component.setTransform("md", (content) => {
+		return md.render(content);
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["./test/stubs/template-custom-nested.webc"]);
+	t.is(html.trim(), `<div># Header</div>
+<h1>Header <code>Test</code></h1>`);
+});
+
 test("Using a custom <template> type with webc:keep", async t => {
 	let component = new WebC();
-	let md = new MarkdownIt();
+	let md = new MarkdownIt({ html: true });
 
 	component.setInputPath("./test/stubs/template-custom-keep.webc");
 	component.setTransform("md", (content) => {
@@ -131,7 +149,7 @@ test("Using a custom <template> type with webc:keep", async t => {
 
 test("Using a async custom <template> type with webc:keep", async t => {
 	let component = new WebC();
-	let md = new MarkdownIt();
+	let md = new MarkdownIt({ html: true });
 
 	component.setInputPath("./test/stubs/template-custom-keep.webc");
 	component.setTransform("md", async (content) => {
@@ -403,6 +421,27 @@ test("Using a web component (skip parent)", async t => {
 	]);
 	t.is(html, `Before
 SSR content
+After`);
+});
+
+test("Using a web component with a declarative shadow root", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/components/shadowroot.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/shadowroot.webc"
+	]);
+	t.is(html, `Before
+<web-component><template shadowroot="open">
+	<style>
+		b { color: red; }
+	</style>
+	Hello <b>World</b>!
+</template></web-component>
 After`);
 });
 

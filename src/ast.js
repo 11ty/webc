@@ -128,20 +128,22 @@ class AstSerializer {
 		return nameAttr?.value;
 	}
 
-	findElement(root, tagName) {
+	findElement(root, tagName, attrCheck = []) {
 		let rootTagName = this.getTagName(root);
 		if(rootTagName === tagName) {
-			return root;
+			if(attrCheck.length === 0 || attrCheck.find(attr => this.hasAttribute(root, attr))) {
+				return root;
+			}
 		}
 		for(let child of root.childNodes || []) {
-			let node = this.findElement(child, tagName);
+			let node = this.findElement(child, tagName, attrCheck);
 			if(node) {
 				return node;
 			}
 		}
 	}
 
-	findAllChildren(parentNode, tagNames, attrCheck) {
+	findAllChildren(parentNode, tagNames, attrCheck = false) {
 		if(!parentNode) {
 			return [];
 		}
@@ -188,6 +190,8 @@ class AstSerializer {
 		let hashLength = 10;
 		let hash = createHash("sha256");
 		let body = this.findElement(component, "body");
+
+		// <style webc:scoped> must be nested at the root
 		let styleNodes = this.findAllChildren(body, ["style"], AstSerializer.attrs.SCOPED);
 		for(let node of styleNodes) {
 			// Override hash with scoped="override"
@@ -212,9 +216,9 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		// First <template> has a webc:root
-		let root = this.findElement(component, "template");
-		if(root && this.hasAttribute(root, AstSerializer.attrs.ROOT)) {
+		// Has <template webc:root> or <template shadowroot>
+		let root = this.findElement(component, "template", [AstSerializer.attrs.ROOT, "shadowroot"]);
+		if(root) {
 			return false;
 		}
 
@@ -280,9 +284,9 @@ class AstSerializer {
 
 	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
-		let tmpl = this.findElement(component, "template");
-		if(tmpl && this.hasAttribute(tmpl, AstSerializer.attrs.ROOT)) {
-			attrs = tmpl.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
+		let root = this.findElement(component, "template", [AstSerializer.attrs.ROOT]);
+		if(root) {
+			attrs = root.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
 		}
 
 		if(scopedStyleHash) {
@@ -450,17 +454,74 @@ class AstSerializer {
 		await this.precompileComponent(finalFilePath);
 	}
 
-	async compileNode(node, slots = {}, options = {}) {
-		options = Object.assign({}, options);
+	async getContentForSlot(node, slots, options) {
+		let slotName = this.getAttributeValue(node, "name") || "default";
+		if(slots[slotName]) {
+			let slotAst = await this.getSlotAst(slots[slotName]);
+			let { html: slotHtml } = await this.getChildContent(slotAst, null, options);
+			return slotHtml;
+		}
 
-		let content = "";
+		// Use fallback content in <slot> if no slot source exists to fill it
+		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options);
+		return slotFallbackHtml;
+	}
 
-		// Transforms can alter HTML content e.g. <template webc:type="markdown">
+	async getContentForTemplate(node, slots, options) {
+		let templateOptions = Object.assign({}, options);
+		templateOptions.rawMode = true;
+		delete templateOptions.currentTransformType;
+
+		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions);
+		// Get plaintext from <template> .content
+		if(options.currentTransformType) {
+			return this.transformContent(rawContent, options.currentTransformType, this.components[options.closestParentComponent]);
+		}
+		return rawContent;
+	}
+
+	// Transforms can alter HTML content e.g. <template webc:type="markdown">
+	getTransformType(node) {
 		let transformType = this.getAttributeValue(node, AstSerializer.attrs.TYPE);
 		if(this.hasAttribute(node, AstSerializer.attrs.SCOPED)) {
 			transformType = AstSerializer.typeAliases.SCOPED;
 		}
 		if(transformType && !!this.transforms[transformType]) {
+			return transformType;
+		}
+	}
+
+	addComponentDependency(tagName, options) {
+		let componentFilePath = this.componentMap[tagName];
+		if(!options.components.hasNode(componentFilePath)) {
+			options.components.addNode(componentFilePath);
+		}
+
+		if(options.closestParentComponent) {
+			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
+			// <web-component><child/></web-component>
+			if(!options.isSlotContent) {
+				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
+					throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for ${options.closestParentComponent}`);
+				}
+			}
+
+			options.components.addDependency(options.closestParentComponent, componentFilePath);
+		}
+
+		// reset for next time
+		options.closestParentComponent = componentFilePath;
+	}
+
+	async compileNode(node, slots = {}, options = {}) {
+		options = Object.assign({}, options);
+
+		let content = "";
+
+		let tagName = this.getTagName(node);
+
+		let transformType = this.getTransformType(node);
+		if(transformType) {
 			options.currentTransformType = transformType;
 		}
 
@@ -468,7 +529,6 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
-		let tagName = this.getTagName(node);
 		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
 		if(importSource) {
 			await this.importComponent(tagName, importSource);
@@ -486,25 +546,7 @@ class AstSerializer {
 		let componentHasContent = null;
 		let component = this.getComponent(tagName);
 		if(!options.rawMode && component) {
-			let componentFilePath = this.componentMap[tagName];
-			if(!options.components.hasNode(componentFilePath)) {
-				options.components.addNode(componentFilePath);
-			}
-
-			if(options.closestParentComponent) {
-				// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
-				// <web-component><child/></web-component>
-				if(!options.isSlotContent) {
-					if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
-						throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for ${options.closestParentComponent}`);
-					}
-				}
-
-				options.components.addDependency(options.closestParentComponent, componentFilePath);
-			}
-
-			// reset for next time
-			options.closestParentComponent = componentFilePath;
+			this.addComponentDependency(tagName, options);
 
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
@@ -527,40 +569,34 @@ class AstSerializer {
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlotContent = true;
 
-				let slotName = this.getAttributeValue(node, "name") || "default";
-				if(slots[slotName]) {
-					let slotAst = await this.getSlotAst(slots[slotName]);
-					let { html: slotHtml } = await this.getChildContent(slotAst, null, options);
-					content += slotHtml;
-				} else {
-					// Use fallback content in <slot> if no slot source exists to fill it
-					let { html: slotFallbackHtml } = await this.getChildContent(node, null, options);
-					content += slotFallbackHtml;
-				}
+				content += await this.getContentForSlot(node, slots, options);
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
-			} else if(node.content) {
-				// TODO maybe optimize this, since it indirectly calls the nodeName #text branch above
-				let { html: rawContent } = await this.compileNode(node.content, slots, options);
-				content += rawContent;
+			} else if(node.content) { // <template> content
+				content += await this.getContentForTemplate(node, slots, options);
 			} else if(node.childNodes?.length > 0) {
 				if(componentHasContent === false) {
 					options.isSlotContent = true;
 				}
 				let { html: childContent } = await this.getChildContent(node, slots, options);
 
-				let key = {
-					style: "css",
-					script: "js",
-				}[ tagName ];
-				if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-					let entryKey = options.closestParentComponent || this.filePath;
-					if(!options[key][entryKey]) {
-						options[key][entryKey] = new Set();
-					}
-					options[key][entryKey].add( childContent );
-				} else {
+				if(options.rawMode) {
 					content += childContent;
+				} else {
+					// aggregate CSS and JS
+					let key = {
+						style: "css",
+						script: "js",
+					}[ tagName ];
+					if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+						let entryKey = options.closestParentComponent || this.filePath;
+						if(!options[key][entryKey]) {
+							options[key][entryKey] = new Set();
+						}
+						options[key][entryKey].add( childContent );
+					} else {
+						content += childContent;
+					}
 				}
 			}
 		}
