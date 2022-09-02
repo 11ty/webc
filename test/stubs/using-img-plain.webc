@@ -1,1 +1,1 @@
-<responsive-image webc:import="./components/img-plain.webc" src="my-src.png">
+<responsive-image webc:import="./components/img-plain.webc" src="my-src.png"></responsive-image>

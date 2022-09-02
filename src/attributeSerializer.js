@@ -83,7 +83,7 @@ class AttributeSerializer {
 				continue;
 			}
 
-			str.push(` ${name}="${value}"`);
+			str.push(` ${name}${value !== "" ? `="${value}"` : ""}`);
 		}
 		return str.join("");
 	}

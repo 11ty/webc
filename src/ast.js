@@ -125,7 +125,7 @@ class AstSerializer {
 		}
 	}
 
-	findAllChildren(parentNode, tagNames, attrCheck = []) {
+	findAllChildren(parentNode, tagNames = [], attrCheck = []) {
 		if(!parentNode) {
 			return [];
 		}
@@ -139,7 +139,7 @@ class AstSerializer {
 		let results = [];
 		for(let child of parentNode.childNodes || []) {
 			let tagName = this.getTagName(child);
-			if(tagNames.has(tagName)) {
+			if(tagNames.size === 0 || tagNames.has(tagName)) {
 				if(attrCheck.length === 0 || attrCheck.find(attr => this.hasAttribute(child, attr))) {
 					results.push(child);
 				}
@@ -193,10 +193,19 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		// Has <template webc:root> (has to be a root child)
 		let body = this.findElement(component, "body");
-		if(this.findAllChildren(body, "template", [AstSerializer.attrs.ROOT]).length) {
-			return false;
+
+		// Has <* webc:root> (has to be a root child, not script/style)
+		let roots = this.findAllChildren(body, [], [AstSerializer.attrs.ROOT]);
+		for(let child of roots) {
+			let tagName = this.getTagName(child);
+			if(tagName === "script" || tagName === "style") {
+				continue;
+			}
+
+			if(this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				return false;
+			}
 		}
 
 		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
@@ -266,11 +275,18 @@ class AstSerializer {
 		return slot;
 	}
 
+	getRootNodes(node) {
+		let body = this.findElement(node, "body");
+		return this.findAllChildren(body, [], [AstSerializer.attrs.ROOT]);
+	}
+
 	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
-		let root = this.findElement(component, "template", [AstSerializer.attrs.ROOT]);
-		if(root) {
-			attrs = root.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT);
+		let roots = this.getRootNodes(component);
+		for(let root of roots) {
+			for(let attr of root.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT)) {
+				attrs.push(attr);
+			}
 		}
 
 		if(scopedStyleHash) {
@@ -485,7 +501,7 @@ class AstSerializer {
 			// <web-component><child/></web-component>
 			if(!options.isSlotContent) {
 				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
-					throw new Error(`Circular dependency error: You cannot *use* <${tagName}> inside the definition for ${options.closestParentComponent}`);
+					throw new Error(`Circular dependency error: You cannot use <${tagName}> inside the definition for ${options.closestParentComponent}`);
 				}
 			}
 
