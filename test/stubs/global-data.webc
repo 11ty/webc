@@ -1,1 +1,1 @@
-<div :key="value"></div>
+<web-component webc:import="./components/component-data.webc" attr="attrValue"/>

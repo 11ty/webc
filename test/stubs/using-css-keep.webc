@@ -1,0 +1,1 @@
+<some-css webc:import="./components/render-css-keep.webc"></some-css>

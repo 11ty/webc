@@ -1159,31 +1159,14 @@ customElements.define('web-component', class extends HTMLElement {
 After`);
 });
 
-test("Using global data in light dom", async t => {
-	let { html } = await testGetResultFor("./test/stubs/global-data-lightdom.webc", null, null, {
-		value: "Attribute value"
-	});
+test("Using a component attribute inside the component", async t => {
+	let { html } = await testGetResultFor("./test/stubs/global-data.webc");
 
-	t.is(html, `Before
-<web-component>
-	<div key="Attribute value">Content</div>
-</web-component>
-After`);
+	t.is(html, `<div key="attrValue"></div>`);
 });
 
-test("Using global data", async t => {
-	let { html } = await testGetResultFor("./test/stubs/global-data.webc", null, null, {
-		value: "Attribute value"
-	});
-
-	t.is(html, `<div key="Attribute value"></div>`);
-});
-
-test.skip("Scripted render function", async t => {
-	let { html, css, js, components } = await testGetResultFor("./test/stubs/render.webc", null, null, {
-		a: 1,
-		b: 2,
-	});
+test("Scripted render function", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render.webc");
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
@@ -1191,7 +1174,60 @@ test.skip("Scripted render function", async t => {
 		"./test/stubs/render.webc",
 	]);
 
-	t.is(html, `<div>
-{"a":1,"b":2}
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+This is sample content.
 </div>`);
+});
+
+test("Using image scripted render function", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-img.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-img.webc",
+		"./test/stubs/components/img.webc",
+	]);
+
+	t.is(html, `<img src="my-src.png">`);
+});
+
+test("Using scripted render function to generate CSS", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`/* CSS */`]);
+	t.deepEqual(components, [
+		"./test/stubs/using-css.webc",
+		"./test/stubs/components/render-css.webc",
+	]);
+
+	t.is(html, ``);
+});
+
+test("Using scripted render function to generate CSS with webc:keep", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-keep.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-css-keep.webc",
+		"./test/stubs/components/render-css-keep.webc",
+	]);
+
+	t.is(html, `<style>/* CSS */</style>`);
+});
+
+test("Using image component plain", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-img-plain.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-img-plain.webc",
+		"./test/stubs/components/img-plain.webc",
+	]);
+
+	t.is(html, `<img src="my-src.png">`);
 });

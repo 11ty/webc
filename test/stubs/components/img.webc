@@ -1,0 +1,9 @@
+<script webc:type="render" webc:is="template">
+module.exports = function(attrs) {
+	// if(!attrs.alt) {
+	// 	throw new Error("Missing alt! " + __filename);
+	// }
+
+	return `<img src="${attrs.src}">`;
+}
+</script>

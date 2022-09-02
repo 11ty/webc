@@ -1,0 +1,5 @@
+<script webc:type="render" webc:is="style" webc:root>
+module.exports = function(attrs) {
+return `/* CSS */`;
+}
+</script>

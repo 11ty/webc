@@ -71,7 +71,7 @@ class AttributeSerializer {
 		};
 	}
 
-	static getString(attrs, { data }) {
+	static getString(attrs, data) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {

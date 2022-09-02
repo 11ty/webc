@@ -1,5 +1,0 @@
-Before
-<web-component>
-	<div :key="value">Content</div>
-</web-component>
-After

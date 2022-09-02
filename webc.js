@@ -95,9 +95,7 @@ class WebC {
 
 		await ast.setComponents(options.components);
 
-		return ast.compile(rawAst, options.slots, {
-			data: options.data
-		});
+		return ast.compile(rawAst, options.slots);
 	}
 }
 
