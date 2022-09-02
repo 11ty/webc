@@ -31,18 +31,6 @@ class WebC {
 		this.rawInput = input;
 	}
 
-	getInputStream() {
-		if(this.filePath) {
-			return fs.createReadStream(this.filePath, {
-				encoding: "utf8"
-			});
-		} else if(this.rawInput) {
-			return Readable.from(this.rawInput);
-		} else {
-			throw new Error("Missing a setInput or setInputPath method call to set the input.");
-		}
-	}
-
 	getInputContent() {
 		if(this.filePath) {
 			return fs.readFileSync(this.filePath, {
