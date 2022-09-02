@@ -6,12 +6,14 @@ class AttributeSerializer {
 		let merged = {
 			style: {
 				value: [],
-				delimiter: ";",
+				splitDelimiter: ";",
+				joinDelimiter: "; "
 			},
 			class: {
 				value: [], // de-dupe individual classes
-				delimiter: " ",
-				deduplicate: true
+				splitDelimiter: " ",
+				joinDelimiter: " ",
+				deduplicate: true,
 			}
 		};
 
@@ -19,13 +21,13 @@ class AttributeSerializer {
 			let {name, value} = attrs[j];
 			if(merged[name]) {
 				// set skipped for 2nd+ dupes
-				if(merged[name].value.length > 0) {
+				if(merged[name].value.length > 0 || value.trim().length === 0) {
 					attrs[j].skipped = true;
 				}
-				for(let splitVal of value.split(merged[name].delimiter)) {
-					let trimmed = splitVal.trim();
-					if(trimmed) {
-						merged[name].value.push(trimmed);
+				for(let splitVal of value.split(merged[name].splitDelimiter)) {
+					splitVal = splitVal.trim();
+					if(splitVal) {
+						merged[name].value.push(splitVal);
 					}
 				}
 			}
@@ -43,7 +45,7 @@ class AttributeSerializer {
 				if(merged[name].deduplicate) {
 					set = Array.from(new Set(set));
 				}
-				attrObject[name] = set.join(merged[name].delimiter);
+				attrObject[name] = set.join(merged[name].joinDelimiter);
 			} else {
 				attrObject[name] = value;
 			}
@@ -71,7 +73,10 @@ class AttributeSerializer {
 
 	static getString(attrs, { data }) {
 		let str = [];
-		let attrObject = AttributeSerializer.dedupeAttributes(attrs);
+		let attrObject = attrs;
+		if(Array.isArray(attrObject)) {
+			attrObject = AttributeSerializer.dedupeAttributes(attrs);
+		}
 		for(let key in attrObject) {
 			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
 			if(value === false) {

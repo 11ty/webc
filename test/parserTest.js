@@ -670,6 +670,22 @@ test("Using a web component (class attribute merging)", async t => {
 After`);
 });
 
+test("Using a web component (class attribute merging, empty classes)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/empty-class.webc", {
+		"web-component": "./test/stubs/components/child-root-empty-class.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/empty-class.webc",
+		"./test/stubs/components/child-root-empty-class.webc",
+	]);
+	t.is(html, `<web-component>
+	SSR content
+</web-component>`);
+});
+
 test("Using a web component (style attribute merging)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/style-merge.webc", {
 		"web-component": "./test/stubs/components/root-style.webc"
@@ -682,12 +698,11 @@ test("Using a web component (style attribute merging)", async t => {
 		"./test/stubs/components/root-style.webc",
 	]);
 	t.is(html, `Before
-<web-component style="font-weight: normal;font-weight: bold;font-style: italic">
+<web-component style="font-weight: normal; font-weight: bold; font-style: italic">
 	SSR content
 </web-component>
 After`);
 });
-
 
 test("Using a web component (skip parent for empty style and empty script)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
@@ -1182,7 +1197,7 @@ test("Using global data to set html raw", async t => {
 	t.is(html, `<div><style>/* This is css */</style></div>`);
 });
 
-test("Scripted render function", async t => {
+test.skip("Scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render.webc", null, null, {
 		a: 1,
 		b: 2,

@@ -54,10 +54,10 @@ class AstSerializer {
 		RAW: "webc:raw",
 		IS: "webc:is",
 		ROOT: "webc:root",
-		IMPORT: "webc:import",
-		SCOPED: "webc:scoped",
-		HTML: "webc:html",
-		RENDER: "webc:render",
+		IMPORT: "webc:import", // import another webc inline
+		SCOPED: "webc:scoped", // css scoping
+		HTML: "webc:html", // set html content
+		RENDER: "webc:render", // scripted render function
 	};
 
 	static typeAliases = {
@@ -209,7 +209,7 @@ class AstSerializer {
 
 		let body = this.findElement(component, "body");
 		// do not ignore if <style> or <script> in component definition
-		// TODO handle <script webc:render>
+		// TODO ignore <script webc:render>
 		// TODO(v2): link[rel="stylesheet"]
 		if(this.hasNonEmptyChildren(body, ["style", "script"])) {
 			return false;
@@ -366,8 +366,25 @@ class AstSerializer {
 		return node.tagName;
 	}
 
+	getAttributes(node, tagName, options) {
+		let attrs = node.attrs.slice(0);
+		let component = this.getComponent(tagName);
+
+		// Top level page-component, make sure we get the top level attributes here
+		if(!component && this.filePath === options.closestParentComponent && this.components[this.filePath]) {
+			component = this.components[this.filePath];
+		}
+
+		if(component && Array.isArray(component.rootAttributes)) {
+			attrs.push(...component.rootAttributes);
+		}
+
+		return attrs;
+	}
+
 	renderStartTag(node, tagName, slotSource, options) {
 		let content = "";
+		let attrObject;
 
 		if(tagName) {
 			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
@@ -376,22 +393,17 @@ class AstSerializer {
 			}
 
 			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
-				let attrs = node.attrs.slice(0);
-				let component = this.getComponent(tagName);
+				let attrs = this.getAttributes(node, tagName, options);
+				attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
-				// Top level page-component, make sure we get the top level attributes here
-				if(!component && this.filePath === options.closestParentComponent && this.components[this.filePath]) {
-					component = this.components[this.filePath];
-				}
-
-				if(component && Array.isArray(component.rootAttributes)) {
-					attrs.push(...component.rootAttributes);
-				}
-
-				content += `<${tagName}${AttributeSerializer.getString(attrs, options)}>`;
+				content += `<${tagName}${AttributeSerializer.getString(attrObject, options)}>`;
 			}
 		}
-		return content;
+
+		return {
+			content,
+			attrs: attrObject
+		};
 	}
 
 	renderEndTag(node, tagName, slotSource, options) {
@@ -517,7 +529,8 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
-		content += this.renderStartTag(node, tagName, slotSource, options);
+		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, options);
+		content += startTagContent;
 
 		let hasProgrammaticContent = false;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
@@ -632,9 +645,9 @@ class AstSerializer {
 
 		let ret = {
 			html: content,
-			components: assets.orderedComponentList,
 			css: assets.getOrderedAssets(options.css),
 			js: assets.getOrderedAssets(options.js),
+			components: assets.orderedComponentList,
 		};
 		return ret;
 	}

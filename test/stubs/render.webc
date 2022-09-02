@@ -1,6 +1,8 @@
-<div>
+<div test2="2"></div>
+<div parentAttribute="test">
 <script webc:render>
 module.exports = function(data) {
+	console.log( { data } );
 	return JSON.stringify(data);
 }
 </script>
