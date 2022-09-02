@@ -98,6 +98,7 @@ class AttributeSerializer {
 				continue;
 			}
 
+			// Note that AST from parse5 returns <* attrName> as { attrName: "" } instead of undefined
 			str.push(` ${name}${value !== "" ? `="${value}"` : ""}`);
 		}
 		return str.join("");
