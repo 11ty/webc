@@ -1193,17 +1193,30 @@ test("Using image scripted render function", async t => {
 	t.is(html, `<img src="my-src.png">`);
 });
 
+test("Using scripted render function to generate CSS (webc:root)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wx-b5atnw .selector{}`]);
+	t.deepEqual(components, [
+		"./test/stubs/using-css-root.webc",
+		"./test/stubs/components/render-css-root.webc",
+	]);
+
+	t.is(html, ``);
+});
+
 test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`/* CSS */`]);
+	t.deepEqual(css, [`.wx-b5atnw .selector{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, ``);
+	t.is(html, `<some-css class="wx-b5atnw"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {

@@ -64,7 +64,7 @@ class AstSerializer {
 
 	static transformTypes = {
 		RENDER: "render",
-		SCOPED: "internal:css/scoped",
+		SCOPED: "css:scoped",
 	}
 
 	// List from the parse5 serializer
@@ -447,9 +447,12 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformType, parentComponent, options) {
-		if(transformType) {
-			return this.transforms[transformType](content, parentComponent, options.componentAttributes);
+	async transformContent(content, transformTypes, parentComponent, options) {
+		if(!transformTypes) {
+			transformTypes = [];
+		}
+		for(let type of transformTypes) {
+			content = await this.transforms[type](content, parentComponent, options.componentAttributes);
 		}
 		return content;
 	}
@@ -477,28 +480,36 @@ class AstSerializer {
 		return slotFallbackHtml;
 	}
 
-	async getContentForTemplate(node, slots, options, attrs) {
+	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
 		templateOptions.rawMode = true;
-		delete templateOptions.currentTransformType;
+		// no transformation on this content
+		delete templateOptions.currentTransformTypes;
 
 		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions);
+
 		// Get plaintext from <template> .content
-		if(options.currentTransformType) {
-			return this.transformContent(rawContent, options.currentTransformType, this.components[options.closestParentComponent], options);
+		if(options.currentTransformTypes) {
+			return this.transformContent(rawContent, options.currentTransformTypes, this.components[options.closestParentComponent], options);
 		}
 		return rawContent;
 	}
 
 	// Transforms can alter HTML content e.g. <template webc:type="markdown">
-	getTransformType(node) {
-		let transformType = this.getAttributeValue(node, AstSerializer.attrs.TYPE);
+	getTransformTypes(node) {
+		let types = [];
+		let transformTypeStr = this.getAttributeValue(node, AstSerializer.attrs.TYPE);
+		if(transformTypeStr) {
+			for(let s of transformTypeStr.split(",")) {
+				if(s && !!this.transforms[s]) {
+					types.push(s);
+				}
+			}
+		}
 		if(this.hasAttribute(node, AstSerializer.attrs.SCOPED)) {
-			transformType = AstSerializer.transformTypes.SCOPED;
+			types.push(AstSerializer.transformTypes.SCOPED);
 		}
-		if(transformType && !!this.transforms[transformType]) {
-			return transformType;
-		}
+		return types;
 	}
 
 	addComponentDependency(component, tagName, options) {
@@ -529,9 +540,9 @@ class AstSerializer {
 		let tagName = this.getTagName(node);
 		let content = "";
 
-		let transformType = this.getTransformType(node);
-		if(transformType) {
-			options.currentTransformType = transformType;
+		let transformTypes = this.getTransformTypes(node);
+		if(transformTypes.length) {
+			options.currentTransformTypes = transformTypes;
 		}
 
 		if(this.hasAttribute(node, AstSerializer.attrs.RAW)) {
@@ -569,14 +580,13 @@ class AstSerializer {
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
 			componentHasContent = foreshadowDom.trim().length > 0;
-
 			content += foreshadowDom;
 		}
 
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
 			if(node.nodeName === "#text") {
-				content += await this.transformContent(node.value, options.currentTransformType, this.components[options.closestParentComponent], options);
+				content += await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options);
 			} else if(node.nodeName === "#comment") {
 				content += `<!--${node.data}-->`;
 			} else if(this.mode === "page" && node.nodeName === "#documentType") {
@@ -590,7 +600,7 @@ class AstSerializer {
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) { // <template> content
-				content += await this.getContentForTemplate(node, slots, options, attrs);
+				content += await this.getContentForTemplate(node, slots, options);
 			} else if(node.childNodes?.length > 0) {
 				// Fallback to light DOM if no component dom exists
 				if(componentHasContent === false) {
@@ -599,7 +609,7 @@ class AstSerializer {
 
 				let { html: childContent } = await this.getChildContent(node, slots, options);
 
-				if(options.rawMode || tagName === "template" && options.currentTransformType) {
+				if(options.rawMode || tagName === "template" && options.currentTransformTypes) {
 					content += childContent;
 				} else {
 					// aggregate CSS and JS

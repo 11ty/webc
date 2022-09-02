@@ -1,4 +1,4 @@
-<script webc:type="render" webc:is="style" webc:scoped>
+<script webc:type="render" webc:is="style" webc:root webc:scoped>
 module.exports = function(attrs) {
 return `/* CSS */
 .selector {}`;
