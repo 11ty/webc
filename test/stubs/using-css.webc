@@ -1,1 +1,1 @@
-<some-css webc:import="./components/render-css.webc"></some-css>
+<some-css webc:import="./components/render-css.webc" @color="red"></some-css>

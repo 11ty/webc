@@ -7,22 +7,22 @@
 * Uses `parse5` to parse HTML with the same rules as browsers
 	* https://twitter.com/DasSurma/status/1559159122964127744
 	* https://twitter.com/patak_dev/status/1564265006627176449
-
 * Syntax should appear as if baseline webc component does not require compilation (but components _are_ compiled).
 
 ### HTML
 
 * Single file components just use HTML in the thing, no `<template>` required (a la Svelte, not Vue).
-* Using raw `<template>` has no special behavior, it outputs a `<template>`.
-* Use `<template webc:type>` for processing via Liquid, Nunjucks or other custom language extensions.
-	* Will replace the `<template>` with the output (use `<template webc:keep>` to keep the template)
+* Using a raw `<template>` has no special behavior, it outputs a `<template>`!
 * Maps `[slot]` (attribute) sources to `<slot>` elements in components (as expected)
 	* Use `[slot][webc:raw]` to opt-out and keep a slot for use in a clientside component.
-* Parent component tags are excluded from client output for HTML-only components (components without any CSS, JS, or declarative shadow root templates)
+* HTML-only components:
+	* Parent component tags are excluded from client output for HTML-only components (components without any CSS, JS, or declarative shadow root templates)
 	* Keep the parent component tag by adding the `webc:keep` attribute
-* Use the `webc:is` attribute for component redefinition
+* Use `webc:is` attribute for component redefinition
 * Handles circular dependencies (You can’t use `<web-component>` inside of shadow dom for `<web-component>`)
-* Use `<template webc:root>` to merge attributes with the outer tag (e.g. adding `class` or `style` attributes via a component definition)
+* Use `<template webc:type>` for processing content via JS, Liquid, Nunjucks or other custom language extensions.
+	* Operates in outerHTML-mode (replaces the parent `<template>`) unless `<template webc:keep>` in use.
+* Use `<* webc:root>` to merge attributes with the outer tag (e.g. merging `class` or `style` attributes via a component definition)
 * Use `<div :name="lookupKey">` to do a lookup on component argument data
 * Use `<div @name="my argument value">` to pass in a prop without adding an argument.
 

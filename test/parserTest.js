@@ -1210,13 +1210,13 @@ test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wx-b5atnw .selector{}`]);
+	t.deepEqual(css, [`.wcshjfhgw .selector{color:red}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, `<some-css class="wx-b5atnw"></some-css>`);
+	t.is(html, `<some-css class="wcshjfhgw"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {

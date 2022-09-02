@@ -25,13 +25,13 @@ class AstSerializer {
 		this.transforms = {};
 
 		// transform scoped CSS with a hash prefix
-		this.addTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
+		this.setTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
 			let prefixer = new CssPrefixer(component.scopedStyleHash);
 			prefixer.setFilePath(component.filePath);
 			return prefixer.process(content);
 		});
 
-		this.addTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
+		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
 			let m = new Module();
 			// m.paths = module.paths;
 			m._compile(content, this.filePath);
@@ -90,7 +90,7 @@ class AstSerializer {
 		wbr: true,
 	};
 
-	addTransform(name, callback) {
+	setTransform(name, callback) {
 		this.transforms[name] = callback;
 	}
 
@@ -188,7 +188,10 @@ class AstSerializer {
 
 				return override;
 			}
-			hash.update(this.getTextContent(node).toString());
+
+			// TODO handle <script webc:type="render" webc:is="style" webc:scoped> (see render-css.webc)
+			let hashContent = this.getTextContent(node).toString();
+			hash.update(hashContent);
 		}
 
 		if(styleNodes.length) { // don’t return a hash if empty
@@ -397,13 +400,6 @@ class AstSerializer {
 			attrs.push(...component.rootAttributes);
 		}
 
-		for(let attr of attrs) {
-			// props
-			if(attr.name.startsWith(AstSerializer.prefixes.props)) {
-				attr.name = attr.name.slice(1);
-			}
-		}
-
 		return attrs;
 	}
 
@@ -421,7 +417,7 @@ class AstSerializer {
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
 			if(options.rawMode || !this.isIgnored(node, component, options) && !slotSource) {
-				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentAttributes)}>`;
+				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps)}>`;
 			}
 		}
 
@@ -452,7 +448,7 @@ class AstSerializer {
 			transformTypes = [];
 		}
 		for(let type of transformTypes) {
-			content = await this.transforms[type](content, parentComponent, options.componentAttributes);
+			content = await this.transforms[type](content, parentComponent, options.componentProps);
 		}
 		return content;
 	}
@@ -571,7 +567,7 @@ class AstSerializer {
 		// Component content (foreshadow dom)
 		let componentHasContent = null;
 		if(component) {
-			options.componentAttributes = attrs;
+			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs);
 		}
 
 		if(!options.rawMode && component) {

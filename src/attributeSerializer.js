@@ -72,12 +72,26 @@ class AttributeSerializer {
 		};
 	}
 
+	// Remove props prefixes
+	static removePropsPrefixesFromAttributes(attrs) {
+		let data = Object.assign({}, attrs);
+		for(let name in data) {
+			if(name.startsWith(AstSerializer.prefixes.props)) {
+				let newName = name.slice(1);
+				data[newName] = data[name];
+				delete data[name];
+			}
+		}
+		return data;
+	}
+
 	static getString(attrs, data) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 		}
+
 		for(let key in attrObject) {
 			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
 			if(name.startsWith(AstSerializer.prefixes.props) || value === false) {

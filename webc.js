@@ -90,7 +90,7 @@ class WebC {
 
 		let ast = new AstSerializer(this.astOptions);
 		for(let name in this.customTransforms) {
-			ast.addTransform(name, this.customTransforms[name]);
+			ast.setTransform(name, this.customTransforms[name]);
 		}
 
 		await ast.setComponents(options.components);
