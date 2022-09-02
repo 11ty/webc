@@ -46,6 +46,11 @@ class AstSerializer {
 		this.hashOverrides = {};
 	}
 
+	static prefixes = {
+		props: "@",
+		lookup: ":",
+	}
+
 	/* Custom HTML attributes */
 	static attrs = {
 		TYPE: "webc:type",
@@ -390,6 +395,13 @@ class AstSerializer {
 
 		if(component && Array.isArray(component.rootAttributes)) {
 			attrs.push(...component.rootAttributes);
+		}
+
+		for(let attr of attrs) {
+			// props
+			if(attr.name.startsWith(AstSerializer.prefixes.props)) {
+				attr.name = attr.name.slice(1);
+			}
 		}
 
 		return attrs;

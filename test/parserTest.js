@@ -1244,3 +1244,16 @@ test("Using img as root mapped to img", async t => {
 
 	t.is(html, `<img src="my-src.png" class="class1" child-attr>`);
 });
+
+test("Using props", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/props.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/props.webc",
+		"./test/stubs/components/img-props.webc",
+	]);
+
+	t.is(html, `<img src="my-src.png">`);
+});

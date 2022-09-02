@@ -1,4 +1,5 @@
 import lodashGet from "lodash.get";
+import { AstSerializer } from "./ast.js";
 
 class AttributeSerializer {
 	static dedupeAttributes(attrs) {
@@ -59,7 +60,7 @@ class AttributeSerializer {
 	}
 
 	static normalizeAttribute(name, value, data) {
-		if(name.startsWith(":")) {
+		if(name.startsWith(AstSerializer.prefixes.lookup)) {
 			return {
 				name: name.slice(1),
 				value: AttributeSerializer.getDataValue(data, value),
@@ -79,7 +80,7 @@ class AttributeSerializer {
 		}
 		for(let key in attrObject) {
 			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
-			if(value === false) {
+			if(name.startsWith(AstSerializer.prefixes.props) || value === false) {
 				continue;
 			}
 
