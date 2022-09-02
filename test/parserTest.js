@@ -1179,24 +1179,6 @@ test("Using global data", async t => {
 	t.is(html, `<div key="Attribute value"></div>`);
 });
 
-test("Using global data to set html", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/global-data-html.webc", null, null, {
-		value: "<style>/* This is css */</style>"
-	});
-
-	t.deepEqual(css, [`/* This is css */`]);
-	t.is(html, `<div>Fallback content</div>`);
-});
-
-test("Using global data to set html raw", async t => {
-	let { html, css } = await testGetResultFor("./test/stubs/global-data-html-raw.webc", null, null, {
-		value: "<style>/* This is css */</style>"
-	});
-
-	t.deepEqual(css, []);
-	t.is(html, `<div><style>/* This is css */</style></div>`);
-});
-
 test.skip("Scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render.webc", null, null, {
 		a: 1,

@@ -56,7 +56,6 @@ class AstSerializer {
 		ROOT: "webc:root",
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
-		HTML: "webc:html", // set html content
 		RENDER: "webc:render", // scripted render function
 	};
 
@@ -532,80 +531,62 @@ class AstSerializer {
 		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, options);
 		content += startTagContent;
 
-		let hasProgrammaticContent = false;
-		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
-		if(htmlAttribute) {
-			let html = AttributeSerializer.getDataValue(options.data, htmlAttribute);
-			let ast = await WebC.getASTFromString(html);
-			let bodyAst = this.findElement(ast, "body");
+		// light dom content
+		let componentHasContent = null;
+		let component = this.getComponent(tagName);
+		if(!options.rawMode && component) {
+			this.addComponentDependency(tagName, options);
 
-			for(let child of bodyAst.childNodes) {
-				let { html: programmaticContent } = await this.compileNode(child, slots, options);
-				if(programmaticContent) {
-					hasProgrammaticContent = true;
-				}
-				content += programmaticContent;
-			}
+			let slots = this.getSlotNodes(node);
+			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
+			componentHasContent = foreshadowDom.trim().length > 0;
+
+			content += foreshadowDom;
 		}
 
-		if(!hasProgrammaticContent) { // only continue if webc:html didn’t have content
-			// light dom content
-			let componentHasContent = null;
-			let component = this.getComponent(tagName);
-			if(!options.rawMode && component) {
-				this.addComponentDependency(tagName, options);
-	
-				let slots = this.getSlotNodes(node);
-				let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
-				componentHasContent = foreshadowDom.trim().length > 0;
-	
-				content += foreshadowDom;
+		// Skip the remaining content is we have foreshadow dom!
+		if(!componentHasContent) {
+			if(node.nodeName === "#text") {
+				content += await this.transformContent(node.value, options.currentTransformType, this.components[options.closestParentComponent], options.data);
+			} else if(node.nodeName === "#comment") {
+				content += `<!--${node.data}-->`;
+			} else if(this.mode === "page" && node.nodeName === "#documentType") {
+				content += `<!doctype ${node.name}>\n`;
 			}
-	
-			// Skip the remaining content is we have foreshadow dom!
-			if(!componentHasContent) {
-				if(node.nodeName === "#text") {
-					content += await this.transformContent(node.value, options.currentTransformType, this.components[options.closestParentComponent], options.data);
-				} else if(node.nodeName === "#comment") {
-					content += `<!--${node.data}-->`;
-				} else if(this.mode === "page" && node.nodeName === "#documentType") {
-					content += `<!doctype ${node.name}>\n`;
-				}
-	
-				if(!options.rawMode && tagName === "slot") { // <slot> node
+
+			if(!options.rawMode && tagName === "slot") { // <slot> node
+				options.isSlotContent = true;
+
+				content += await this.getContentForSlot(node, slots, options);
+			} else if(!options.rawMode && slotSource) {
+				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
+			} else if(node.content) { // <template> content
+				content += await this.getContentForTemplate(node, slots, options);
+			} else if(node.childNodes?.length > 0) {
+				// Fallback to light DOM if no component dom exists
+				if(componentHasContent === false) {
 					options.isSlotContent = true;
-	
-					content += await this.getContentForSlot(node, slots, options);
-				} else if(!options.rawMode && slotSource) {
-					// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
-				} else if(node.content) { // <template> content
-					content += await this.getContentForTemplate(node, slots, options);
-				} else if(node.childNodes?.length > 0) {
-					// Fallback to light DOM if no component dom exists
-					if(componentHasContent === false) {
-						options.isSlotContent = true;
-					}
+				}
 
-					let { html: childContent } = await this.getChildContent(node, slots, options);
+				let { html: childContent } = await this.getChildContent(node, slots, options);
 
-					if(options.rawMode || options.currentTransformType === AstSerializer.typeAliases.RENDER) {
-						content += childContent;
-					} else {
-						// aggregate CSS and JS
-						let key = {
-							style: "css",
-							script: "js",
-						}[ tagName ];
+				if(options.rawMode || options.currentTransformType === AstSerializer.typeAliases.RENDER) {
+					content += childContent;
+				} else {
+					// aggregate CSS and JS
+					let key = {
+						style: "css",
+						script: "js",
+					}[ tagName ];
 
-						if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-							let entryKey = options.closestParentComponent || this.filePath;
-							if(!options[key][entryKey]) {
-								options[key][entryKey] = new Set();
-							}
-							options[key][entryKey].add( childContent );
-						} else {
-							content += childContent;
+					if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+						let entryKey = options.closestParentComponent || this.filePath;
+						if(!options[key][entryKey]) {
+							options[key][entryKey] = new Set();
 						}
+						options[key][entryKey].add( childContent );
+					} else {
+						content += childContent;
 					}
 				}
 			}
