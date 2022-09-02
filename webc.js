@@ -1,12 +1,12 @@
 import fs from "fs";
-import { ParserStream } from "parse5-parser-stream";
-import { Readable } from "stream";
+import { parse } from "parse5";
 import { AstSerializer } from "./src/ast.js";
 
 class WebC {
 	constructor(options = {}) {
-		let { file, input, mode } = options;
+		let { file, input, mode, inputMode } = options;
 
+		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
 
 		if(file) {
@@ -31,13 +31,25 @@ class WebC {
 		this.rawInput = input;
 	}
 
-	getInput() {
+	getInputStream() {
 		if(this.filePath) {
 			return fs.createReadStream(this.filePath, {
 				encoding: "utf8"
 			});
 		} else if(this.rawInput) {
 			return Readable.from(this.rawInput);
+		} else {
+			throw new Error("Missing a setInput or setInputPath method call to set the input.");
+		}
+	}
+
+	getInputContent() {
+		if(this.filePath) {
+			return fs.readFileSync(this.filePath, {
+				encoding: "utf8"
+			});
+		} else if(this.rawInput) {
+			return this.rawInput;
 		} else {
 			throw new Error("Missing a setInput or setInputPath method call to set the input.");
 		}
@@ -57,28 +69,17 @@ class WebC {
 		return wc.getAST();
 	}
 
-	async getAST(inputStream) {
-		if(!inputStream) {
-			inputStream = this.getInput();
-		}
-
-		// TODO reject and "error"
-		return new Promise((resolve, reject) => {
-			let parser = new ParserStream({
-				scriptEnabled: true, // Toggles <noscript> parsing as text
-			});
-
-			// Content should have no-quirks-mode nested in <body> semantics
+	async getAST() {
+		if(this.inputMode === "fs") {
+			let content = this.getInputContent();
 			if(this.astOptions.mode === "component") {
-				parser.write(`<!doctype html><body>`);
+				content = `<!doctype html><body>${content}</body></html>`;
 			}
-
-			parser.once("finish", function() {
-				resolve(parser.document);
+			let ast = parse(content, {
+				scriptingEnabled: true,
 			});
-
-			inputStream.pipe(parser);
-		});
+			return ast;
+		}
 	}
 
 	setTransform(key, callback) {

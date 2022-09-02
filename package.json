@@ -14,8 +14,7 @@
 		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",
 		"lodash.get": "^4.4.2",
-		"parse5": "^7.1.1",
-		"parse5-parser-stream": "^7.0.0"
+		"parse5": "^7.1.1"
 	},
 	"devDependencies": {
 		"ava": "^4.3.1",
