@@ -2,7 +2,6 @@ import path from "path";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
 import { Module } from "module";
-import lodashGet from "lodash.get";
 
 import { WebC } from "../webc.js";
 import { AssetManager } from "./assetManager.js";
@@ -225,7 +224,7 @@ class AstSerializer {
 		return true;
 	}
 
-	isIgnored(node) {
+	isIgnored(node, component) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -242,8 +241,9 @@ class AstSerializer {
 			return true;
 		}
 
-		
-		let component = this.getComponent(tagName);
+		if(!component) {
+			component = this.getComponent(tagName);
+		}
 		if(component?.ignoreRootTag) {
 			// do not include the parent element if this component has no styles or script associated with it
 			return true;
@@ -380,9 +380,8 @@ class AstSerializer {
 		return node.tagName;
 	}
 
-	getAttributes(node, tagName, options) {
+	getAttributes(node, component, options) {
 		let attrs = node.attrs.slice(0);
-		let component = this.getComponent(tagName);
 
 		// If this is a top level page-component, make sure we get the top level attributes here
 		if(!component && this.filePath === options.closestParentComponent && this.components[this.filePath]) {
@@ -396,7 +395,7 @@ class AstSerializer {
 		return attrs;
 	}
 
-	renderStartTag(node, tagName, slotSource, options) {
+	renderStartTag(node, tagName, slotSource, component, options) {
 		let content = "";
 		let attrObject;
 
@@ -406,10 +405,10 @@ class AstSerializer {
 				content += `\n`;
 			}
 
-			let attrs = this.getAttributes(node, tagName, options);
+			let attrs = this.getAttributes(node, component, options);
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
-			if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
+			if(options.rawMode || !this.isIgnored(node, component, options) && !slotSource) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentAttributes)}>`;
 			}
 		}
@@ -420,12 +419,12 @@ class AstSerializer {
 		};
 	}
 
-	renderEndTag(node, tagName, slotSource, options) {
+	renderEndTag(node, tagName, slotSource, component, options) {
 		let content = "";
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isIgnored(node, options) && !slotSource) {
+			} else if(options.rawMode || !this.isIgnored(node, component, options) && !slotSource) {
 				content += `</${tagName}>`;
 			}
 
@@ -443,14 +442,14 @@ class AstSerializer {
 		return content;
 	}
 
-	async importComponent(tagName, filePath) {
+	async importComponent(filePath) {
 		let parsed = path.parse(this.filePath);
 		let relativeFromRoot = path.join(parsed.dir, filePath);
 		let finalFilePath = `.${path.sep}${relativeFromRoot}`;
 
-		this.componentMap[tagName] = finalFilePath;
-
 		await this.precompileComponent(finalFilePath);
+
+		return this.components[finalFilePath];
 	}
 
 	async getContentForSlot(node, slots, options) {
@@ -490,8 +489,8 @@ class AstSerializer {
 		}
 	}
 
-	addComponentDependency(tagName, options) {
-		let componentFilePath = this.componentMap[tagName];
+	addComponentDependency(component, tagName, options) {
+		let componentFilePath = component.filePath;
 		if(!options.components.hasNode(componentFilePath)) {
 			options.components.addNode(componentFilePath);
 		}
@@ -527,9 +526,12 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
+		let component;
 		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
 		if(importSource) {
-			await this.importComponent(tagName, importSource);
+			component = await this.importComponent(importSource);
+		} else {
+			component = this.getComponent(tagName);
 		}
 
 		let slotSource = this.getAttributeValue(node, "slot");
@@ -540,18 +542,17 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
-		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, options);
+		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, component, options);
 		content += startTagContent;
 
 		// Component content (foreshadow dom)
 		let componentHasContent = null;
-		let component = this.getComponent(tagName);
 		if(component) {
 			options.componentAttributes = attrs;
 		}
 
 		if(!options.rawMode && component) {
-			this.addComponentDependency(tagName, options);
+			this.addComponentDependency(component, tagName, options);
 
 			let slots = this.getSlotNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
@@ -609,7 +610,7 @@ class AstSerializer {
 		}
 
 		// End tag
-		content += this.renderEndTag(node, tagName, slotSource, options);
+		content += this.renderEndTag(node, tagName, slotSource, component, options);
 
 		return {
 			html: content,

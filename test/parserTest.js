@@ -1231,3 +1231,16 @@ test("Using image component plain", async t => {
 
 	t.is(html, `<img src="my-src.png">`);
 });
+
+test("Using img as root mapped to img", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/img-to-img.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/img-to-img.webc",
+		"./test/stubs/components/img-as-root.webc",
+	]);
+
+	t.is(html, `<img src="my-src.png" class="class1" child-attr>`);
+});
