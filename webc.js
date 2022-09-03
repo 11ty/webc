@@ -27,8 +27,9 @@ class WebC {
 		this.astOptions.filePath = file;
 	}
 
-	setInput(input) {
+	setInput(input, filePath) {
 		this.rawInput = input;
+		this.astOptions.filePath = filePath;
 	}
 
 	getInputContent() {

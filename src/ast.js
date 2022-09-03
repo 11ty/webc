@@ -34,6 +34,10 @@ class AstSerializer {
 		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
 			let m = new Module();
 			// m.paths = module.paths;
+			let trimmed = content.trim();
+			if(!trimmed.startsWith("module.exports = ") && trimmed.startsWith(`function(`)) {
+				content = `module.exports = ${content}`;
+			}
 			m._compile(content, this.filePath);
 			let fn = m.exports;
 			return fn(data);
@@ -454,6 +458,9 @@ class AstSerializer {
 	}
 
 	async importComponent(filePath) {
+		if(!this.filePath) {
+			throw new Error("Dynamic component import requires a filePath to be set.")
+		}
 		let parsed = path.parse(this.filePath);
 		let relativeFromRoot = path.join(parsed.dir, filePath);
 		let finalFilePath = `.${path.sep}${relativeFromRoot}`;

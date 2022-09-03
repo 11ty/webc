@@ -1,5 +1,5 @@
 <script webc:type="render" webc:is="style" webc:scoped>
-module.exports = function(attrs = {}) {
+function(attrs = {}) {
 return `/* CSS */
 .selector {
 	color: ${attrs.color}
