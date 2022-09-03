@@ -236,11 +236,11 @@ class AstSerializer {
 		return true;
 	}
 
-	getMode(component) {
-		return component ? component.mode : this.mode;
+	getMode(filePath) {
+		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
-	isIgnored(node, component) {
+	isIgnored(node, component, renderingMode) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -265,7 +265,7 @@ class AstSerializer {
 			return true;
 		}
 
-		if(this.getMode(component) === "component") {
+		if(renderingMode === "component") {
 			if(tagName === "head" || tagName === "body" || tagName === "html") {
 				return true;
 			}
@@ -325,7 +325,6 @@ class AstSerializer {
 			ast = await WebC.getASTFromFilePath(filePath);
 		}
 		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
-
 		this.components[filePath] = {
 			filePath,
 			ast,
@@ -415,20 +414,20 @@ class AstSerializer {
 		return attrs;
 	}
 
-	renderStartTag(node, tagName, slotSource, component, options) {
+	renderStartTag(node, tagName, slotSource, component, renderingMode, options) {
 		let content = "";
 		let attrObject;
 
 		if(tagName) {
 			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
-			if(this.getMode(component) === "page" && tagName === "head") {
+			if(renderingMode === "page" && tagName === "head") {
 				content += `\n`;
 			}
 
 			let attrs = this.getAttributes(node, component, options);
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
-			if(options.rawMode || !this.isIgnored(node, component, options) && !slotSource) {
+			if(options.rawMode || !this.isIgnored(node, component, renderingMode) && !slotSource) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps)}>`;
 			}
 		}
@@ -439,16 +438,16 @@ class AstSerializer {
 		};
 	}
 
-	renderEndTag(node, tagName, slotSource, component, options) {
+	renderEndTag(node, tagName, slotSource, component, renderingMode, options) {
 		let content = "";
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isIgnored(node, component, options) && !slotSource) {
+			} else if(options.rawMode || !this.isIgnored(node, component, renderingMode) && !slotSource) {
 				content += `</${tagName}>`;
 			}
 
-			if(this.getMode(component) === "page" && tagName === "body") {
+			if(renderingMode === "page" && tagName === "body") {
 				content += `\n`;
 			}
 		}
@@ -568,6 +567,8 @@ class AstSerializer {
 			component = this.getComponent(tagName);
 		}
 
+		let renderingMode = this.getMode(options.closestParentComponent);
+
 		let slotSource = this.getAttributeValue(node, "slot");
 		if(slotSource) {
 			options.isSlotContent = true;
@@ -576,7 +577,7 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
-		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, component, options);
+		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, component, renderingMode, options);
 		content += startTagContent;
 
 		// Component content (foreshadow dom)
@@ -600,7 +601,7 @@ class AstSerializer {
 				content += await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options);
 			} else if(node.nodeName === "#comment") {
 				content += `<!--${node.data}-->`;
-			} else if(this.getMode(component) === "page" && node.nodeName === "#documentType") {
+			} else if(renderingMode === "page" && node.nodeName === "#documentType") {
 				content += `<!doctype ${node.name}>\n`;
 			}
 
@@ -643,7 +644,7 @@ class AstSerializer {
 		}
 
 		// End tag
-		content += this.renderEndTag(node, tagName, slotSource, component, options);
+		content += this.renderEndTag(node, tagName, slotSource, component, renderingMode, options);
 
 		return {
 			html: content,
