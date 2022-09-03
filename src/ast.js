@@ -236,6 +236,10 @@ class AstSerializer {
 		return true;
 	}
 
+	getMode(component) {
+		return component ? component.mode : this.mode;
+	}
+
 	isIgnored(node, component) {
 		let tagName = this.getTagName(node);
 
@@ -261,7 +265,7 @@ class AstSerializer {
 			return true;
 		}
 
-		if(this.mode === "component") {
+		if(this.getMode(component) === "component") {
 			if(tagName === "head" || tagName === "body" || tagName === "html") {
 				return true;
 			}
@@ -315,6 +319,8 @@ class AstSerializer {
 			return;
 		}
 
+		let isTopLevelComponent = !!ast;
+
 		if(!ast) {
 			ast = await WebC.getASTFromFilePath(filePath);
 		}
@@ -323,6 +329,8 @@ class AstSerializer {
 		this.components[filePath] = {
 			filePath,
 			ast,
+			// if ast is provided, this is the top level component
+			mode: isTopLevelComponent ? this.mode : "component",
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
 			scopedStyleHash,
 			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
@@ -413,7 +421,7 @@ class AstSerializer {
 
 		if(tagName) {
 			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
-			if(this.mode === "page" && tagName === "head") {
+			if(this.getMode(component) === "page" && tagName === "head") {
 				content += `\n`;
 			}
 
@@ -440,7 +448,7 @@ class AstSerializer {
 				content += `</${tagName}>`;
 			}
 
-			if(this.mode === "page" && tagName === "body") {
+			if(this.getMode(component) === "page" && tagName === "body") {
 				content += `\n`;
 			}
 		}
@@ -592,7 +600,7 @@ class AstSerializer {
 				content += await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options);
 			} else if(node.nodeName === "#comment") {
 				content += `<!--${node.data}-->`;
-			} else if(this.mode === "page" && node.nodeName === "#documentType") {
+			} else if(this.getMode(component) === "page" && node.nodeName === "#documentType") {
 				content += `<!doctype ${node.name}>\n`;
 			}
 
