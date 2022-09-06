@@ -55,15 +55,19 @@ class AttributeSerializer {
 		return attrObject;
 	}
 
-	static getDataValue(data, selector) {
-		return lodashGet(data, selector, "")
+	static getDataValue(selector, data, globalData) {
+		let dataValue = lodashGet(data, selector, "");
+		if(dataValue === "") {
+			return lodashGet(globalData, selector, "");
+		}
+		return dataValue;
 	}
 
-	static normalizeAttribute(name, value, data) {
+	static normalizeAttribute(name, value, data, globalData) {
 		if(name.startsWith(AstSerializer.prefixes.lookup)) {
 			return {
 				name: name.slice(1),
-				value: AttributeSerializer.getDataValue(data, value),
+				value: AttributeSerializer.getDataValue(value, data, globalData),
 			};
 		}
 		return {
@@ -85,7 +89,7 @@ class AttributeSerializer {
 		return data;
 	}
 
-	static getString(attrs, data) {
+	static getString(attrs, data, globalData) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {
@@ -93,7 +97,7 @@ class AttributeSerializer {
 		}
 
 		for(let key in attrObject) {
-			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
+			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data, globalData);
 			if(name.startsWith(AstSerializer.prefixes.props) || value === false) {
 				continue;
 			}

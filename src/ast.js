@@ -8,6 +8,25 @@ import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 
+class ModuleScript {
+	static evaluateAttribute(content, filePath) {
+		return ModuleScript.getFunction(`module.exports = async function() { return ${content} };`, filePath, true);
+	}
+
+	static getFunction(content, filePath, isAttrMode = false) {
+		let m = new Module();
+		// m.paths = module.paths;
+		let trimmed = content.trim();
+		if(!trimmed.startsWith("module.exports = ")) {
+			if(trimmed.startsWith(`function(`) || trimmed.startsWith(`async function(`)) {
+				content = `module.exports = ${content}`;
+			}
+		}
+		m._compile(content, filePath);
+		return m.exports;
+	}
+}
+
 class AstSerializer {
 	constructor(options = {}) {
 		let { filePath } = Object.assign({
@@ -23,6 +42,9 @@ class AstSerializer {
 		// content transforms
 		this.transforms = {};
 
+		// helper functions
+		this.filters = {};
+
 		// transform scoped CSS with a hash prefix
 		this.setTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
 			let prefixer = new CssPrefixer(component.scopedStyleHash);
@@ -31,15 +53,9 @@ class AstSerializer {
 		});
 
 		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
-			let m = new Module();
-			// m.paths = module.paths;
-			let trimmed = content.trim();
-			if(!trimmed.startsWith("module.exports = ") && (trimmed.startsWith(`function(`) || trimmed.startsWith(`async function(`))) {
-				content = `module.exports = ${content}`;
-			}
-			m._compile(content, this.filePath);
-			let fn = m.exports;
-			return fn(data);
+			let fn = ModuleScript.getFunction(content, this.filePath);
+			let context = Object.assign({}, this.filters, data, this.globalData);
+			return fn.call(context);
 		});
 
 		// Component cache
@@ -47,10 +63,8 @@ class AstSerializer {
 		this.components = {};
 
 		this.hashOverrides = {};
-	}
 
-	setMode(mode = "component") {
-		this.mode = mode; // "page" or "component"
+		this.globalData = {};
 	}
 
 	static prefixes = {
@@ -62,17 +76,20 @@ class AstSerializer {
 	static attrs = {
 		TYPE: "webc:type",
 		KEEP: "webc:keep",
+		NOKEEP: "webc:nokeep",
 		RAW: "webc:raw",
 		IS: "webc:is",
 		ROOT: "webc:root",
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
+		HTML: "@html",
+		OUTERHTML: "@outerhtml",
 	};
 
 	static transformTypes = {
 		RENDER: "render",
 		SCOPED: "css:scoped",
-	}
+	};
 
 	// List from the parse5 serializer
 	// https://github.com/inikulin/parse5/blob/3955dcc158031cc773a18517d2eabe8b17107aa3/packages/parse5/lib/serializer/index.ts
@@ -97,8 +114,20 @@ class AstSerializer {
 		wbr: true,
 	};
 
+	setMode(mode = "component") {
+		this.mode = mode; // "page" or "component"
+	}
+
+	setFilter(name, callback) {
+		this.filters[name] = callback;
+	}
+
 	setTransform(name, callback) {
 		this.transforms[name] = callback;
+	}
+
+	setData(data = {}) {
+		this.globalData = data;
 	}
 
 	isVoidElement(tagName) {
@@ -253,6 +282,19 @@ class AstSerializer {
 
 		if(this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
 			return true;
+		}
+
+		// must come after webc:keep (takes precedence)
+		if(this.hasAttribute(node, AstSerializer.attrs.NOKEEP)) {
+			return true;
+		}
+
+		if(this.hasAttribute(node, AstSerializer.attrs.OUTERHTML)) {
+			return true;
+		}
+
+		if(this.hasAttribute(node, AstSerializer.attrs.HTML)) {
+			return false;
 		}
 
 		// Must come after webc:keep (takes precedence)
@@ -431,7 +473,7 @@ class AstSerializer {
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
 			if(options.rawMode || !this.isIgnored(node, component, renderingMode) && !slotSource) {
-				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps)}>`;
+				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
 			}
 		}
 
@@ -510,19 +552,20 @@ class AstSerializer {
 
 	// Transforms can alter HTML content e.g. <template webc:type="markdown">
 	getTransformTypes(node) {
-		let types = [];
+		let types = new Set();
 		let transformTypeStr = this.getAttributeValue(node, AstSerializer.attrs.TYPE);
 		if(transformTypeStr) {
 			for(let s of transformTypeStr.split(",")) {
 				if(s && !!this.transforms[s]) {
-					types.push(s);
+					types.add(s);
 				}
 			}
 		}
+
 		if(this.hasAttribute(node, AstSerializer.attrs.SCOPED)) {
-			types.push(AstSerializer.transformTypes.SCOPED);
+			types.add(AstSerializer.transformTypes.SCOPED);
 		}
-		return types;
+		return Array.from(types);
 	}
 
 	addComponentDependency(component, tagName, options) {
@@ -589,7 +632,14 @@ class AstSerializer {
 			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs);
 		}
 
-		if(!options.rawMode && component) {
+		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML) || this.getAttributeValue(node, AstSerializer.attrs.OUTERHTML);
+		if(htmlAttribute) {
+			let fn = ModuleScript.evaluateAttribute(htmlAttribute, this.filePath);
+			let context = Object.assign({}, this.filters, options.componentProps, this.globalData);
+			let htmlContent = await fn.call(context);
+			componentHasContent = htmlContent.trim().length > 0;
+			content+= htmlContent;
+		} else if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
 
 			let slots = this.getSlotNodes(node);

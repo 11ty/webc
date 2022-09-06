@@ -1207,13 +1207,13 @@ test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wsg0anvls .selector{color:red}`]);
+	t.deepEqual(css, [`.wjmnc5heg .selector{color:red}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, `<some-css class="wsg0anvls"></some-css>`);
+	t.is(html, `<some-css class="wjmnc5heg"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {
@@ -1266,4 +1266,32 @@ test("Using props", async t => {
 	]);
 
 	t.is(html, `<img src="my-src.png">`);
+});
+
+test("Using @html", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/html.webc");
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			variable1: "value1"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/html.webc",
+	]);
+
+	t.is(html, `<p>Paragraph HTML</p>
+<p>value1</p>
+Template Outer HTML
+<template>Template Outer HTML Keep</template>
+Template Outer HTML Nokeep
+<template>Template HTML</template>
+<template>Template HTML Keep</template>
+Template HTML Nokeep
+`);
 });

@@ -1,8 +1,8 @@
 <script webc:type="render" webc:is="style" webc:scoped>
-function(attrs = {}) {
+function() {
 return `/* CSS */
 .selector {
-	color: ${attrs.color}
+	color: ${this.color}
 }`;
 }
 </script>

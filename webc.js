@@ -8,6 +8,7 @@ class WebC {
 
 		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
+		this.customFilters = {};
 
 		if(file) {
 			this.filePath = file;
@@ -103,6 +104,10 @@ class WebC {
 		this.customTransforms[key] = callback;
 	}
 
+	setFilter(key, callback) {
+		this.customFilters[key] = callback;
+	}
+
 	async compile(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
@@ -113,6 +118,10 @@ class WebC {
 
 		for(let name in this.customTransforms) {
 			ast.setTransform(name, this.customTransforms[name]);
+		}
+
+		for(let name in this.customFilters) {
+			ast.setFilter(name, this.customFilters[name]);
 		}
 
 		await ast.setComponents(options.components);
