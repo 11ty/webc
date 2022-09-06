@@ -19,7 +19,8 @@ test("No Quirks mode default", async t => {
 	let component = new WebC();
 	component.setInput(`<div class="red"></div>`);
 
-	let ast = await component.getAST();
+	let {content} = component.getContent();
+	let ast = await component.getAST(content);
 
 	t.is("no-quirks", ast.mode);
 });
@@ -398,10 +399,9 @@ test("<slot webc:keep>", async t => {
 
 // Note that parse5 returns an extra \n at the end of the <body> element
 test("Full page", async t => {
-	let page = new WebC({ mode: "page" });
-
+	let page = new WebC();
 	page.setInputPath("./test/stubs/page.webc");
-	
+
 	let { html, css, js, components } = await page.compile();
 
 	t.deepEqual(js, []);
@@ -424,10 +424,9 @@ test("Full page", async t => {
 </html>`);
 });
 
-// WARNING: this returns quirks mode parsing
+/* This can’t exist any more */
 test("Component in page mode (error case)", async t => {
-	let page = new WebC({ mode: "page" });
-
+	let page = new WebC();
 	page.setInputPath("./test/stubs/component-in-page-mode.webc");
 	
 	let { html, css, js, components } = await page.compile();
@@ -437,9 +436,7 @@ test("Component in page mode (error case)", async t => {
 	t.deepEqual(components, [
 		"./test/stubs/component-in-page-mode.webc"
 	]);
-	t.is(html, `<html>
-<head></head><body><div>Test</div></body>
-</html>`);
+	t.is(html, `<div>Test</div>`);
 });
 
 async function testGetResultFor(filename, components, slots, data) {

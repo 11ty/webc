@@ -4,7 +4,7 @@ import { AstSerializer } from "./src/ast.js";
 
 class WebC {
 	constructor(options = {}) {
-		let { file, input, mode, inputMode } = options;
+		let { file, input, inputMode } = options;
 
 		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
@@ -17,7 +17,6 @@ class WebC {
 		}
 
 		this.astOptions = {
-			mode: mode || "component",
 			filePath: file,
 		};
 	}
@@ -29,41 +28,70 @@ class WebC {
 
 	setInput(input, filePath) {
 		this.rawInput = input;
-		this.astOptions.filePath = filePath;
+
+		if(filePath) {
+			this.astOptions.filePath = filePath;
+		}
 	}
 
-	getInputContent() {
-		if(this.filePath) {
-			return fs.readFileSync(this.filePath, {
-				encoding: "utf8"
-			});
-		} else if(this.rawInput) {
+	getRenderingMode(content) {
+		if(!content.startsWith("<!doctype") && !content.startsWith("<html")) {
+			return "component";
+		}
+
+		return "page";
+	}
+
+	_getRawContent() {
+		if(this.rawInput) {
 			return this.rawInput;
+		} else if(this.filePath) {
+			if(!this._cachedContent) {
+				this._cachedContent = fs.readFileSync(this.filePath, {
+					encoding: "utf8"
+				});
+			}
+
+			return this._cachedContent;
 		} else {
 			throw new Error("Missing a setInput or setInputPath method call to set the input.");
 		}
+	}
+
+	getContent() {
+		let content = this._getRawContent();
+		let mode = this.getRenderingMode(content);
+		// prepend for no-quirks mode
+		if(mode === "component") {
+			content = `<!doctype html><html><body>${content}</body></html>`;
+		}
+		return {
+			content,
+			mode,
+		};
 	}
 
 	static async getASTFromString(string) {
 		let wc = new WebC({
 			input: string
 		});
-		return wc.getAST();
+		let { content } = wc.getContent();
+		return wc.getAST(content);
 	}
 
 	static async getASTFromFilePath(filePath) {
 		let wc = new WebC({
 			file: filePath
 		});
-		return wc.getAST();
+		let { content } = wc.getContent();
+		return wc.getAST(content);
 	}
 
-	async getAST() {
+	getAST(content) {
+		if(!content) {
+			throw new Error("WebC.getAST() expects a content argument.");
+		}
 		if(this.inputMode === "fs") {
-			let content = this.getInputContent();
-			if(this.astOptions.mode === "component") {
-				content = `<!doctype html><body>${content}</body></html>`;
-			}
 			let ast = parse(content, {
 				scriptingEnabled: true,
 			});
@@ -76,9 +104,13 @@ class WebC {
 	}
 
 	async compile(options = {}) {
-		let rawAst = await this.getAST();
+		let { content, mode } = this.getContent();
+		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
+		ast.setMode(mode);
+		ast.setData(options.data);
+
 		for(let name in this.customTransforms) {
 			ast.setTransform(name, this.customTransforms[name]);
 		}

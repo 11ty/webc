@@ -10,13 +10,12 @@ import { AttributeSerializer } from "./attributeSerializer.js";
 
 class AstSerializer {
 	constructor(options = {}) {
-		let { mode, filePath } = Object.assign({
-			mode: "component", // or "page"
+		let { filePath } = Object.assign({
 			filePath: undefined,
 		}, options);
 
 		// controls whether or not doctype, html, body are prepended to content
-		this.mode = mode;
+		this.mode = "component";
 
 		// for error messaging
 		this.filePath = filePath;
@@ -48,6 +47,10 @@ class AstSerializer {
 		this.components = {};
 
 		this.hashOverrides = {};
+	}
+
+	setMode(mode = "component") {
+		this.mode = mode; // "page" or "component"
 	}
 
 	static prefixes = {
