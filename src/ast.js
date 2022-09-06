@@ -35,7 +35,7 @@ class AstSerializer {
 			let m = new Module();
 			// m.paths = module.paths;
 			let trimmed = content.trim();
-			if(!trimmed.startsWith("module.exports = ") && trimmed.startsWith(`function(`)) {
+			if(!trimmed.startsWith("module.exports = ") && (trimmed.startsWith(`function(`) || trimmed.startsWith(`async function(`))) {
 				content = `module.exports = ${content}`;
 			}
 			m._compile(content, this.filePath);
