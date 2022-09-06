@@ -9,8 +9,9 @@ import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 
 class ModuleScript {
-	static evaluateAttribute(content, filePath) {
-		return ModuleScript.getFunction(`module.exports = async function() { return ${content} };`, filePath, true);
+	static evaluateAttribute(content) {
+		const AsyncFunction = (async function () {}).constructor;
+		return new AsyncFunction(`return ${content};`);
 	}
 
 	static getFunction(content, filePath, isAttrMode = false) {
