@@ -7,26 +7,7 @@ import { WebC } from "../webc.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
-
-class ModuleScript {
-	static evaluateAttribute(content) {
-		const AsyncFunction = (async function () {}).constructor;
-		return new AsyncFunction(`return ${content};`);
-	}
-
-	static getFunction(content, filePath, isAttrMode = false) {
-		let m = new Module();
-		// m.paths = module.paths;
-		let trimmed = content.trim();
-		if(!trimmed.startsWith("module.exports = ")) {
-			if(trimmed.startsWith(`function(`) || trimmed.startsWith(`async function(`)) {
-				content = `module.exports = ${content}`;
-			}
-		}
-		m._compile(content, filePath);
-		return m.exports;
-	}
-}
+import { ModuleScript } from "./moduleScript.js";
 
 class AstSerializer {
 	constructor(options = {}) {
@@ -54,7 +35,7 @@ class AstSerializer {
 		});
 
 		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
-			let fn = ModuleScript.getFunction(content, this.filePath);
+			let fn = ModuleScript.getModule(content, this.filePath);
 			let context = Object.assign({}, this.filters, data, this.globalData);
 			return fn.call(context);
 		});
@@ -707,7 +688,7 @@ class AstSerializer {
 
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
-			rawMode: false,
+			rawMode: false, // plaintext output
 			isSlotContent: false,
 			css: {},
 			js: {},
