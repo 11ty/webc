@@ -381,21 +381,16 @@ class AstSerializer {
 			ast = await WebC.getASTFromFilePath(filePath);
 		}
 
-		try {
-			let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
-			this.components[filePath] = {
-				filePath,
-				ast,
-				// if ast is provided, this is the top level component
-				mode: isTopLevelComponent ? this.mode : "component",
-				ignoreRootTag: this.ignoreComponentParentTag(ast),
-				scopedStyleHash,
-				rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
-			};
-		} catch(e) {
-			this._streamError(e);
-			return Promise.reject(e);
-		}
+		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
+		this.components[filePath] = {
+			filePath,
+			ast,
+			// if ast is provided, this is the top level component
+			mode: isTopLevelComponent ? this.mode : "component",
+			ignoreRootTag: this.ignoreComponentParentTag(ast),
+			scopedStyleHash,
+			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
+		};
 	}
 
 	// synchronous (components should already be cached)
@@ -701,7 +696,7 @@ class AstSerializer {
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlotContent = true;
 
-				content += this.outputHtml(await this.getContentForSlot(node, slots, options), false);
+				content += await this.getContentForSlot(node, slots, options);
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) { // <template> content
@@ -712,9 +707,12 @@ class AstSerializer {
 					options.isSlotContent = true;
 				}
 
-				if(options.rawMode || tagName === "template" && options.currentTransformTypes) {
-					let { html: childContent } = await this.getChildContent(node, slots, options, false);
+				if(options.rawMode) {
+					let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
 					content += childContent;
+				} else if(tagName === "template" && options.currentTransformTypes) {
+					let { html: childContent } = await this.getChildContent(node, slots, options, false);
+					content += this.outputHtml(childContent, streamEnabled);
 				} else {
 					// aggregate CSS and JS
 					let key = {
@@ -734,7 +732,7 @@ class AstSerializer {
 
 						options[key][entryKey].add( childContent );
 					} else {
-						let { html: childContent } = await this.getChildContent(node, slots, options, true);
+						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
 						content += childContent;
 					}
 				}
@@ -768,17 +766,21 @@ class AstSerializer {
 			options.components.addNode(this.filePath);
 		}
 
-		let compiled = await this.compileNode(node, slots, options);
-		let content = compiled.html;
-		let assets = new AssetManager(options.components);
-
-		let ret = {
-			html: content,
-			css: assets.getOrderedAssets(options.css),
-			js: assets.getOrderedAssets(options.js),
-			components: assets.orderedComponentList,
-		};
-		return ret;
+		try {
+			let compiled = await this.compileNode(node, slots, options);
+			let content = compiled.html;
+			let assets = new AssetManager(options.components);
+	
+			return {
+				html: content,
+				css: assets.getOrderedAssets(options.css),
+				js: assets.getOrderedAssets(options.js),
+				components: assets.orderedComponentList,
+			};
+		} catch(e) {
+			this._streamError(e);
+			return Promise.reject(e);
+		}
 	}
 }
 

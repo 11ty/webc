@@ -960,7 +960,7 @@ test("Using a web component with webc:raw to allow client component slots (skip 
 		"./test/stubs/nested-multiple-slots-raw.webc",
 		"./test/stubs/components/nested-child-empty.webc"
 	]);
-	// TODO should this opt-in to keeping the <web-component> parent around?
+	// TODO should this automatically opt-in to keeping the <web-component> parent around?
 	// Note the slots are using webc:raw
 	t.is(html, `Before
 
