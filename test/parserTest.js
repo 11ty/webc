@@ -16,6 +16,16 @@ test("Raw Input", async t => {
 	t.is(html, `<div class="red"></div>`);
 });
 
+test("No Quirks mode default (HTML file without doctype)", async t => {
+	let component = new WebC();
+	component.setInput(`<html><div class="red"></div></html>`);
+
+	let {content} = component.getContent();
+	let ast = await component.getAST(content);
+
+	t.is("no-quirks", ast.mode);
+});
+
 test("No Quirks mode default", async t => {
 	let component = new WebC();
 	component.setInput(`<div class="red"></div>`);
