@@ -1,7 +1,8 @@
 import test from "ava";
-import { WebC } from "../webc.js";
 import MarkdownIt from "markdown-it";
 import typescript from "typescript";
+
+import { WebC } from "../webc.js";
 
 test("Raw Input", async t => {
 	let component = new WebC();
@@ -99,7 +100,9 @@ test("Using a custom <template webc:type> (empty) gets rid of parent <template>"
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 	t.deepEqual(components, ["./test/stubs/template-custom-notype.webc"]);
-	t.is(html.trim(), `No <code>content</code>.`);
+	t.is(html, `
+No <code>content</code>.
+`);
 });
 
 test("Using a custom <template> type", async t => {

@@ -137,7 +137,10 @@ class WebC {
 
 		serializer.startStreaming();
 
-		serializer.compile(ast, options.slots).then(() => {
+		serializer.compile(ast, options.slots).catch(() => {
+			// Node requires this to avoid unhandled rejection errors (yes, even with `finally`)
+			serializer.endStreaming();
+		}).finally(() => {
 			serializer.endStreaming();
 		});
 

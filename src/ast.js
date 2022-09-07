@@ -116,8 +116,14 @@ class AstSerializer {
 		});
 	}
 
+	_streamError(error, streamKey = "html") {
+		if(this.streams && this.streams[streamKey]) {
+			this.streams[streamKey].destroy(error);
+		}
+	}
+
 	endStreaming() {
-		// lol who decided this
+		// push(null) is required by Node to trigger the close event on the stream
 		this.streams.html.push(null);
 		this.streams.css.push(null);
 		this.streams.js.push(null);
@@ -374,16 +380,22 @@ class AstSerializer {
 		if(!ast) {
 			ast = await WebC.getASTFromFilePath(filePath);
 		}
-		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
-		this.components[filePath] = {
-			filePath,
-			ast,
-			// if ast is provided, this is the top level component
-			mode: isTopLevelComponent ? this.mode : "component",
-			ignoreRootTag: this.ignoreComponentParentTag(ast),
-			scopedStyleHash,
-			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
-		};
+
+		try {
+			let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
+			this.components[filePath] = {
+				filePath,
+				ast,
+				// if ast is provided, this is the top level component
+				mode: isTopLevelComponent ? this.mode : "component",
+				ignoreRootTag: this.ignoreComponentParentTag(ast),
+				scopedStyleHash,
+				rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
+			};
+		} catch(e) {
+			this._streamError(e);
+			return Promise.reject(e);
+		}
 	}
 
 	// synchronous (components should already be cached)
@@ -409,7 +421,7 @@ class AstSerializer {
 		for(let name in components) {
 			promises.push(this.precompileComponent(components[name]));
 		}
-		await Promise.all(promises);
+		return Promise.all(promises);
 	}
 
 	// This *needs* to be depth first instead of breadth first for **streaming**
@@ -472,10 +484,8 @@ class AstSerializer {
 	}
 
 	outputHtml(str, streamEnabled) {
-		if(streamEnabled) {
-			if(str) {
-				this._outputToStream("html", str);
-			}
+		if(streamEnabled && str) {
+			this._outputToStream("html", str);
 		}
 
 		return str;
@@ -548,12 +558,12 @@ class AstSerializer {
 		let slotName = this.getAttributeValue(node, "name") || "default";
 		if(slots[slotName]) {
 			let slotAst = await this.getSlotAst(slots[slotName]);
-			let { html: slotHtml } = await this.getChildContent(slotAst, null, options, false);
+			let { html: slotHtml } = await this.getChildContent(slotAst, null, options, true);
 			return slotHtml;
 		}
 
 		// Use light dom fallback content in <slot> if no slot source exists to fill it
-		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, false);
+		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, true);
 		return slotFallbackHtml;
 	}
 
@@ -691,7 +701,7 @@ class AstSerializer {
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlotContent = true;
 
-				content += this.outputHtml(await this.getContentForSlot(node, slots, options), true);
+				content += this.outputHtml(await this.getContentForSlot(node, slots, options), false);
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) { // <template> content
@@ -718,7 +728,10 @@ class AstSerializer {
 						if(!options[key][entryKey]) {
 							options[key][entryKey] = new Set();
 						}
-						// TODO how to handle streaming here
+						if(!options[key][entryKey].has(childContent)) {
+							this._outputToStream(key, childContent);
+						}
+
 						options[key][entryKey].add( childContent );
 					} else {
 						let { html: childContent } = await this.getChildContent(node, slots, options, true);
