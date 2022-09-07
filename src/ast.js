@@ -1,7 +1,7 @@
 import path from "path";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
-import { Module } from "module";
+import Stream from "stream";
 
 import { WebC } from "../webc.js";
 import { AssetManager } from "./assetManager.js";
@@ -98,6 +98,29 @@ class AstSerializer {
 
 	setMode(mode = "component") {
 		this.mode = mode; // "page" or "component"
+	}
+
+	startStreaming() {
+		this.streams = {};
+		this.streams.html = new Stream.Readable({
+			read() {},
+			encoding: "utf8",
+		});
+		this.streams.css = new Stream.Readable({
+			read() {},
+			encoding: "utf8",
+		});
+		this.streams.js = new Stream.Readable({
+			read() {},
+			encoding: "utf8",
+		});
+	}
+
+	endStreaming() {
+		// lol who decided this
+		this.streams.html.push(null);
+		this.streams.css.push(null);
+		this.streams.js.push(null);
 	}
 
 	setFilter(name, callback) {
@@ -389,16 +412,16 @@ class AstSerializer {
 		await Promise.all(promises);
 	}
 
-	async getChildContent(parentNode, slots, options) {
-		let promises = [];
+	// This *needs* to be depth first instead of breadth first for **streaming**
+	async getChildContent(parentNode, slots, options, streamEnabled) {
+		let html = [];
 		for(let child of parentNode.childNodes || []) {
-			promises.push(this.compileNode(child, slots, options))
+			let { html: nodeHtml } = await this.compileNode(child, slots, options, streamEnabled);
+			html.push(nodeHtml);
 		}
-		let p = await Promise.all(promises);
-		let html = p.map(entry => entry.html).join("");
 
 		return {
-			html,
+			html: html.join(""),
 		};
 	}
 
@@ -439,6 +462,23 @@ class AstSerializer {
 		}
 
 		return attrs;
+	}
+
+	_outputToStream(streamKey, str) {
+		if(this.streams && this.streams[streamKey]) {
+			// console.log( "Streaming to", streamKey, { str } );
+			this.streams[streamKey].push(str);
+		}
+	}
+
+	outputHtml(str, streamEnabled) {
+		if(streamEnabled) {
+			if(str) {
+				this._outputToStream("html", str);
+			}
+		}
+
+		return str;
 	}
 
 	renderStartTag(node, tagName, slotSource, component, renderingMode, options) {
@@ -508,12 +548,12 @@ class AstSerializer {
 		let slotName = this.getAttributeValue(node, "name") || "default";
 		if(slots[slotName]) {
 			let slotAst = await this.getSlotAst(slots[slotName]);
-			let { html: slotHtml } = await this.getChildContent(slotAst, null, options);
+			let { html: slotHtml } = await this.getChildContent(slotAst, null, options, false);
 			return slotHtml;
 		}
 
-		// Use fallback content in <slot> if no slot source exists to fill it
-		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options);
+		// Use light dom fallback content in <slot> if no slot source exists to fill it
+		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, false);
 		return slotFallbackHtml;
 	}
 
@@ -523,8 +563,7 @@ class AstSerializer {
 		// no transformation on this content
 		delete templateOptions.currentTransformTypes;
 
-		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions);
-
+		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions, false);
 		// Get plaintext from <template> .content
 		if(options.currentTransformTypes) {
 			return this.transformContent(rawContent, options.currentTransformTypes, this.components[options.closestParentComponent], options);
@@ -572,7 +611,7 @@ class AstSerializer {
 		options.closestParentComponent = componentFilePath;
 	}
 
-	async compileNode(node, slots = {}, options = {}) {
+	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 
 		let tagName = this.getTagName(node);
@@ -587,6 +626,25 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
+		// Short circuit for text nodes, comments, doctypes
+		let renderingMode = this.getMode(options.closestParentComponent);
+		if(node.nodeName === "#text") {
+			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
+				content += this.outputHtml(node.value, streamEnabled);
+			} else {
+				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options), streamEnabled);
+			}
+			return { html: content };
+		} else if(node.nodeName === "#comment") {
+			return {
+				html: this.outputHtml(`<!--${node.data}-->`, streamEnabled)
+			};
+		} else if(renderingMode === "page" && node.nodeName === "#documentType") {
+			return {
+				html: this.outputHtml(`<!doctype ${node.name}>\n`, streamEnabled)
+			};
+		}
+
 		let component;
 		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
 		if(importSource) {
@@ -594,8 +652,6 @@ class AstSerializer {
 		} else {
 			component = this.getComponent(tagName);
 		}
-
-		let renderingMode = this.getMode(options.closestParentComponent);
 
 		let slotSource = this.getAttributeValue(node, "slot");
 		if(slotSource) {
@@ -605,58 +661,49 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
-		let { content: startTagContent, attrs } = this.renderStartTag(node, tagName, slotSource, component, renderingMode, options);
-		content += startTagContent;
+		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, slotSource, component, renderingMode, options);
+		content += this.outputHtml(startTagContent, streamEnabled);
 
-		// Component content (foreshadow dom)
-		let componentHasContent = null;
 		if(component) {
 			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs);
 		}
 
+		// Component content (foreshadow dom)
+		let componentHasContent = null;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML) || this.getAttributeValue(node, AstSerializer.attrs.OUTERHTML);
 		if(htmlAttribute) {
 			let fn = ModuleScript.evaluateAttribute(htmlAttribute, this.filePath);
 			let context = Object.assign({}, this.filters, options.componentProps, this.globalData);
 			let htmlContent = await fn.call(context);
 			componentHasContent = htmlContent.trim().length > 0;
-			content+= htmlContent;
+			content += htmlContent;
 		} else if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
 
 			let slots = this.getSlotNodes(node);
-			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options);
+			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
 		}
 
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
-			if(node.nodeName === "#text") {
-				content += await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options);
-			} else if(node.nodeName === "#comment") {
-				content += `<!--${node.data}-->`;
-			} else if(renderingMode === "page" && node.nodeName === "#documentType") {
-				content += `<!doctype ${node.name}>\n`;
-			}
-
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlotContent = true;
 
-				content += await this.getContentForSlot(node, slots, options);
+				content += this.outputHtml(await this.getContentForSlot(node, slots, options), true);
 			} else if(!options.rawMode && slotSource) {
 				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) { // <template> content
-				content += await this.getContentForTemplate(node, slots, options);
+				content += this.outputHtml(await this.getContentForTemplate(node, slots, options), streamEnabled);
 			} else if(node.childNodes?.length > 0) {
 				// Fallback to light DOM if no component dom exists
 				if(componentHasContent === false) {
 					options.isSlotContent = true;
 				}
 
-				let { html: childContent } = await this.getChildContent(node, slots, options);
-
 				if(options.rawMode || tagName === "template" && options.currentTransformTypes) {
+					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += childContent;
 				} else {
 					// aggregate CSS and JS
@@ -666,12 +713,15 @@ class AstSerializer {
 					}[ tagName ];
 
 					if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+						let { html: childContent } = await this.getChildContent(node, slots, options, false);
 						let entryKey = options.closestParentComponent || this.filePath;
 						if(!options[key][entryKey]) {
 							options[key][entryKey] = new Set();
 						}
+						// TODO how to handle streaming here
 						options[key][entryKey].add( childContent );
 					} else {
+						let { html: childContent } = await this.getChildContent(node, slots, options, true);
 						content += childContent;
 					}
 				}
@@ -679,7 +729,7 @@ class AstSerializer {
 		}
 
 		// End tag
-		content += this.renderEndTag(node, tagName, slotSource, component, renderingMode, options);
+		content += this.outputHtml(await this.renderEndTag(node, tagName, slotSource, component, renderingMode, options), streamEnabled);
 
 		return {
 			html: content,

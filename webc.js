@@ -108,7 +108,7 @@ class WebC {
 		this.customFilters[key] = callback;
 	}
 
-	async compile(options = {}) {
+	async _setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
 
@@ -126,7 +126,30 @@ class WebC {
 
 		await ast.setComponents(options.components);
 
-		return ast.compile(rawAst, options.slots);
+		return {
+			ast: rawAst,
+			serializer: ast,
+		};
+	}
+
+	async stream(options = {}) {
+		let { ast, serializer } = await this._setup(options);
+
+		serializer.startStreaming();
+
+		serializer.compile(ast, options.slots).then(() => {
+			serializer.endStreaming();
+		});
+
+		return {
+			streams: serializer.streams,
+		}
+	}
+
+	async compile(options = {}) {
+		let { ast, serializer } = await this._setup(options);
+
+		return serializer.compile(ast, options.slots);
 	}
 }
 

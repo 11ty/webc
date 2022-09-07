@@ -57,11 +57,6 @@ const fileInputStubs = {
 		description: "One empty <style>",
 		content: "",
 	},
-
-	"./test/stubs/style-clean-attrs.webc": {
-		description: "Remove superfluous type=\"text/css\" attribute",
-		content: "",
-	},
 };
 
 for(let filename in fileInputStubs) {
