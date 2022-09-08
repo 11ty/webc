@@ -129,12 +129,16 @@ class WebC {
 	}
 
 	addGlobalComponents(globOrObject) {
-		if(typeof globOrObject === "string") {
-			let files = fastglob.sync(globOrObject, {
-				ignore: ["**/node_modules/**"],
-				caseSensitiveMatch: false,
-				dot: false,
-			})
+		if(typeof globOrObject === "string" || Array.isArray(globOrObject)) {
+			let files = globOrObject;
+
+			if(typeof globOrObject === "string") {
+				files = fastglob.sync(globOrObject, {
+					ignore: ["**/node_modules/**"],
+					caseSensitiveMatch: false,
+					dot: false,
+				});
+			}
 	
 			let obj = {}
 			for(let file of files) {
