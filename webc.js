@@ -128,9 +128,9 @@ class WebC {
 		}
 	}
 
-	async addGlobalComponents(globOrObject) {
+	addGlobalComponents(globOrObject) {
 		if(typeof globOrObject === "string") {
-			let files = await fastglob(globOrObject, {
+			let files = fastglob.sync(globOrObject, {
 				ignore: ["**/node_modules/**"],
 				caseSensitiveMatch: false,
 				dot: false,

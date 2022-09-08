@@ -5,7 +5,7 @@ import { WebC } from "../webc.js";
 test("Uses a global component (register by glob)", async t => {
 	let component = new WebC();
 	component.setContent(`<my-custom-element></my-custom-element>`);
-	await component.addGlobalComponents("./test/stubs/global-components/*");
+	component.addGlobalComponents("./test/stubs/global-components/*");
 
 	let { html, css, js, components } = await component.compile();
 
@@ -20,7 +20,7 @@ test("Uses a global component (registered explicitly)", async t => {
 	let component = new WebC();
 	component.setContent(`<my-custom-element></my-custom-element>`);
 
-	await component.addGlobalComponents({
+	component.addGlobalComponents({
 		"my-custom-element": "./test/stubs/global-components/my-custom-element.webc"
 	});
 
@@ -37,7 +37,7 @@ test("Uses a global component (registered explicitly)", async t => {
 test("Uses a global component with CSS and JS", async t => {
 	let component = new WebC();
 	component.setContent(`<other-custom-element></other-custom-element>`);
-	await component.addGlobalComponents("./test/stubs/global-components/*");
+	component.addGlobalComponents("./test/stubs/global-components/*");
 
 	let { html, css, js, components } = await component.compile();
 
@@ -56,5 +56,5 @@ p { color: blue; }
 
 test("Naming collision errors", async t => {
 	let component = new WebC();
-	await t.throwsAsync(component.addGlobalComponents("./test/stubs/global-components/**"));
+	t.throws(() => component.addGlobalComponents("./test/stubs/global-components/**"));
 });
