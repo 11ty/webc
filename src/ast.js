@@ -342,8 +342,7 @@ class AstSerializer {
 		return attrs;
 	}
 
-	async precompileComponent(filePath, ast) {
-		// Async-caching here could be better?
+	async preparseComponent(filePath, ast) {
 		if(this.components[filePath]) {
 			return;
 		}
@@ -384,10 +383,10 @@ class AstSerializer {
 	async setComponents(components = {}) {
 		Object.assign(this.componentMap, components || {});
 
-		// precompile components
+		// parse components
 		let promises = [];
 		for(let name in components) {
-			promises.push(this.precompileComponent(components[name]));
+			promises.push(this.preparseComponent(components[name]));
 		}
 		return Promise.all(promises);
 	}
@@ -510,7 +509,7 @@ class AstSerializer {
 		let relativeFromRoot = path.join(parsed.dir, filePath);
 		let finalFilePath = `.${path.sep}${relativeFromRoot}`;
 
-		await this.precompileComponent(finalFilePath);
+		await this.preparseComponent(finalFilePath);
 
 		return this.components[finalFilePath];
 	}
@@ -723,10 +722,10 @@ class AstSerializer {
 			closestParentComponent: this.filePath,
 		}, options);
 
-		// Precompile the top level component
+		// parse the top level component
 		if(this.filePath) {
 			if(!this.components[this.filePath]) {
-				await this.precompileComponent(this.filePath, node);
+				await this.preparseComponent(this.filePath, node);
 			}
 
 			options.components.addNode(this.filePath);
