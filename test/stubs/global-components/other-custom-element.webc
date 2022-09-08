@@ -1,0 +1,7 @@
+<p>This is another global component.</p>
+<style>
+p { color: blue; }
+</style>
+<script>
+alert("hi");
+</script>

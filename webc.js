@@ -1,4 +1,6 @@
 import fs from "fs";
+import fastglob from "fast-glob";
+import path from "path";
 import { parse } from "parse5";
 import { AstSerializer } from "./src/ast.js";
 
@@ -9,6 +11,7 @@ class WebC {
 		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
 		this.customFilters = {};
+		this.globalComponents = {};
 
 		if(file) {
 			this.filePath = file;
@@ -115,6 +118,22 @@ class WebC {
 		this.customFilters[key] = callback;
 	}
 
+	async addGlobalComponents(glob) {
+		let files = await fastglob(glob, {
+			ignore: ["**/node_modules/**"],
+			caseSensitiveMatch: false,
+			dot: false,
+		})
+
+		for(let file of files) {
+			let {name} = path.parse(file);
+			if(this.globalComponents[name]) {
+				throw new Error(`Global component name collision on "${name}" between: ${this.globalComponents[name]} and ${file}`)
+			}
+			this.globalComponents[name] = file;
+		}
+	}
+
 	async _setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
@@ -131,6 +150,7 @@ class WebC {
 			ast.setFilter(name, this.customFilters[name]);
 		}
 
+		await ast.setComponents(this.globalComponents);
 		await ast.setComponents(options.components);
 
 		return {
