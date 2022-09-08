@@ -118,19 +118,36 @@ class WebC {
 		this.customFilters[key] = callback;
 	}
 
-	async addGlobalComponents(glob) {
-		let files = await fastglob(glob, {
-			ignore: ["**/node_modules/**"],
-			caseSensitiveMatch: false,
-			dot: false,
-		})
-
-		for(let file of files) {
-			let {name} = path.parse(file);
+	async addGlobalComponentsObject(obj = {}) {
+		for(let name in obj) {
+			let file = obj[name];
 			if(this.globalComponents[name]) {
 				throw new Error(`Global component name collision on "${name}" between: ${this.globalComponents[name]} and ${file}`)
 			}
 			this.globalComponents[name] = file;
+		}
+	}
+
+	async addGlobalComponents(globOrObject) {
+		if(typeof globOrObject === "string") {
+			let files = await fastglob(globOrObject, {
+				ignore: ["**/node_modules/**"],
+				caseSensitiveMatch: false,
+				dot: false,
+			})
+	
+			let obj = {}
+			for(let file of files) {
+				let {name} = path.parse(file);
+				if(obj[name]) {
+					throw new Error(`Global component name collision on "${name}" between: ${obj[name]} and ${file}`)
+				}
+				obj[name] = file;
+			}
+
+			this.addGlobalComponentsObject(obj);
+		} else {
+			this.addGlobalComponentsObject(globOrObject);
 		}
 	}
 

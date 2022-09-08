@@ -2,7 +2,7 @@ import test from "ava";
 
 import { WebC } from "../webc.js";
 
-test("Uses a global component", async t => {
+test("Uses a global component (register by glob)", async t => {
 	let component = new WebC();
 	component.setContent(`<my-custom-element></my-custom-element>`);
 	await component.addGlobalComponents("./test/stubs/global-components/*");
@@ -15,6 +15,24 @@ test("Uses a global component", async t => {
 	t.deepEqual(css, []);
 	t.deepEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
 });
+
+test("Uses a global component (registered explicitly)", async t => {
+	let component = new WebC();
+	component.setContent(`<my-custom-element></my-custom-element>`);
+
+	await component.addGlobalComponents({
+		"my-custom-element": "./test/stubs/global-components/my-custom-element.webc"
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.is(html, `This is a global component.`);
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
+});
+
 
 test("Uses a global component with CSS and JS", async t => {
 	let component = new WebC();
