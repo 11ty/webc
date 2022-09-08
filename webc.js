@@ -118,7 +118,7 @@ class WebC {
 		this.customFilters[key] = callback;
 	}
 
-	async addGlobalComponentsObject(obj = {}) {
+	async _defineComponentsObject(obj = {}) {
 		for(let name in obj) {
 			let file = obj[name];
 			if(this.globalComponents[name]) {
@@ -128,7 +128,7 @@ class WebC {
 		}
 	}
 
-	addGlobalComponents(globOrObject) {
+	defineComponents(globOrObject) {
 		if(typeof globOrObject === "string" || Array.isArray(globOrObject)) {
 			let files = globOrObject;
 
@@ -149,9 +149,9 @@ class WebC {
 				obj[name] = file;
 			}
 
-			this.addGlobalComponentsObject(obj);
+			this._defineComponentsObject(obj);
 		} else {
-			this.addGlobalComponentsObject(globOrObject);
+			this._defineComponentsObject(globOrObject);
 		}
 	}
 
