@@ -24,18 +24,17 @@ async function getStreamChunks(readableStream) {
 }
 
 async function testGetStreamResultFor(webc, components, slots, data) {
-	let streams = await webc.stream({
+	let { html, css, js } = await webc.stream({
 		slots,
 		components,
 		data
 	});
 
 	return {
-		streams,
 		chunks: {
-			html: await getStreamChunks(streams.html),
-			css: await getStreamChunks(streams.css),
-			js: await getStreamChunks(streams.js)
+			html: await getStreamChunks(html),
+			css: await getStreamChunks(css),
+			js: await getStreamChunks(js)
 		}
 	}
 }
@@ -45,7 +44,7 @@ async function testGetResultFor(filename, components, slots, data) {
 	
 	component.setInputPath(filename);
 
-	let { streams, chunks } = await testGetStreamResultFor(component, components, slots, data);
+	let { chunks } = await testGetStreamResultFor(component, components, slots, data);
 
 	return {
 		html: chunks.html.join(""),
@@ -57,7 +56,7 @@ async function testGetResultFor(filename, components, slots, data) {
 test("Empty file", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/empty.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 0);
 	t.is(chunks.html.join(""), "");
 });
@@ -65,7 +64,7 @@ test("Empty file", async t => {
 test("No top level <template> required", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/no-template.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 2);
 	t.is(chunks.html.join(""), `<div class="test"></div>`);
 });
@@ -73,7 +72,7 @@ test("No top level <template> required", async t => {
 test("Image element", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/img.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 1);
 	t.is(chunks.html.join(""), `<img src="test.jpg">`);
 });
@@ -81,7 +80,7 @@ test("Image element", async t => {
 test("HTML Comment", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/comment.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 1);
 	t.is(chunks.html.join(""), `<!-- comment -->`);
 });
@@ -89,7 +88,7 @@ test("HTML Comment", async t => {
 test("Un-nests nested links (same as web)", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/nested-link.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 6);
 	t.is(chunks.html.join(""), `<a href="#">Parent</a><a href="#">Child</a>`);
 });
@@ -97,7 +96,7 @@ test("Un-nests nested links (same as web)", async t => {
 test("One empty <style>", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/style.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 	t.deepEqual( chunks.html.length, 0);
 	t.is(chunks.html.join(""), ``);
 });
@@ -105,7 +104,7 @@ test("One empty <style>", async t => {
 test("Using a top level <template>", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/template.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 
 	t.is( chunks.html.join(""), `<template>
 	<div class="test"></div>
@@ -119,7 +118,7 @@ test("Using a top level <template>", async t => {
 test("Using a custom <template webc:type> (empty) gets rid of parent <template>", async t => {
 	let webc = new WebC();
 	webc.setInputPath("./test/stubs/template-custom-notype.webc");
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 
 	t.is( chunks.html.join(""), `
 No <code>content</code>.
@@ -140,7 +139,7 @@ test("Using a custom <template> type", async t => {
 		return md.render(content);
 	});
 
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 
 	t.is( chunks.html.join(""), `<h1>Header</h1>
 `);
@@ -160,7 +159,7 @@ test("Using a custom <template> type (<template><div>)", async t => {
 		return md.render(content);
 	});
 
-	let { streams, chunks } = await testGetStreamResultFor(webc);
+	let { chunks } = await testGetStreamResultFor(webc);
 
 	t.is( chunks.html.join(""), `<div># Header</div>
 <h1>Header <code>Test</code></h1>
@@ -180,7 +179,7 @@ test("Using a custom <template> type with webc:keep", async t => {
 		return md.render(content);
 	});
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `<template><h1>Header</h1>
 </template>`);
@@ -203,7 +202,7 @@ test("Using a async custom <template> type with webc:keep", async t => {
 		});
 	});
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `<template><h1>Header</h1>
 </template>`);
@@ -218,7 +217,7 @@ test("Two components using identical <style>", async t => {
 
 	component.setInputPath("./test/stubs/two-style.webc");
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `<web-component>SSR content</web-component>
 <web-component>SSR content</web-component>`);
@@ -234,7 +233,7 @@ test("<style webc:scoped>", async t => {
 
 	component.setInputPath("./test/stubs/scoped.webc");
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `<web-component class="whukf8ig4">
 Light dom content</web-component>`);
@@ -250,7 +249,7 @@ test("<style webc:scoped> selector tests", async t => {
 
 	component.setInputPath("./test/stubs/scoped-top.webc");
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `
 <div class="w4yaok8y2">Testing testing</div>`);
@@ -281,7 +280,7 @@ div:before {}
 		return `/* This is an override */`;
 	});
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `
 <div>Testing testing</div>`);
@@ -296,7 +295,7 @@ test("<style webc:scoped=\"hashOverride\">", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/scoped-override.webc");
 
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `<web-component class="hashOverride">
 Light dom content</web-component>`);
@@ -383,7 +382,7 @@ for(let filename in slotsStubs) {
 
 		component.setInputPath(filename);
 		
-		let { streams, chunks } = await testGetStreamResultFor(component, null, stub.slots);
+		let { chunks } = await testGetStreamResultFor(component, null, stub.slots);
 
 		t.is( chunks.html.join(""), stub.content);
 
@@ -398,7 +397,7 @@ test("<slot webc:raw>", async t => {
 
 	component.setInputPath("./test/stubs/slot-raw.webc");
 	
-	let { streams, chunks } = await testGetStreamResultFor(component, null, {
+	let { chunks } = await testGetStreamResultFor(component, null, {
 		name1: "Hello",
 		default: "Goodbye"
 	});
@@ -415,7 +414,7 @@ test("<slot webc:keep>", async t => {
 
 	component.setInputPath("./test/stubs/slot-keep.webc");
 	
-	let { streams, chunks } = await testGetStreamResultFor(component, null, {
+	let { chunks } = await testGetStreamResultFor(component, null, {
 		name1: "Hello",
 		default: "Goodbye",
 	});
@@ -433,7 +432,7 @@ test("Full page", async t => {
 	page.setInputPath("./test/stubs/page.webc");
 
 
-	let { streams, chunks } = await testGetStreamResultFor(page, null, {
+	let { chunks } = await testGetStreamResultFor(page, null, {
 		name1: "Hello",
 		default: "Goodbye",
 	});
@@ -462,7 +461,7 @@ test("Using a web component without it being declared", async t => {
 
 	component.setInputPath("./test/stubs/nested.webc");
 	
-	let { streams, chunks } = await testGetStreamResultFor(component);
+	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `Before
 <web-component></web-component>
