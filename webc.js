@@ -142,17 +142,17 @@ class WebC {
 	async stream(options = {}) {
 		let { ast, serializer } = await this._setup(options);
 
-		serializer.startStreaming();
+		serializer.streams.start();
 
 		serializer.compile(ast, options.slots).catch(() => {
 			// Node requires this to avoid unhandled rejection errors (yes, even with `finally`)
-			serializer.endStreaming();
+			serializer.streams.end();
 		}).finally(() => {
-			serializer.endStreaming();
+			serializer.streams.end();
 		});
 
 		return {
-			streams: serializer.streams,
+			streams: serializer.streams.get(),
 		}
 	}
 

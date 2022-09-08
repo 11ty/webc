@@ -1,13 +1,13 @@
 import path from "path";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
-import Stream from "stream";
 
 import { WebC } from "../webc.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.js";
+import { Streams } from "./streams.js";
 
 class AstSerializer {
 	constructor(options = {}) {
@@ -47,6 +47,8 @@ class AstSerializer {
 		this.hashOverrides = {};
 
 		this.globalData = {};
+
+		this.streams = new Streams(["html", "css", "js"]);
 	}
 
 	static prefixes = {
@@ -98,35 +100,6 @@ class AstSerializer {
 
 	setMode(mode = "component") {
 		this.mode = mode; // "page" or "component"
-	}
-
-	startStreaming() {
-		this.streams = {};
-		this.streams.html = new Stream.Readable({
-			read() {},
-			encoding: "utf8",
-		});
-		this.streams.css = new Stream.Readable({
-			read() {},
-			encoding: "utf8",
-		});
-		this.streams.js = new Stream.Readable({
-			read() {},
-			encoding: "utf8",
-		});
-	}
-
-	_streamError(error, streamKey = "html") {
-		if(this.streams && this.streams[streamKey]) {
-			this.streams[streamKey].destroy(error);
-		}
-	}
-
-	endStreaming() {
-		// push(null) is required by Node to trigger the close event on the stream
-		this.streams.html.push(null);
-		this.streams.css.push(null);
-		this.streams.js.push(null);
 	}
 
 	setFilter(name, callback) {
@@ -471,16 +444,9 @@ class AstSerializer {
 		return attrs;
 	}
 
-	_outputToStream(streamKey, str) {
-		if(this.streams && this.streams[streamKey]) {
-			// console.log( "Streaming to", streamKey, { str } );
-			this.streams[streamKey].push(str);
-		}
-	}
-
 	outputHtml(str, streamEnabled) {
 		if(streamEnabled && str) {
-			this._outputToStream("html", str);
+			this.streams.output("html", str);
 		}
 
 		return str;
@@ -727,7 +693,7 @@ class AstSerializer {
 							options[key][entryKey] = new Set();
 						}
 						if(!options[key][entryKey].has(childContent)) {
-							this._outputToStream(key, childContent);
+							this.streams.output(key, childContent);
 						}
 
 						options[key][entryKey].add( childContent );
@@ -778,7 +744,7 @@ class AstSerializer {
 				components: assets.orderedComponentList,
 			};
 		} catch(e) {
-			this._streamError(e);
+			this.streams.error("html", e);
 			return Promise.reject(e);
 		}
 	}
