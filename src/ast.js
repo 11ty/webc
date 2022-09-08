@@ -24,7 +24,8 @@ class AstSerializer {
 		// content transforms
 		this.transforms = {};
 
-		// helper functions
+		// helper functions are used in @html and render functions
+		// TODO lookup attributes too?
 		this.filters = {};
 
 		// transform scoped CSS with a hash prefix
