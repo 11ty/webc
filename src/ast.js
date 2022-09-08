@@ -732,6 +732,10 @@ class AstSerializer {
 		}
 
 		try {
+			if(node.mode === "quirks") {
+				throw new Error(`Quirks mode rendering encountered${this.filePath ? ` for ${this.filePath}` : ""}. A <!doctype html> declaration *is* optional—did you specify a different doctype?`)
+			}
+
 			let compiled = await this.compileNode(node, slots, options);
 			let content = compiled.html;
 			let assets = new AssetManager(options.components);

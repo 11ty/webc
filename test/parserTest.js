@@ -36,6 +36,14 @@ test("No Quirks mode default", async t => {
 	t.is("no-quirks", ast.mode);
 });
 
+test("Throw an error if quirks mode", async t => {
+	let component = new WebC();
+	component.setInput(`<!doctype alksdjfasdf><p></p>`);
+
+	// await component.compile();
+	await t.throwsAsync(component.compile());
+});
+
 const fileInputStubs = {
 	"./test/stubs/empty.webc": {
 		description: "Empty file",
