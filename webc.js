@@ -30,7 +30,7 @@ class WebC {
 		this.astOptions.filePath = file;
 	}
 
-	setInput(input, filePath) {
+	setContent(input, filePath) {
 		this.rawInput = input;
 
 		if(filePath) {
@@ -171,9 +171,7 @@ class WebC {
 			serializer.streams.end();
 		});
 
-		return {
-			streams: serializer.streams.get(),
-		}
+		return serializer.streams.get();
 	}
 
 	async compile(options = {}) {

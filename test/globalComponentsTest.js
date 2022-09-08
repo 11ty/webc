@@ -4,7 +4,7 @@ import { WebC } from "../webc.js";
 
 test("Uses a global component", async t => {
 	let component = new WebC();
-	component.setInput(`<my-custom-element></my-custom-element>`);
+	component.setContent(`<my-custom-element></my-custom-element>`);
 	await component.addGlobalComponents("./test/stubs/global-components/*");
 
 	let { html, css, js, components } = await component.compile();
@@ -18,7 +18,7 @@ test("Uses a global component", async t => {
 
 test("Uses a global component with CSS and JS", async t => {
 	let component = new WebC();
-	component.setInput(`<other-custom-element></other-custom-element>`);
+	component.setContent(`<other-custom-element></other-custom-element>`);
 	await component.addGlobalComponents("./test/stubs/global-components/*");
 
 	let { html, css, js, components } = await component.compile();

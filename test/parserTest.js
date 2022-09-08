@@ -6,7 +6,7 @@ import { WebC } from "../webc.js";
 
 test("Raw Input", async t => {
 	let component = new WebC();
-	component.setInput(`<div class="red"></div>`);
+	component.setContent(`<div class="red"></div>`);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -18,7 +18,7 @@ test("Raw Input", async t => {
 
 test("No Quirks mode default (HTML file without doctype)", async t => {
 	let component = new WebC();
-	component.setInput(`<html><div class="red"></div></html>`);
+	component.setContent(`<html><div class="red"></div></html>`);
 
 	let {content} = component.getContent();
 	let ast = await component.getAST(content);
@@ -28,7 +28,7 @@ test("No Quirks mode default (HTML file without doctype)", async t => {
 
 test("No Quirks mode default", async t => {
 	let component = new WebC();
-	component.setInput(`<div class="red"></div>`);
+	component.setContent(`<div class="red"></div>`);
 
 	let {content} = component.getContent();
 	let ast = await component.getAST(content);
@@ -38,7 +38,7 @@ test("No Quirks mode default", async t => {
 
 test("Throw an error if quirks mode", async t => {
 	let component = new WebC();
-	component.setInput(`<!doctype alksdjfasdf><p></p>`);
+	component.setContent(`<!doctype alksdjfasdf><p></p>`);
 
 	// await component.compile();
 	await t.throwsAsync(component.compile());

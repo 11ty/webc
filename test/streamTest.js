@@ -24,7 +24,7 @@ async function getStreamChunks(readableStream) {
 }
 
 async function testGetStreamResultFor(webc, components, slots, data) {
-	let { streams } = await webc.stream({
+	let streams = await webc.stream({
 		slots,
 		components,
 		data
