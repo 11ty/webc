@@ -238,9 +238,11 @@ As noted in the JavaScript API section above, the `compile` method returns four 
 let { html, css, js, components } = await page.compile();
 ```
 
-By default, `<style>` and `<script>` elements in component files are removed from individual component markup and aggregated together for re-use elsewhere (you could write this to a file, or use as Critical CSS in another layout template, the Eleventy plugin will smooth this over for you).
+By default, `<style>` and `<script>` elements in component files are removed from individual component markup and aggregated together for re-use elsewhere (you could write this to a file, or use as Critical CSS in another layout template—the Eleventy plugin will smooth this over for you).
 
-If a `<style>` is nested inside of [declarative shadow root](https://web.dev/declarative-shadow-dom/) template (e.g. `<template shadowroot>`), it is also left as is and not aggregated. You can opt out of aggregation on a per-element basis using `<style webc:keep>` or `<script webc:keep>`. 
+Note that if a `<style>` is nested inside of [declarative shadow root](https://web.dev/declarative-shadow-dom/) template (e.g. `<template shadowroot>`), it is also left as is and not aggregated.
+
+You can also opt out of aggregation on a per-element basis using `<style webc:keep>` or `<script webc:keep>`. 
 
 `page.webc`:
 
