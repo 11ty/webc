@@ -14,6 +14,28 @@
 * The `.webc` file extension is recommended (not a requirement)—you _can_ use `.html`.
 	* Tip for Visual Studio Code users: go to `Preferences -> Settings -> Files: Associations` to add a mapping for `*.webc` to `html`.
 
+## Installation
+
+It’s available on npm as `@11ty/webc`:
+
+```
+npm install @11ty/webc
+```
+
+This is an ESM project and as such requires a `"type": "module"` in your `package.json` (or use the `.mjs` file extension).
+
+```js
+import { WebC } from "@11ty/webc";
+```
+
+You _can_ use this in a CommonJS file via dynamic import:
+
+```js
+(async function() {
+	const { WebC } = await import("@11ty/webc");
+})();
+```
+
 ## Examples
 
 ### JavaScript API
