@@ -3,6 +3,7 @@ import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
 
 import { WebC } from "../webc.js";
+import { Path } from "./path.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
@@ -556,7 +557,7 @@ class AstSerializer {
 	}
 
 	addComponentDependency(component, tagName, options) {
-		let componentFilePath = component.filePath;
+		let componentFilePath = Path.normalizePath(component.filePath);
 		if(!options.components.hasNode(componentFilePath)) {
 			options.components.addNode(componentFilePath);
 		}
@@ -574,7 +575,7 @@ class AstSerializer {
 		}
 
 		// reset for next time
-		options.closestParentComponent = componentFilePath;
+		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
