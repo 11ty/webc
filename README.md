@@ -54,7 +54,7 @@ page.setInputPath("page.webc");
 let { html, css, js, components } = await page.compile();
 
 // Or, Readable Streams for each
-let { html, css, js } = await webc.stream();
+let { html, css, js } = await page.stream();
 ```
 
 ### It’s HTML
