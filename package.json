@@ -1,15 +1,32 @@
 {
-	"name": "webc",
-	"version": "1.0.0",
-	"description": "",
+	"name": "@11ty/webc",
+	"version": "0.1.0",
+	"description": "Single File Web Components",
 	"main": "webc.js",
 	"type": "module",
 	"scripts": {
-		"test": "echo \"Error: no test specified\" && exit 1"
+		"test": "npx ava"
 	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
+	"publishConfig": {
+    "access": "public"
+  },
+	"license": "MIT",
+  "engines": {
+    "node": ">=14"
+  },
+	"funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/11ty"
+  },
+	"keywords": [
+		"web-components",
+		"custom-elements"
+	],
+	"author": {
+    "name": "Zach Leatherman",
+    "email": "zachleatherman@gmail.com",
+    "url": "https://zachleat.com/"
+  },
 	"dependencies": {
 		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",

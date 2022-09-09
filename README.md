@@ -95,7 +95,7 @@ If the `components/my-component.webc` file contains:
 Components don’t need a root element, y’all.
 ```
 
-Rendering `page.webc` will output:
+Compiling `page.webc` will return the following HTML:
 
 ```html
 <!doctype html>
