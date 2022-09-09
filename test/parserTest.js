@@ -1081,9 +1081,7 @@ test("<script webc:type> with Typescript", async t => {
 
 	component.setInputPath("./test/stubs/script-type.webc");
 	component.setTransform("ts", async (content) => {
-		t.is(content, `
-let x: string = "string";
-`);
+		t.is(content.trim(), `let x: string = "string";`);
 		let ret = typescript.transpileModule(content, {
 			compilerOptions: {}
 		});
