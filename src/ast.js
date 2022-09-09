@@ -20,7 +20,7 @@ class AstSerializer {
 		this.mode = "component";
 
 		// for error messaging
-		this.filePath = filePath;
+		this.filePath = Path.normalizePath(filePath);
 
 		// content transforms
 		this.transforms = {};
@@ -253,6 +253,7 @@ class AstSerializer {
 		return true;
 	}
 
+	// filePath is already cross platform normalized (used by options.closestParentComponent)
 	getMode(filePath) {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
@@ -378,13 +379,14 @@ class AstSerializer {
 
 	// `components` object maps from component name => filename
 	async setComponents(components = {}) {
-		Object.assign(this.componentMap, components || {});
-
-		// parse components
 		let promises = [];
 		for(let name in components) {
-			promises.push(this.preparseComponent(components[name]));
+			let filePath = components[name];
+			this.componentMap[name] = Path.normalizePath(filePath);
+
+			promises.push(this.preparseComponent(this.componentMap[name]));
 		}
+
 		return Promise.all(promises);
 	}
 
@@ -504,7 +506,7 @@ class AstSerializer {
 		}
 		let parsed = path.parse(this.filePath);
 		let relativeFromRoot = path.join(parsed.dir, filePath);
-		let finalFilePath = `.${path.sep}${relativeFromRoot}`;
+		let finalFilePath = Path.normalizePath(`.${path.sep}${relativeFromRoot}`);
 
 		await this.preparseComponent(finalFilePath);
 
