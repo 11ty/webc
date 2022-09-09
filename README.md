@@ -16,7 +16,7 @@
 
 ## Installation
 
-It’s available on npm as `@11ty/webc`:
+It’s available [on npm as `@11ty/webc`](https://www.npmjs.com/package/@11ty/webc):
 
 ```
 npm install @11ty/webc
