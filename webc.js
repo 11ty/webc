@@ -10,7 +10,7 @@ class WebC {
 
 		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
-		this.customFilters = {};
+		this.customHelpers = {};
 		this.globalComponents = {};
 
 		if(file) {
@@ -115,7 +115,7 @@ class WebC {
 	}
 
 	setFilter(key, callback) {
-		this.customFilters[key] = callback;
+		this.customHelpers[key] = callback;
 	}
 
 	async _defineComponentsObject(obj = {}) {
@@ -167,8 +167,8 @@ class WebC {
 			ast.setTransform(name, this.customTransforms[name]);
 		}
 
-		for(let name in this.customFilters) {
-			ast.setFilter(name, this.customFilters[name]);
+		for(let name in this.customHelpers) {
+			ast.setFilter(name, this.customHelpers[name]);
 		}
 
 		await ast.setComponents(this.globalComponents);

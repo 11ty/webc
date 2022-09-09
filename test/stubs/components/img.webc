@@ -1,5 +1,5 @@
 <script webc:type="render" webc:is="template">
-module.exports = function() {
+function() {
 	return `<img src="${this.src}">`;
 }
 </script>

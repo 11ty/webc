@@ -26,7 +26,7 @@ class AstSerializer {
 
 		// helper functions are used in @html and render functions
 		// TODO lookup attributes too?
-		this.filters = {};
+		this.helpers = {};
 
 		// transform scoped CSS with a hash prefix
 		this.setTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
@@ -37,7 +37,7 @@ class AstSerializer {
 
 		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
 			let fn = ModuleScript.getModule(content, this.filePath);
-			let context = Object.assign({}, this.filters, data, this.globalData);
+			let context = Object.assign({}, this.helpers, data, this.globalData);
 			return fn.call(context);
 		});
 
@@ -104,7 +104,7 @@ class AstSerializer {
 	}
 
 	setFilter(name, callback) {
-		this.filters[name] = callback;
+		this.helpers[name] = callback;
 	}
 
 	setTransform(name, callback) {
@@ -644,7 +644,7 @@ class AstSerializer {
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML) || this.getAttributeValue(node, AstSerializer.attrs.OUTERHTML);
 		if(htmlAttribute) {
 			let fn = ModuleScript.evaluateAttribute(htmlAttribute, this.filePath);
-			let context = Object.assign({}, this.filters, options.componentProps, this.globalData);
+			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 			let htmlContent = await fn.call(context);
 			componentHasContent = htmlContent.trim().length > 0;
 			content += htmlContent;
