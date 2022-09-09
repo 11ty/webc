@@ -114,7 +114,7 @@ class WebC {
 		this.customTransforms[key] = callback;
 	}
 
-	setFilter(key, callback) {
+	setHelper(key, callback) {
 		this.customHelpers[key] = callback;
 	}
 
@@ -168,7 +168,7 @@ class WebC {
 		}
 
 		for(let name in this.customHelpers) {
-			ast.setFilter(name, this.customHelpers[name]);
+			ast.setHelper(name, this.customHelpers[name]);
 		}
 
 		await ast.setComponents(this.globalComponents);

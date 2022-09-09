@@ -103,7 +103,7 @@ class AstSerializer {
 		this.mode = mode; // "page" or "component"
 	}
 
-	setFilter(name, callback) {
+	setHelper(name, callback) {
 		this.helpers[name] = callback;
 	}
 
