@@ -286,6 +286,8 @@ let results = await page.compile();
 }
 ```
 
+You can also specify an attribute value to `webc:scoped` to hard code your own component prefix (e.g. `<style webc:scoped="my-prefix">`). This allows the CSS to look a bit more friendly and readable. We will automatically check for duplicate values in your component tree and throw an error if collisions occur.
+
 Note: Some folks recommend using Declarative Shadow DOM (the fastest and safest way to do component style encapsulation), however (in my personal opinion) the JavaScript progressive enhancement story there requires ubiquitous browser support before using it for content in the critical rendering path (so just be aware). You can use both methods in WebC!
 
 ### Custom Transforms
