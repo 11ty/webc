@@ -1090,8 +1090,7 @@ test("<script webc:type> with Typescript", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, [`var x = "string";
-`]);
+	t.deepEqual(js.join("").trim(), `var x = "string";`);
 	t.deepEqual(css, []);
 	t.deepEqual(components, [
 		"./test/stubs/script-type.webc",
