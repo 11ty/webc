@@ -1080,9 +1080,6 @@ test("Using @html", async t => {
 
 	t.is(html, `<p>Paragraph HTML</p>
 <p>value1</p>
-Template Outer HTML
-<template>Template Outer HTML Keep</template>
-Template Outer HTML Nokeep
 <template>Template HTML</template>
 <template>Template HTML Keep</template>
 Template HTML Nokeep

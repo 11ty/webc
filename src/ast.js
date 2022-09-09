@@ -68,7 +68,6 @@ class AstSerializer {
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
 		HTML: "@html",
-		OUTERHTML: "@outerhtml",
 	};
 
 	static transformTypes = {
@@ -271,10 +270,6 @@ class AstSerializer {
 
 		// must come after webc:keep (takes precedence)
 		if(this.hasAttribute(node, AstSerializer.attrs.NOKEEP)) {
-			return true;
-		}
-
-		if(this.hasAttribute(node, AstSerializer.attrs.OUTERHTML)) {
 			return true;
 		}
 
@@ -641,7 +636,7 @@ class AstSerializer {
 
 		// Component content (foreshadow dom)
 		let componentHasContent = null;
-		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML) || this.getAttributeValue(node, AstSerializer.attrs.OUTERHTML);
+		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
 			let fn = ModuleScript.evaluateAttribute(htmlAttribute, this.filePath);
 			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
