@@ -1,0 +1,5 @@
+<script webc:type="render" webc:is="template">
+function() {
+	return this.alwaysBlue();
+}
+</script>

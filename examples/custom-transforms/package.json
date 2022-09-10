@@ -1,0 +1,6 @@
+{
+	"type": "module",
+  "dependencies": {
+    "markdown-it": "^13.0.1"
+  }
+}

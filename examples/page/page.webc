@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<title>WebC Example</title>
+		<style webc:keep>
+			body {
+				color: #333;
+			}
+		</style>
+		<script webc:keep>
+			alert("Hello World!");
+		</script>
+		<script webc:nokeep>
+			console.log("Hello World!");
+		</script>
+	</head>
+	<body>
+		<style webc:nokeep>
+			body {
+				color: red;
+			}
+		</style>
+		WebC *is* HTML.
+	</body>
+</html>

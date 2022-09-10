@@ -1,0 +1,6 @@
+<script webc:type="render" webc:is="style">
+function() {
+	return `/* ${this.license} */`;
+}
+</script>
+<slot></slot>

@@ -1,0 +1,3 @@
+<template webc:root class="another-class">
+	Some component content
+</template>

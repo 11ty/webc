@@ -1,0 +1,8 @@
+<title>WebC Example</title>
+<my-component></my-component>
+
+<!-- Dynamic import -->
+<any-tag-name webc:import="components/my-dynamic-component.webc"></any-tag-name>
+
+<!-- Remapping components -->
+<div webc:is="my-remapped-component"></div>
