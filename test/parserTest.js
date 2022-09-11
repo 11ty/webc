@@ -683,7 +683,7 @@ test("Using a web component (class attribute merging)", async t => {
 After`);
 });
 
-test("Using nested quote types", async t => {
+test("Using different attribute delimiters and nested potential delimiters", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/attribute-quotes.webc",);
 
 	t.deepEqual(js, []);
@@ -692,13 +692,12 @@ test("Using nested quote types", async t => {
 		"./test/stubs/attribute-quotes.webc",
 	]);
 	t.is(html, `<div>
-  <div data-foo="no-nested-quotes"></div>
-  <div data-foo="still-valid-technically"></div>
-  <div data-foo='foo="bar"'></div>
-  <div data-foo="foo='bar'"></div>
-  <div data-foo='foo="bar"'></div>
-</div>
-`);
+	<div data-foo="no-nested-quotes"></div>
+	<div data-foo="still-valid-technically"></div>
+	<div data-foo='foo="bar"'></div>
+	<div data-foo="foo='bar'"></div>
+	<div data-foo='foo="bar"'></div>
+</div>`);
 });
 
 test("Using a web component (class attribute merging, empty classes)", async t => {
