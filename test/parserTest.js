@@ -683,6 +683,24 @@ test("Using a web component (class attribute merging)", async t => {
 After`);
 });
 
+test("Using nested quote types", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/attribute-quotes.webc",);
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/attribute-quotes.webc",
+	]);
+	t.is(html, `<div>
+  <div data-foo="no-nested-quotes"></div>
+  <div data-foo="still-valid-technically"></div>
+  <div data-foo='foo="bar"'></div>
+  <div data-foo="foo='bar'"></div>
+  <div data-foo='foo="bar"'></div>
+</div>
+`);
+});
+
 test("Using a web component (class attribute merging, empty classes)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/empty-class.webc", {
 		"web-component": "./test/stubs/components/child-root-empty-class.webc"

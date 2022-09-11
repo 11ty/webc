@@ -1,0 +1,7 @@
+<div>
+  <div data-foo="no-nested-quotes"></div>
+  <div data-foo=still-valid-technically></div>
+  <div data-foo='foo="bar"'></div>
+  <div data-foo="foo='bar'"></div>
+  <div data-foo="foo=&quot;bar&quot;"></div>
+</div>
