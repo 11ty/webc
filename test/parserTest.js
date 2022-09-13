@@ -316,7 +316,7 @@ const slotsStubs = {
 
 	"./test/stubs/slot-unused.webc": {
 		description: "Unused slot content",
-		content: `<div></div>`,
+		content: `<div><span slot="slot1">Text</span></div>`,
 	},
 
 	"./test/stubs/slot-unused-default.webc": {
@@ -324,7 +324,7 @@ const slotsStubs = {
 		slots: {
 			default: "hello",
 		},
-		content: `<div>hello</div>`,
+		content: `<div>hello<span slot="slot1">Text</span></div>`,
 	},
 
 	"./test/stubs/slot-unused-2.webc": {
@@ -332,7 +332,7 @@ const slotsStubs = {
 		slots: {
 			default: "hello",
 		},
-		content: `<div>hello</div>`,
+		content: `<div>hello<div slot="slot1">Text</div><div slot="slot2"><p></p></div></div>`,
 	},
 
 	"./test/stubs/slot-named.webc": {
@@ -897,8 +897,11 @@ test("Using a web component with two slots but child has no shadow dom (skip par
 	t.is(html, `Before
 
 	<p>Before slot content!</p>
-	
-	
+	<div slot="slot1"><p>Slot 1 content</p></div>
+	<div slot="slot2">
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
 	<p>After slot content!</p>
 
 After`);
@@ -918,8 +921,11 @@ test("Using a web component with two slots but child has no shadow dom (keep par
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
-	
-	
+	<div slot="slot1"><p>Slot 1 content</p></div>
+	<div slot="slot2">
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
 	<p>After slot content!</p>
 </web-component>
 After`);
@@ -937,7 +943,7 @@ test("Using a web component with two slots and default content (skip parent)", a
 		"./test/stubs/components/nested-child-namedslot.webc",
 	]);
 	t.is(html, `Before
-SSR content<p>Slot 1 content</p>After slot content
+SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
 	
@@ -958,7 +964,7 @@ test("Using a web component with two slots and default content (keep parent)", a
 		"./test/stubs/components/nested-child-namedslot-style.webc",
 	]);
 	t.is(html, `Before
-<web-component name="World">SSR content<p>Slot 1 content</p>After slot content
+<web-component name="World">SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
 	
@@ -1304,4 +1310,33 @@ test("Using @html", async t => {
 <template>Template HTML Keep</template>
 Template HTML Nokeep
 `);
+});
+
+test("Issue #3 slot inconsistency", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/issue-3/page.webc");
+	component.defineComponents("./test/stubs/issue-3/my-article.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/issue-3/page.webc",
+		"./test/stubs/issue-3/my-article.webc",
+	]);
+
+	t.is(html, `<article>
+	<hgroup>
+		<h2>Article Title</h2>
+		<p>Subtitle</p>
+	</hgroup>
+	<hgroup slot="shadow-dom-slot">Shadow dom slot</hgroup>
+	<prose-content>
+	
+	
+	<p>Content</p>
+</prose-content>
+</article>`);
 });

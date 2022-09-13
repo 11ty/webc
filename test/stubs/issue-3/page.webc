@@ -1,0 +1,5 @@
+<my-article>
+	<h2 slot="title">Article Title</h2>
+	<p slot="subtitle">Subtitle</p>
+	<p>Content</p>
+</my-article>

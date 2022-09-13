@@ -135,6 +135,21 @@ class AstSerializer {
 		return nameAttr?.value;
 	}
 
+	findAllElements(root, tagName) {
+		let results = [];
+		let rootTagName = this.getTagName(root);
+		if(rootTagName === tagName) {
+			results.push(root);
+		}
+		for(let child of root.childNodes || []) {
+			for(let node of this.findAllElements(child, tagName)) {
+				results.push(node);
+			}
+		}
+
+		return results;
+	}
+
 	findElement(root, tagName, attrCheck = []) {
 		let rootTagName = this.getTagName(root);
 		if(rootTagName === tagName) {
@@ -310,14 +325,6 @@ class AstSerializer {
 		return false;
 	}
 
-	// Allow options.slots to be strings
-	async getSlotAst(slot) {
-		if(typeof slot === "string") {
-			return WebC.getASTFromString(slot);
-		}
-		return slot;
-	}
-
 	getRootNodes(node) {
 		let body = this.findElement(node, "body");
 		return this.findAllChildren(body, [], [AstSerializer.attrs.ROOT]);
@@ -360,6 +367,7 @@ class AstSerializer {
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
 			scopedStyleHash,
 			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
+			slotTargets: this.getSlotTargets(ast),
 		};
 	}
 
@@ -403,8 +411,20 @@ class AstSerializer {
 		};
 	}
 
-	getSlotNodes(node, slots = {}) {
+	getSlotTargets(node) {
+		let targetNodes = this.findAllElements(node, "slot");
+		let map = {};
+		for(let target of targetNodes) {
+			let name = this.getAttributeValue(target, "name") || "default";
+			map[name] = true;
+		}
+		return map;
+	}
+
+	getSlottedContentNodes(node) {
+		let slots = {};
 		let defaultSlot = [];
+		// Slot definitions must be top level (this matches browser-based Web Components behavior)
 		for(let child of node.childNodes) {
 			let slotName = this.getAttributeValue(child, "slot");
 			if(slotName) {
@@ -415,6 +435,7 @@ class AstSerializer {
 		}
 		// faking a real AST by returning an object with childNodes
 		slots.default = { childNodes: defaultSlot };
+
 		return slots;
 	}
 
@@ -450,7 +471,7 @@ class AstSerializer {
 		return str;
 	}
 
-	renderStartTag(node, tagName, slotSource, component, renderingMode, options) {
+	renderStartTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 		let attrObject;
 
@@ -463,7 +484,11 @@ class AstSerializer {
 			let attrs = this.getAttributes(node, component, options);
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
-			if(options.rawMode || !this.isIgnored(node, component, renderingMode) && !slotSource) {
+			if(options.isMatchingSlotSource) {
+				delete attrObject.slot;
+			}
+
+			if(options.rawMode || !this.isIgnored(node, component, renderingMode)) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
 			}
 		}
@@ -474,12 +499,12 @@ class AstSerializer {
 		};
 	}
 
-	renderEndTag(node, tagName, slotSource, component, renderingMode, options) {
+	renderEndTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isIgnored(node, component, renderingMode) && !slotSource) {
+			} else if(options.rawMode || !this.isIgnored(node, component, renderingMode)) {
 				content += `</${tagName}>`;
 			}
 
@@ -515,9 +540,13 @@ class AstSerializer {
 
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
+
 		if(slots[slotName]) {
-			let slotAst = await this.getSlotAst(slots[slotName]);
-			let { html: slotHtml } = await this.getChildContent(slotAst, null, options, true);
+			let slotAst = slots[slotName];
+			if(typeof slotAst === "string") {
+				slotAst = await WebC.getASTFromString(slotAst);
+			}
+			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
 		}
 
@@ -567,7 +596,7 @@ class AstSerializer {
 		if(options.closestParentComponent) {
 			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
 			// <web-component><child/></web-component>
-			if(!options.isSlotContent) {
+			if(!options.isSlottedContent) {
 				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
 					throw new Error(`Circular dependency error: You cannot use <${tagName}> inside the definition for ${options.closestParentComponent}`);
 				}
@@ -623,14 +652,17 @@ class AstSerializer {
 		}
 
 		let slotSource = this.getAttributeValue(node, "slot");
-		if(slotSource) {
-			options.isSlotContent = true;
+		if(!options.rawMode && options.closestParentComponent && slotSource && options.isSlottedContent) {
+			let slotTargets = this.components[options.closestParentComponent].slotTargets;
+			if(slotTargets[slotSource]) {
+				options.isMatchingSlotSource = true;
+			}
 		}
 
 		// TODO warning if top level page component using a style hash but has no root element
 
 		// Start tag
-		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, slotSource, component, renderingMode, options);
+		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
@@ -649,7 +681,7 @@ class AstSerializer {
 		} else if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
 
-			let slots = this.getSlotNodes(node);
+			let slots = this.getSlottedContentNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
@@ -658,17 +690,15 @@ class AstSerializer {
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
 			if(!options.rawMode && tagName === "slot") { // <slot> node
-				options.isSlotContent = true;
+				options.isSlottedContent = true;
 
 				content += await this.getContentForSlot(node, slots, options);
-			} else if(!options.rawMode && slotSource) {
-				// do nothing if this is a <tag slot=""> attribute source: do not add to compiled content
 			} else if(node.content) { // <template> content
 				content += this.outputHtml(await this.getContentForTemplate(node, slots, options), streamEnabled);
 			} else if(node.childNodes?.length > 0) {
-				// Fallback to light DOM if no component dom exists
+				// Fallback to light DOM if no component dom exists (default slot content)
 				if(componentHasContent === false) {
-					options.isSlotContent = true;
+					options.isSlottedContent = true;
 				}
 
 				if(options.rawMode) {
@@ -704,7 +734,7 @@ class AstSerializer {
 		}
 
 		// End tag
-		content += this.outputHtml(await this.renderEndTag(node, tagName, slotSource, component, renderingMode, options), streamEnabled);
+		content += this.outputHtml(await this.renderEndTag(node, tagName, component, renderingMode, options), streamEnabled);
 
 		return {
 			html: content,
@@ -714,7 +744,8 @@ class AstSerializer {
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false, // plaintext output
-			isSlotContent: false,
+			isSlottedContent: false,
+			isMatchingSlotSource: false,
 			css: {},
 			js: {},
 			components: new DepGraph({ circular: true }),

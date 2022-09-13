@@ -326,8 +326,8 @@ const slotsStubs = {
 
 	"./test/stubs/slot-unused.webc": {
 		description: "Unused slot content",
-		content: `<div></div>`,
-		htmlChunkSize: 2,
+		content: `<div><span slot="slot1">Text</span></div>`,
+		htmlChunkSize: 5,
 	},
 
 	"./test/stubs/slot-unused-default.webc": {
@@ -335,8 +335,8 @@ const slotsStubs = {
 		slots: {
 			default: "hello",
 		},
-		content: `<div>hello</div>`,
-		htmlChunkSize: 3,
+		content: `<div>hello<span slot="slot1">Text</span></div>`,
+		htmlChunkSize: 6,
 	},
 
 	"./test/stubs/slot-unused-2.webc": {
@@ -344,8 +344,8 @@ const slotsStubs = {
 		slots: {
 			default: "hello",
 		},
-		content: `<div>hello</div>`,
-		htmlChunkSize: 3,
+		content: `<div>hello<div slot="slot1">Text</div><div slot="slot2"><p></p></div></div>`,
+		htmlChunkSize: 10,
 	},
 
 	"./test/stubs/slot-named.webc": {
@@ -385,7 +385,6 @@ for(let filename in slotsStubs) {
 		let { chunks } = await testGetStreamResultFor(component, null, stub.slots);
 
 		t.is( chunks.html.join(""), stub.content);
-
 		t.deepEqual( chunks.html.length, stub.htmlChunkSize);
 		t.deepEqual( chunks.css.length, 0);
 		t.deepEqual( chunks.js.length, 0);
@@ -789,8 +788,11 @@ test("Using a web component with two slots but child has no shadow dom (skip par
 	t.is(html, `Before
 
 	<p>Before slot content!</p>
-	
-	
+	<div slot="slot1"><p>Slot 1 content</p></div>
+	<div slot="slot2">
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
 	<p>After slot content!</p>
 
 After`);
@@ -806,8 +808,11 @@ test("Using a web component with two slots but child has no shadow dom (keep par
 	t.is(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
-	
-	
+	<div slot="slot1"><p>Slot 1 content</p></div>
+	<div slot="slot2">
+		<!-- ignored -->
+		<p>Slot 2 content</p>
+	</div>
 	<p>After slot content!</p>
 </web-component>
 After`);
@@ -821,7 +826,7 @@ test("Using a web component with two slots and default content (skip parent)", a
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 	t.is(html, `Before
-SSR content<p>Slot 1 content</p>After slot content
+SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
 	
@@ -838,7 +843,7 @@ test("Using a web component with two slots and default content (keep parent)", a
 	t.deepEqual(js, []);
 	t.deepEqual(css, ["p { color: red; }"]);
 	t.is(html, `Before
-<web-component name="World">SSR content<p>Slot 1 content</p>After slot content
+<web-component name="World">SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
 	

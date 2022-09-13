@@ -1,0 +1,8 @@
+<article>
+	<hgroup>
+		<slot name="title"></slot>
+		<slot name="subtitle"></slot>
+	</hgroup>
+	<hgroup slot="shadow-dom-slot">Shadow dom slot</hgroup>
+	<prose-content><slot></slot></prose-content>
+</article>
