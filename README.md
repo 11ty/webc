@@ -4,9 +4,10 @@
 
 * Framework-independent standalone HTML serializer for generating markup for Web Components.
 	* Expand any HTML element (including custom elements and web components) to HTML with defined conventions from web standards.
+	* This means that Web Components created with WebC are compatible with server-side rendering (without duplicating author-written markup).
 * Compilation tools to aggregate component-level assets (CSS or JS) for critical CSS or client JavaScript.
 * Opt-in to scope your component CSS using WebC’s built-in CSS prefixer.
-	* Or, use browser-native Shadow DOM style scoping (requires Declarative Shadow DOM browser support for proper Progressive Enhancement)
+	* Or, use browser-native Shadow DOM style scoping (for future-compatibility when Declarative Shadow DOM browser support is ubiquitous)
 * Progress-enhancement friendly. 
 * Streaming friendly.
 * Shadow DOM friendly.
@@ -16,7 +17,7 @@
 
 ## Installation
 
-It’s available [on npm as `@11ty/webc`](https://www.npmjs.com/package/@11ty/webc):
+It’s available on [npm as `@11ty/webc`](https://www.npmjs.com/package/@11ty/webc):
 
 ```
 npm install @11ty/webc
