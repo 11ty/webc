@@ -540,12 +540,17 @@ class AstSerializer {
 
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
-
-		if(slots[slotName]) {
+		if(slots[slotName] || slotName !== "default") {
 			let slotAst = slots[slotName];
 			if(typeof slotAst === "string") {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
+
+			if(!slotAst && slotName !== "default") {
+				let { html: mismatchedSlotHtml } = await this.getChildContent(node, slots, options, true);
+				return mismatchedSlotHtml;
+			}
+
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
 		}
@@ -652,10 +657,12 @@ class AstSerializer {
 		}
 
 		let slotSource = this.getAttributeValue(node, "slot");
-		if(!options.rawMode && options.closestParentComponent && slotSource && options.isSlottedContent) {
-			let slotTargets = this.components[options.closestParentComponent].slotTargets;
-			if(slotTargets[slotSource]) {
-				options.isMatchingSlotSource = true;
+		if(!options.rawMode && options.closestParentComponent) {
+			if(slotSource && options.isSlottedContent) {
+				let slotTargets = this.components[options.closestParentComponent].slotTargets;
+				if(slotTargets[slotSource]) {
+					options.isMatchingSlotSource = true;
+				}
 			}
 		}
 
