@@ -185,6 +185,17 @@ Adding a `<style>` or `<script>` element to your component file will automatical
 
 Child content optionally precompiles using `<slot>` and `[slot]` too.
 
+<!--
+Slot internal notes
+
+If component content does not exist, render all child content as-is.
+If component content does exist, match `<slot>`s to names `slot=""` or default slot content.
+Slight deviation from browser web components: If `<slot>` does not match any content, the browser renders as-is. WebC will prune the slot tags from the resulting markup while rendering the fallback content (unless webc:keep is in play).
+
+Slot definitions **must** be top-level (and relatedly cannot be nested)
+`<slot>` elements can be nested.
+-->
+
 `page.webc`:
 
 ```html
