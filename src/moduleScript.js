@@ -11,7 +11,7 @@ class ModuleScript {
 		// m.paths = module.paths;
 		let trimmed = content.trim();
 		if(!trimmed.startsWith("module.exports = ")) {
-			if(trimmed.startsWith(`function(`) || trimmed.startsWith(`function (`) || trimmed.startsWith(`async function(`) || trimmed.startsWith(`async function (`)) {
+			if(trimmed.startsWith(`function(`) || trimmed.startsWith(`async function(`)) {
 				content = `module.exports = ${content}`;
 			}
 		}
