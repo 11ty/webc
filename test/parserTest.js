@@ -354,6 +354,14 @@ const slotsStubs = {
 		content: `<div>helloTextSlot 2</div>`,
 	},
 
+	"./test/stubs/slot-nested-3.webc": {
+		description: "Nested slot sources (outer only)",
+		slots: {
+			default: "hello",
+			slot1: "Slot 1",
+		},
+		content: `<div>helloSlot 1</div>`,
+	},
 
 	"./test/stubs/slot-named.webc": {
 		description: "Named slots",
