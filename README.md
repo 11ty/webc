@@ -224,7 +224,9 @@ This works with named slots too:
 
 ```html
 <my-component>
-	<div slot="named-slot">This is a named slot</div>
+	This is the default slot.
+	<strong slot="named-slot">This is a named slot</strong>
+	This is also the default slot.
 </my-component>
 ```
 
@@ -237,7 +239,7 @@ This works with named slots too:
 Compiles to:
 
 ```html
-<p>This is a named slot.</p>
+<p><strong>This is a named slot.</strong></p>
 ```
 
 If your WebC component wants to _output_ a `<slot>` in the compiled markup for use in clientside JavaScript, use the aforementioned `webc:keep` attribute (e.g. `<slot webc:keep>`).
