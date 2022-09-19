@@ -1446,3 +1446,31 @@ test("Issue #3 slot inconsistency", async t => {
 </prose-content>
 </article>`);
 });
+
+test("External script src and stylesheet", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals.webc");
+
+	t.deepEqual(js, [`/* This is the external script */`]);
+	t.deepEqual(css, [`/* This is some CSS */`]);
+	t.deepEqual(components, [
+		"./test/stubs/externals/externals.webc",
+	]);
+
+	t.is(html, `<p>This is another global component.</p>
+
+`);
+});
+
+test("External script src and stylesheet webc:keep", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-keep.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/externals/externals-keep.webc",
+	]);
+
+	t.is(html, `<p>This is another global component.</p>
+<link rel="stylesheet" href="my-style.css">
+<script src="my-script.js">/* hi */</script>`);
+});

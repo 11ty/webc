@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
 
@@ -9,6 +10,36 @@ import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.js";
 import { Streams } from "./streams.js";
+
+class FileSystemCache {
+	constructor() {
+		this.contents = {};
+	}
+
+	isFileInProjectDirectory(filePath) {
+		let workingDir = path.resolve();
+		let absoluteFile = path.resolve(filePath);
+		return absoluteFile.startsWith(workingDir);
+	}
+
+	read(filePath, relativeTo) {
+		if(relativeTo) {
+			let parsed = path.parse(relativeTo);
+			filePath = path.join(parsed.dir, filePath);
+		}
+		if(!this.isFileInProjectDirectory(filePath)) {
+			throw new Error(`Invalid path ${filePath} is not in the working directory.`);
+		}
+
+		if(!this.contents[filePath]) {
+			this.contents[filePath] = fs.readFileSync(filePath, {
+				encoding: "utf8"
+			});
+		}
+
+		return this.contents[filePath];
+	}
+}
 
 class AstSerializer {
 	constructor(options = {}) {
@@ -51,6 +82,8 @@ class AstSerializer {
 		this.globalData = {};
 
 		this.streams = new Streams(["html", "css", "js"]);
+
+		this.fileCache = new FileSystemCache();
 	}
 
 	static prefixes = {
@@ -254,8 +287,15 @@ class AstSerializer {
 		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
 		let children = this.findAllChildren(body, ["script", "style"]);
 		for(let child of children) {
-			if(!this.hasAttribute(child, AstSerializer.attrs.ROOT) && this.hasTextContent(child)) {
-				return false;
+			if(!this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				if(this.hasTextContent(child)) {
+					return false;
+				}
+				// <script src=""> or <link rel="stylesheet" href="">
+				let tagName = this.getTagName(child);
+				if(this.getExternalSource(tagName, child)) {
+					return false;
+				}
 			}
 		}
 
@@ -273,7 +313,7 @@ class AstSerializer {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
-	isIgnored(node, component, renderingMode) {
+	isTagIgnored(node, component, renderingMode) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -318,7 +358,7 @@ class AstSerializer {
 		}
 
 		// aggregation tags
-		if(tagName === "style" || tagName === "script") {
+		if(tagName === "style" || tagName === "script" || tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
 			return true;
 		}
 
@@ -488,7 +528,7 @@ class AstSerializer {
 				delete attrObject.slot;
 			}
 
-			if(options.rawMode || !this.isIgnored(node, component, renderingMode)) {
+			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
 			}
 		}
@@ -504,7 +544,7 @@ class AstSerializer {
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isIgnored(node, component, renderingMode)) {
+			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				content += `</${tagName}>`;
 			}
 
@@ -614,9 +654,37 @@ class AstSerializer {
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
+	getAggregateAssetKey(tagName, node) {
+		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+			return false;
+		}
+
+		if(tagName === "style") {
+			return "css";
+		}
+		
+		if(tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
+			return "css";
+		}
+		
+		if(tagName === "script") {
+			return "js"
+		}
+	}
+
+	getExternalSource(tagName, node) {
+		if(tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
+			return this.getAttributeValue(node, "href");
+		}
+		
+		if(tagName === "script") {
+			return this.getAttributeValue(node, "src");
+		}
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
-
+		
 		let tagName = this.getTagName(node);
 		let content = "";
 
@@ -693,16 +761,18 @@ class AstSerializer {
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
 		}
-
+		
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
+			let externalSource = this.getExternalSource(tagName, node);
+
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottedContent = true;
 
 				content += await this.getContentForSlot(node, slots, options);
 			} else if(node.content) { // <template> content
 				content += this.outputHtml(await this.getContentForTemplate(node, slots, options), streamEnabled);
-			} else if(node.childNodes?.length > 0) {
+			} else if(node.childNodes?.length > 0 || externalSource) {
 				// Fallback to light DOM if no component dom exists (default slot content)
 				if(componentHasContent === false) {
 					options.isSlottedContent = true;
@@ -715,14 +785,17 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					// aggregate CSS and JS
-					let key = {
-						style: "css",
-						script: "js",
-					}[ tagName ];
+					let key = this.getAggregateAssetKey(tagName, node);
+					// Aggregate to CSS/JS bundles
+					if(key) {
+						let childContent;
+						if(externalSource) { // fetch file contents, note that child content is ignored here
+							childContent = this.fileCache.read(externalSource, this.filePath);
+						} else {
+							let { html } = await this.getChildContent(node, slots, options, false);
+							childContent = html;
+						}
 
-					if(key && !this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-						let { html: childContent } = await this.getChildContent(node, slots, options, false);
 						let entryKey = options.closestParentComponent || this.filePath;
 						if(!options[key][entryKey]) {
 							options[key][entryKey] = new Set();
@@ -732,7 +805,7 @@ class AstSerializer {
 						}
 
 						options[key][entryKey].add( childContent );
-					} else {
+					} else { // Otherwise, leave as-is
 						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
 						content += childContent;
 					}

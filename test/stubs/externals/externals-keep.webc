@@ -1,0 +1,3 @@
+<p>This is another global component.</p>
+<link rel="stylesheet" href="my-style.css" webc:keep>
+<script src="my-script.js" webc:keep>/* hi */</script>
