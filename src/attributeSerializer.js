@@ -104,8 +104,9 @@ class AttributeSerializer {
 
 			// Note that AST from parse5 returns <* attrName> as { attrName: "" } instead of undefined
 			if (value !== "") {
-				const quoteType = value.includes(`"`) ? `'` : `"`
-
+				// Note that backslash does *not* escape nested quotes in HTML
+				// e.g. <* attrName="\"test"> parses as <* attrName="\" test"="">
+				let quoteType = value.includes(`"`) ? `'` : `"`
 				value = `=${quoteType}${value}${quoteType}`
 			}
 

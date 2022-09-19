@@ -721,6 +721,7 @@ test("Using different attribute delimiters and nested potential delimiters", asy
 	]);
 	t.is(html, `<div>
 	<div data-foo="no-nested-quotes"></div>
+	<div data-foo="using-single-quotes-without-nested-quotes"></div>
 	<div data-foo="still-valid-technically"></div>
 	<div data-foo='foo="bar"'></div>
 	<div data-foo="foo='bar'"></div>
