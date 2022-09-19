@@ -1,0 +1,8 @@
+<div test2="2"></div>
+<div parentAttribute="test">
+<script webc:type="render" webc:is="template">
+function () {
+	return `This is sample content.`;
+}
+</script>
+</div>

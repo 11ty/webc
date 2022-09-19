@@ -1242,6 +1242,66 @@ This is sample content.
 </div>`);
 });
 
+test("Scripted render function whitespace variation", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render2.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render2.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+This is sample content.
+</div>`);
+});
+
+test("Scripted named render function", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render3.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render3.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+This is sample content.
+</div>`);
+});
+
+test("Async scripted render function", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-async.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-async.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+This is sample content.
+</div>`);
+});
+
+test("Async scripted render function whitespace variation", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-async2.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-async2.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+This is sample content.
+</div>`);
+});
+
 test("Using image scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-img.webc");
 
