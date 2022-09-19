@@ -139,7 +139,7 @@ Tricky trick: you aren’t limited to custom element names (e.g. `my-component`)
 
 Registering global components is _not_ required! You can use `webc:import` to dynamically import another component inline.
 
-_Important note: `webc:` attributes are always removed from the resulting compiled markup._
+_Important note:_ `webc:` attributes are always removed from the resulting compiled markup.
 
 `page.webc`:
 
@@ -148,7 +148,7 @@ _Important note: `webc:` attributes are always removed from the resulting compil
 <any-tag-name webc:import="components/my-component.webc"></any-tag-name>
 ```
 
-Note: We check for circular component dependencies and throw an error as expected if one is encountered.
+_Another important note:_ We check for circular component dependencies and throw an error as expected if one is encountered.
 
 ### Remapping components
 
@@ -214,7 +214,7 @@ Compiles to:
 <p>This is the default slot.</p>
 ```
 
-Important note: if your component file contains *no content markup* (for example, only `<style>` or `<script>`), the default slot will be used automatically. If the WebC component file does contain content markup, the content passed in as the default slot will require `<slot>` to be included.
+_Important note:_ per web component standard conventions, if your component file contains *no content markup* (for example, only `<style>` or `<script>`), `<slot></slot>` is implied and the default slot content will be included automatically. If the WebC component file does contain content markup, the content passed in as the default slot requires `<slot>` to be included.
 
 ##### Named slots
 
