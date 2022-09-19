@@ -103,7 +103,13 @@ class AttributeSerializer {
 			}
 
 			// Note that AST from parse5 returns <* attrName> as { attrName: "" } instead of undefined
-			str.push(` ${name}${value !== "" ? `="${value}"` : ""}`);
+			if (value !== "") {
+				const quoteType = value.includes(`"`) ? `'` : `"`
+
+				value = `=${quoteType}${value}${quoteType}`
+			}
+
+			str.push(` ${name}${value}`);
 		}
 		return str.join("");
 	}
