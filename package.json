@@ -8,25 +8,25 @@
 		"test": "npx ava"
 	},
 	"publishConfig": {
-    "access": "public"
-  },
+		"access": "public"
+	},
 	"license": "MIT",
-  "engines": {
-    "node": ">=14"
-  },
+	"engines": {
+		"node": ">=14"
+	},
 	"funding": {
-    "type": "opencollective",
-    "url": "https://opencollective.com/11ty"
-  },
+		"type": "opencollective",
+		"url": "https://opencollective.com/11ty"
+	},
 	"keywords": [
 		"web-components",
 		"custom-elements"
 	],
 	"author": {
-    "name": "Zach Leatherman",
-    "email": "zachleatherman@gmail.com",
-    "url": "https://zachleat.com/"
-  },
+		"name": "Zach Leatherman",
+		"email": "zachleatherman@gmail.com",
+		"url": "https://zachleat.com/"
+	},
 	"dependencies": {
 		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",
