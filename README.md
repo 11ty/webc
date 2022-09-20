@@ -507,3 +507,23 @@ p { color: rebeccapurple; }
 </style>
 </template>
 ```
+
+## Limitations and Exceptions
+
+### `<head>` Components
+
+There are a few wrinkles when using an HTML parser with custom elements. Notably, the parser tries to force custom element children in the `<head>` over to the `<body>`. To workaround this limitation, use `web:is`. Here are a few example workarounds:
+
+```html
+<head web:is="my-custom-head">
+	<!-- this is slot content, yes you can use named slots here too -->
+</head>
+```
+
+```html
+<head>
+	<!-- <my-custom-head> is not allowed here -->
+	<meta web:is="my-custom-head">
+	<title web:is="my-custom-title">Default Title</title>
+</head>
+```

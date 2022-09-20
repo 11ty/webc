@@ -1529,11 +1529,12 @@ test("<head> is a component", async t => {
 
 	t.is(html, `<!doctype html>
 <html>
-<head><!-- ha ha --><meta name="description" content="this is a head component">
+<head><!-- ha ha --><title>This is a title</title>
+<meta name="description" content="this is a head component">
 
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>This is a title</title>
+	
 </head><body></body>
 </html>`);
 });

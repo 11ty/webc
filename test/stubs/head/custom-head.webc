@@ -1,3 +1,4 @@
 <!-- ha ha -->
+<slot name="titleSlot"></slot>
 <meta name="description" content="this is a head component">
 <slot></slot>
