@@ -1494,3 +1494,46 @@ test("External full url script src and stylesheet webc:keep", async t => {
 <link rel="stylesheet" href="https://www.11ty.dev/css/async.css">
 <script src="https://www.11ty.dev/js/eleventy.js">/* hi */</script>`);
 });
+
+test("<head> Components", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/head/head.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/head/head.webc",
+		"./test/stubs/head/meta.webc",
+	]);
+
+	t.is(html, `<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content>
+
+	<title>This is a title</title>
+</head><body></body>
+</html>`);
+});
+
+test("<head> is a component", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/head/head-is-component.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/head/head-is-component.webc",
+		"./test/stubs/head/custom-head.webc",
+	]);
+
+	t.is(html, `<!doctype html>
+<html>
+<head><!-- ha ha --><meta name="description" content="this is a head component">
+
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>This is a title</title>
+</head><body></body>
+</html>`);
+});

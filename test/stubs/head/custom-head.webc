@@ -1,0 +1,3 @@
+<!-- ha ha -->
+<meta name="description" content="this is a head component">
+<slot></slot>

@@ -252,10 +252,10 @@ class AstSerializer {
 		let prefix = "w";
 		let hashLength = 8;
 		let hash = createHash("sha256");
-		let body = this.findElement(component, "body");
+		let root = this.getImplicitRootNode(component);
 
 		// <style webc:scoped> must be nested at the root
-		let styleNodes = this.findAllChildren(body, "style", [AstSerializer.attrs.SCOPED]);
+		let styleNodes = this.findAllChildren(root, "style", [AstSerializer.attrs.SCOPED]);
 		for(let node of styleNodes) {
 			// Override hash with scoped="override"
 			let override = this.getAttributeValue(node, AstSerializer.attrs.SCOPED);
@@ -282,10 +282,13 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		let body = this.findElement(component, "body");
+		let root = this.getImplicitRootNode(component);
+		if(!root) {
+			throw new Error("Unable to find component root element, expected an implicit <head> or <body>");
+		}
 
 		// Has <* webc:root> (has to be a root child, not script/style)
-		let roots = this.findAllChildren(body, [], [AstSerializer.attrs.ROOT]);
+		let roots = this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
 		for(let child of roots) {
 			let tagName = this.getTagName(child);
 			if(tagName === "script" || tagName === "style") {
@@ -298,7 +301,7 @@ class AstSerializer {
 		}
 
 		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
-		let children = this.findAllChildren(body, ["script", "style"]);
+		let children = this.findAllChildren(root, ["script", "style"]);
 		for(let child of children) {
 			if(!this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
 				if(this.hasTextContent(child)) {
@@ -312,8 +315,8 @@ class AstSerializer {
 			}
 		}
 
-		// Has <template shadowroot> (can be anywhere in the tree)
-		let shadowroot = this.findElement(body, "template", ["shadowroot"]);
+		// Has <template shadowroot> (can be anywhere in the component body)
+		let shadowroot = this.findElement(root, "template", ["shadowroot"]);
 		if(shadowroot) {
 			return false;
 		}
@@ -355,6 +358,7 @@ class AstSerializer {
 		if(!component) {
 			component = this.getComponent(tagName);
 		}
+
 		if(component?.ignoreRootTag) {
 			// do not include the parent element if this component has no styles or script associated with it
 			return true;
@@ -371,16 +375,25 @@ class AstSerializer {
 		}
 
 		// aggregation tags
-		if(tagName === "style" || tagName === "script" || tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
+		if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
 			return true;
 		}
 
 		return false;
 	}
 
-	getRootNodes(node) {
+	getImplicitRootNode(node) {
 		let body = this.findElement(node, "body");
-		return this.findAllChildren(body, [], [AstSerializer.attrs.ROOT]);
+		let head = this.findElement(node, "head");
+		if(head?.childNodes?.length > 0) {
+			return head;
+		}
+		return body;
+	}
+
+	getRootNodes(node) {
+		let root = this.getImplicitRootNode(node);
+		return this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
 	}
 
 	getRootAttributes(component, scopedStyleHash) {
@@ -405,7 +418,7 @@ class AstSerializer {
 			return;
 		}
 
-		let isTopLevelComponent = !!ast;
+		let isTopLevelComponent = !!ast; // ast is passed in for Top Level components
 
 		if(!ast) {
 			ast = await WebC.getASTFromFilePath(filePath);
@@ -667,6 +680,10 @@ class AstSerializer {
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
+	isStylesheetNode(tagName, node) {
+		return tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet";
+	}
+
 	getAggregateAssetKey(tagName, node) {
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
 			return false;
@@ -676,7 +693,7 @@ class AstSerializer {
 			return "css";
 		}
 		
-		if(tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
+		if(this.isStylesheetNode(tagName, node)) {
 			return "css";
 		}
 		
@@ -686,7 +703,7 @@ class AstSerializer {
 	}
 
 	getExternalSource(tagName, node) {
-		if(tagName === "link" && this.getAttributeValue(node, "rel") === "stylesheet") {
+		if(this.isStylesheetNode(tagName, node)) {
 			return this.getAttributeValue(node, "href");
 		}
 		

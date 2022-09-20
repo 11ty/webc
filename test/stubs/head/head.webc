@@ -1,0 +1,5 @@
+<!doctype html>
+<head>
+	<meta webc:is="meta-tags" webc:import="meta.webc">
+	<title>This is a title</title>
+</head>

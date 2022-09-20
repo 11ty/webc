@@ -66,16 +66,11 @@ class WebC {
 		let content = this._getRawContent();
 		let mode = this.getRenderingMode(content);
 
-		// prepend for no-quirks mode
-		if(mode === "component") {
-			content = `<!doctype html><html><body>${content}</body></html>`;
-		}
-
-		// prepend doctype to page rendering modes too
-		if(!content.startsWith("<!doctype ") && content.startsWith("<html")) {
+		// prepend for no-quirks mode on components or implicit page rendering modes (starts with <html>)
+		if(mode === "component" || !content.startsWith("<!doctype ") && content.startsWith("<html")) {
 			content = `<!doctype html>${content}`;
 		}
-
+		
 		return {
 			content,
 			mode,
