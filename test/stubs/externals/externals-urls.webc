@@ -1,0 +1,3 @@
+<p>This is another global component.</p>
+<link rel="stylesheet" href="https://www.11ty.dev/css/async.css">
+<script src="https://www.11ty.dev/js/eleventy.js">/* hi */</script>

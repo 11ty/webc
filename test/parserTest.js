@@ -1474,3 +1474,23 @@ test("External script src and stylesheet webc:keep", async t => {
 <link rel="stylesheet" href="my-style.css">
 <script src="my-script.js">/* hi */</script>`);
 });
+
+test("External full url script src and stylesheet without webc:keep", async t => {
+	await t.throwsAsync(testGetResultFor("./test/stubs/externals/externals-urls.webc"), {
+		message: "Full URLs in <script> and <link rel=\"stylesheet\"> are not yet supported without webc:keep."
+	});
+});
+
+test("External full url script src and stylesheet webc:keep", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-urls-keep.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/externals/externals-urls-keep.webc",
+	]);
+
+	t.is(html, `<p>This is another global component.</p>
+<link rel="stylesheet" href="https://www.11ty.dev/css/async.css">
+<script src="https://www.11ty.dev/js/eleventy.js">/* hi */</script>`);
+});

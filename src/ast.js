@@ -16,6 +16,15 @@ class FileSystemCache {
 		this.contents = {};
 	}
 
+	isFullUrl(filePath) {
+		try {
+			new URL(filePath);
+			return true;
+		} catch(e) {
+			return false;
+		}
+	}
+
 	isFileInProjectDirectory(filePath) {
 		let workingDir = path.resolve();
 		let absoluteFile = path.resolve(filePath);
@@ -23,6 +32,10 @@ class FileSystemCache {
 	}
 
 	read(filePath, relativeTo) {
+		if(this.isFullUrl(filePath)) {
+			throw new Error(`Full URLs in <script> and <link rel="stylesheet"> are not yet supported without webc:keep.`);
+		}
+
 		if(relativeTo) {
 			let parsed = path.parse(relativeTo);
 			filePath = path.join(parsed.dir, filePath);
