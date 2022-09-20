@@ -252,7 +252,7 @@ As noted in the JavaScript API section above, the `compile` method returns four 
 let { html, css, js, components } = await page.compile();
 ```
 
-By default, `<style>` and `<script>` elements in component files are removed from individual component markup and aggregated together for re-use elsewhere (you could write this to a file, or use as Critical CSS in another layout template—the Eleventy plugin will smooth this over for you). _This includes `<link rel="stylesheet">` and `<script src>` when the URLs point to files on the file system ([remote URL sources are not yet supported](https://github.com/11ty/webc/issues/15)).
+By default, `<style>` and `<script>` elements in component files are removed from individual component markup and aggregated together for re-use elsewhere (you could write this to a file, or use as Critical CSS in another layout template—the Eleventy plugin will smooth this over for you). _This includes `<link rel="stylesheet">` and `<script src>` when the URLs point to files on the file system ([remote URL sources are not yet supported](https://github.com/11ty/webc/issues/15))_.
 
 Note that if a `<style>` is nested inside of [declarative shadow root](https://web.dev/declarative-shadow-dom/) template (e.g. `<template shadowroot>`), it is also left as is and not aggregated.
 
