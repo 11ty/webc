@@ -15,6 +15,14 @@
 * The `.webc` file extension is recommended (not a requirement)—you _can_ use `.html`.
 	* Tip for Visual Studio Code users: go to `Preferences -> Settings -> Files: Associations` to add a mapping for `*.webc` to `html`.
 
+### Testimonials
+
+> “javascript frameworks are dead to me”—[Andy Bell](https://twitter.com/hankchizljaw/status/1568301299623411715)
+
+> “The DX and authoring model you landed on here looks fantastic”—[Addy Osmani](https://twitter.com/addyosmani/status/1568741911690899457)
+
+> “Really like the programmatic API approach over using a bundler to pre-compile and then serve.”—[Harminder Virk](https://twitter.com/AmanVirk1/status/1568312188292546566)
+
 ### Similar Works
 
 Folks doing similar things with Web Components: check them out!
@@ -22,14 +30,6 @@ Folks doing similar things with Web Components: check them out!
 * [Enhance](https://enhance.dev/docs/)
 * [wcc](https://github.com/ProjectEvergreen/wcc)
 * [Lit SSR](https://lit.dev/docs/ssr/overview/) with plugins for [Eleventy](https://github.com/lit/lit/tree/main/packages/labs/eleventy-plugin-lit#lit-labseleventy-plugin-lit), [Astro](https://docs.astro.build/en/guides/integrations-guide/lit/), and [Rocket](https://rocket.modern-web.dev/docs/basics/components/)
-
-## Testimonials
-
-> “javascript frameworks are dead to me”—[Andy Bell](https://twitter.com/hankchizljaw/status/1568301299623411715)
-
-> “The DX and authoring model you landed on here looks fantastic”—[Addy Osmani](https://twitter.com/addyosmani/status/1568741911690899457)
-
-> “Really like the programmatic API approach over using a bundler to pre-compile and then serve.”—[Harminder Virk](https://twitter.com/AmanVirk1/status/1568312188292546566)
 
 ## Installation
 
