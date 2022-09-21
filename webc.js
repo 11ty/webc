@@ -9,7 +9,7 @@ class AstCache {
 		this.ast = {};
 	}
 
-	get(contents, filePath) {
+	get(contents) {
 		if(!this.ast[contents]) {
 			this.ast[contents] = parse(contents, {
 				scriptingEnabled: true,
@@ -81,15 +81,16 @@ class WebC {
 
 	getContent() {
 		let content = this._getRawContent();
+		let mode = this.getRenderingMode(content);
 
 		// prepend for no-quirks mode on components or implicit page rendering modes (starts with <html>)
-		if(!content.startsWith("<!doctype ")) {
+		if(mode === "component" || !content.startsWith("<!doctype ")) {
 			content = `<!doctype html>${content}`;
 		}
 		
 		return {
 			content,
-			mode: this.getRenderingMode(content),
+			mode,
 		};
 	}
 
@@ -114,7 +115,7 @@ class WebC {
 			throw new Error("WebC.getAST() expects a content argument.");
 		}
 
-		return localAstCache.get(content, this.filePath);
+		return localAstCache.get(content);
 	}
 
 	setTransform(key, callback) {
