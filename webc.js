@@ -2,6 +2,8 @@ import fs from "fs";
 import fastglob from "fast-glob";
 import path from "path";
 import { parse } from "parse5";
+import { TemplatePath } from "@11ty/eleventy-utils";
+
 import { AstSerializer } from "./src/ast.js";
 
 class AstCache {
@@ -29,20 +31,18 @@ class WebC {
 		this.customTransforms = {};
 		this.customHelpers = {};
 		this.globalComponents = {};
+		this.astOptions = {};
 
-		if(file) {
-			this.filePath = file;
-		}
 		if(input) {
 			this.rawInput = input;
 		}
-
-		this.astOptions = {
-			filePath: file,
-		};
+		if(file) {
+			this.setInputPath(file);
+		}
 	}
 
 	setInputPath(file) {
+		file = TemplatePath.addLeadingDotSlash(file);
 		this.filePath = file;
 		this.astOptions.filePath = file;
 	}
@@ -163,7 +163,7 @@ class WebC {
 		}
 	}
 
-	async _setup(options = {}) {
+	async setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
 
@@ -188,15 +188,14 @@ class WebC {
 		};
 	}
 
-	async getComponents(options = {}) {
-		let { ast, serializer } = await this._setup(options);
-
+	getComponents(setup) {
+		let { ast, serializer } = setup;
 		let obj = serializer.getComponentList(ast);
 		return Object.keys(obj);
 	}
 
 	async stream(options = {}) {
-		let { ast, serializer } = await this._setup(options);
+		let { ast, serializer } = await this.setup(options);
 
 		serializer.streams.start();
 
@@ -211,7 +210,7 @@ class WebC {
 	}
 
 	async compile(options = {}) {
-		let { ast, serializer } = await this._setup(options);
+		let { ast, serializer } = await this.setup(options);
 
 		return serializer.compile(ast, options.slots);
 	}

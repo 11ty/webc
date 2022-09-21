@@ -28,12 +28,13 @@
 		"url": "https://zachleat.com/"
 	},
 	"ava": {
-    "failFast": true,
-    "files": [
-      "./test/*.js"
-    ]
-  },
+		"failFast": true,
+		"files": [
+			"./test/*.js"
+		]
+	},
 	"dependencies": {
+		"@11ty/eleventy-utils": "^1.0.1",
 		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",
 		"fast-glob": "^3.2.12",

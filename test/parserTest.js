@@ -1545,7 +1545,7 @@ test("getComponents API", async t => {
 
 	component.setInputPath("./test/stubs/components-list.webc");
 
-	let components = await component.getComponents({
+	let setup = await component.setup({
 		components: {
 			"my-grandparent": "./test/stubs/components/child-css-js-a.webc",
 			"my-parent": "./test/stubs/components/child-css-js-c.webc",
@@ -1555,6 +1555,8 @@ test("getComponents API", async t => {
 			"my-sibling": "./test/stubs/components/child-css-js-d.webc",
 		}
 	});
+
+	let components = component.getComponents(setup);
 
 	t.deepEqual(components, [
 		"./test/stubs/components-list.webc",
