@@ -712,6 +712,44 @@ class AstSerializer {
 		}
 	}
 
+	/* Depth-first list, not dependency-graph ordered.
+	 * This is in contrast to `components` returned from compile methods *are* dependency-graph ordered.
+	 * Also note this is overly permissive (includes components in unused slots).
+	 * This method is used for incremental static builds.
+	 */
+	getComponentList(node, rawMode = false) {
+		let components = {};
+
+		if(rawMode) {
+			return components;
+		}
+
+		if(this.filePath) {
+			components[this.filePath] = true;
+		}
+
+		if(this.hasAttribute(node, AstSerializer.attrs.RAW)) {
+			rawMode = true;
+		}
+
+		let tagName = this.getTagName(node);
+		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
+		if(importSource) {
+			components[importSource] = true;
+		} else {
+			let filePath = this.componentMap[tagName];
+			if(filePath) {
+				components[filePath] = true;
+			}
+		}
+
+		for(let child of (node.childNodes || [])) {
+			Object.assign(components, this.getComponentList(child, rawMode || tagName === "template"));
+		}
+
+		return components;
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 		

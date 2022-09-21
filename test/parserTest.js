@@ -1538,3 +1538,31 @@ test("<head> is a component", async t => {
 </head><body></body>
 </html>`);
 });
+
+
+test("getComponents API", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/components-list.webc");
+
+	let components = await component.getComponents({
+		components: {
+			"my-grandparent": "./test/stubs/components/child-css-js-a.webc",
+			"my-parent": "./test/stubs/components/child-css-js-c.webc",
+			"my-me": "./test/stubs/components/child-css-js-e.webc",
+			"my-child": "./test/stubs/components/child-css-js-f.webc",
+			"my-aunt": "./test/stubs/components/child-css-js-b.webc",
+			"my-sibling": "./test/stubs/components/child-css-js-d.webc",
+		}
+	});
+
+	t.deepEqual(components, [
+		"./test/stubs/components-list.webc",
+		"./test/stubs/components/child-css-js-a.webc",
+		"./test/stubs/components/child-css-js-c.webc",
+		"./test/stubs/components/child-css-js-e.webc",
+		"./test/stubs/components/child-css-js-f.webc",
+		"./test/stubs/components/child-css-js-b.webc",
+		// no sibling
+	]);
+});

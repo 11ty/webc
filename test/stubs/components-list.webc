@@ -1,0 +1,8 @@
+<my-grandparent>
+	<my-parent>
+		<my-me>
+			<my-child>CHILD CONTENT</my-child>
+		</my-me>
+	</my-parent>
+	<my-aunt>AUNT CONTENT</my-aunt>
+</my-grandparent>

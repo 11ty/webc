@@ -188,6 +188,13 @@ class WebC {
 		};
 	}
 
+	async getComponents(options = {}) {
+		let { ast, serializer } = await this._setup(options);
+
+		let obj = serializer.getComponentList(ast);
+		return Object.keys(obj);
+	}
+
 	async stream(options = {}) {
 		let { ast, serializer } = await this._setup(options);
 
