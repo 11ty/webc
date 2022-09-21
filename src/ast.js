@@ -86,10 +86,9 @@ class AstSerializer {
 			return prefixer.process(content);
 		});
 
-		this.setTransform(AstSerializer.transformTypes.RENDER, async (content, component, data) => {
+		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
 			let fn = ModuleScript.getModule(content, this.filePath);
-			let context = Object.assign({}, this.helpers, data, this.globalData);
-			return fn.call(context);
+			return fn.call(this);
 		});
 
 		// Component cache
@@ -592,13 +591,25 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformTypes, parentComponent, options) {
+	async transformContent(content, transformTypes, node, parentComponent, options) {
 		if(!transformTypes) {
 			transformTypes = [];
 		}
+
+		let context = Object.assign({
+			attrs: AttributeSerializer.dedupeAttributes(node.attrs),
+			filePath: this.filePath,
+			data: this.globalData,
+			helpers: this.helpers,
+		}, options.componentProps);
+
 		for(let type of transformTypes) {
-			content = await this.transforms[type](content, parentComponent, options.componentProps);
+			content = await this.transforms[type].call({
+				type,
+				...context
+			}, content, parentComponent, options.componentProps);
 		}
+
 		return content;
 	}
 
@@ -646,7 +657,7 @@ class AstSerializer {
 		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions, false);
 		// Get plaintext from <template> .content
 		if(options.currentTransformTypes) {
-			return this.transformContent(rawContent, options.currentTransformTypes, this.components[options.closestParentComponent], options);
+			return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 		}
 		return rawContent;
 	}
@@ -663,9 +674,11 @@ class AstSerializer {
 			}
 		}
 
+		// Always last
 		if(this.hasAttribute(node, AstSerializer.attrs.SCOPED)) {
 			types.add(AstSerializer.transformTypes.SCOPED);
 		}
+
 		return Array.from(types);
 	}
 
@@ -753,7 +766,7 @@ class AstSerializer {
 
 		let importSource = Path.normalizePath(this.getAttributeValue(node, AstSerializer.attrs.IMPORT));
 		if(importSource) {
-			// TODO also relative-to-closest-component paths here? (and below in compileNode)
+			// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
 			components[importSource] = true;
 			closestComponentFilePath = importSource;
 			
@@ -763,7 +776,7 @@ class AstSerializer {
 		} else {
 			let filePath = Path.normalizePath(this.componentMap[tagName]);
 			if(filePath) {
-				// TODO also relative-to-closest-component paths here? (and below in compileNode)
+				// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
 				components[filePath] = true;
 				closestComponentFilePath = filePath;
 
@@ -801,7 +814,7 @@ class AstSerializer {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
 				content += this.outputHtml(node.value, streamEnabled);
 			} else {
-				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, this.components[options.closestParentComponent], options), streamEnabled);
+				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
 			}
 			return { html: content };
 		} else if(node.nodeName === "#comment") {

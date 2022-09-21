@@ -353,12 +353,13 @@ You can also transform individual element content using the `setTransform` metho
 let component = new WebC();
 let md = new MarkdownIt({ html: true });
 
-component.setTransform("md", (content) => {
+component.setTransform("md", async (content) => {
+	// async-friendly
 	return md.render(content);
 });
 ```
 
-Now you can automatically transform markdown in your WebC templates via the `webc:type` attribute:
+Now you can automatically transform markdown in your WebC templates via the `webc:type` attribute.
 
 ```html
 <template webc:type="md">
@@ -372,7 +373,9 @@ Compiles to:
 <h1>Header</h1>
 ```
 
-Note that `<template webc:type>` is compiled away. Again, if you’d like to keep it around, use `webc:keep` (e.g. `<template webc:type webc:keep>`).
+* Bonus feature: `webc:type` supports a comma separated list of transforms.
+
+Note that the `<template webc:type>` node is compiled away. If you’d like to keep it around, use `webc:keep` (e.g. `<template webc:type webc:keep>`).
 
 We do provide two built-in transforms in WebC: JavaScript Render Functions (`webc:type="render"`) and CSS scoping (`webc:scoped`). Those are covered in separate sections. You _can_ override these with the `setTransform` API but it is generally recommended to add your own named transform!
 
