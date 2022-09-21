@@ -161,6 +161,10 @@ class AstSerializer {
 		this.globalData = data;
 	}
 
+	restorePreparsedComponents(components) {
+		Object.assign(this.components, components);
+	}
+
 	isVoidElement(tagName) {
 		return AstSerializer.voidElements[tagName] || false;
 	}
@@ -415,6 +419,7 @@ class AstSerializer {
 
 	async preparseComponent(filePath, ast) {
 		if(this.components[filePath]) {
+			// already parsed
 			return;
 		}
 
@@ -733,13 +738,21 @@ class AstSerializer {
 		}
 
 		let tagName = this.getTagName(node);
-		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
+		let importSource = Path.normalizePath(this.getAttributeValue(node, AstSerializer.attrs.IMPORT));
 		if(importSource) {
 			components[importSource] = true;
+
+			if(this.components[importSource]) {
+				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode));
+			}
 		} else {
-			let filePath = this.componentMap[tagName];
+			let filePath = Path.normalizePath(this.componentMap[tagName]);
 			if(filePath) {
 				components[filePath] = true;
+
+				if(this.components[filePath]) {
+					Object.assign(components, this.getComponentList(this.components[filePath].ast, rawMode));
+				}
 			}
 		}
 
