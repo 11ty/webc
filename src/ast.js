@@ -726,6 +726,7 @@ class AstSerializer {
 	/* Depth-first list, not dependency-graph ordered.
 	 * This is in contrast to `components` returned from compile methods *are* dependency-graph ordered.
 	 * Also note this is overly permissive (includes components in unused slots).
+	 * Also includes external <script src> and <link rel="stylesheet" href> sources here too.
 	 * This method is used for incremental static builds.
 	 */
 	getComponentList(node, rawMode = false, closestComponentFilePath) {
