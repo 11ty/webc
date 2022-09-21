@@ -871,7 +871,7 @@ class AstSerializer {
 					if(key) {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
-							childContent = this.fileCache.read(externalSource, this.filePath);
+							childContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;
