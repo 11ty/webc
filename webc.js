@@ -4,11 +4,28 @@ import path from "path";
 import { parse } from "parse5";
 import { AstSerializer } from "./src/ast.js";
 
+class AstCache {
+	constructor() {
+		this.ast = {};
+	}
+
+	get(contents, filePath) {
+		if(!this.ast[contents]) {
+			this.ast[contents] = parse(contents, {
+				scriptingEnabled: true,
+			});
+		}
+
+		return this.ast[contents];
+	}
+}
+
+const localAstCache = new AstCache();
+
 class WebC {
 	constructor(options = {}) {
-		let { file, input, inputMode } = options;
+		let { file, input } = options;
 
-		this.inputMode = inputMode || "fs";
 		this.customTransforms = {};
 		this.customHelpers = {};
 		this.globalComponents = {};
@@ -64,16 +81,15 @@ class WebC {
 
 	getContent() {
 		let content = this._getRawContent();
-		let mode = this.getRenderingMode(content);
 
 		// prepend for no-quirks mode on components or implicit page rendering modes (starts with <html>)
-		if(mode === "component" || !content.startsWith("<!doctype ") && content.startsWith("<html")) {
+		if(!content.startsWith("<!doctype ")) {
 			content = `<!doctype html>${content}`;
 		}
 		
 		return {
 			content,
-			mode,
+			mode: this.getRenderingMode(content),
 		};
 	}
 
@@ -97,12 +113,8 @@ class WebC {
 		if(!content) {
 			throw new Error("WebC.getAST() expects a content argument.");
 		}
-		if(this.inputMode === "fs") {
-			let ast = parse(content, {
-				scriptingEnabled: true,
-			});
-			return ast;
-		}
+
+		return localAstCache.get(content, this.filePath);
 	}
 
 	setTransform(key, callback) {

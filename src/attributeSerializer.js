@@ -52,6 +52,11 @@ class AttributeSerializer {
 			}
 		}
 
+		// don’t mutate those original attr objects!
+		for(let j = 0, k = attrs.length; j<k; j++) {
+			delete attrs[j].skipped;
+		}
+
 		return attrObject;
 	}
 
