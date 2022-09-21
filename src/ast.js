@@ -25,6 +25,14 @@ class FileSystemCache {
 		}
 	}
 
+	static getRelativeFilePath(filePath, relativeTo) {
+		if(relativeTo) {
+			let parsed = path.parse(relativeTo);
+			return path.join(parsed.dir, filePath);
+		}
+		return filePath;
+	}
+
 	isFileInProjectDirectory(filePath) {
 		let workingDir = path.resolve();
 		let absoluteFile = path.resolve(filePath);
@@ -36,10 +44,8 @@ class FileSystemCache {
 			throw new Error(`Full URLs in <script> and <link rel="stylesheet"> are not yet supported without webc:keep.`);
 		}
 
-		if(relativeTo) {
-			let parsed = path.parse(relativeTo);
-			filePath = path.join(parsed.dir, filePath);
-		}
+		filePath = FileSystemCache.getRelativeFilePath(filePath, relativeTo);
+
 		if(!this.isFileInProjectDirectory(filePath)) {
 			throw new Error(`Invalid path ${filePath} is not in the working directory.`);
 		}
@@ -722,7 +728,7 @@ class AstSerializer {
 	 * Also note this is overly permissive (includes components in unused slots).
 	 * This method is used for incremental static builds.
 	 */
-	getComponentList(node, rawMode = false) {
+	getComponentList(node, rawMode = false, closestComponentFilePath) {
 		let components = {};
 
 		if(rawMode) {
@@ -738,26 +744,36 @@ class AstSerializer {
 		}
 
 		let tagName = this.getTagName(node);
+		let externalSource = this.getExternalSource(tagName, node);
+		if(externalSource) {
+			let p = FileSystemCache.getRelativeFilePath(externalSource, closestComponentFilePath);
+			components[Path.normalizePath(p)] = true;
+		}
+
 		let importSource = Path.normalizePath(this.getAttributeValue(node, AstSerializer.attrs.IMPORT));
 		if(importSource) {
+			// TODO also relative-to-closest-component paths here? (and below in compileNode)
 			components[importSource] = true;
-
+			closestComponentFilePath = importSource;
+			
 			if(this.components[importSource]) {
-				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode));
+				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode, importSource));
 			}
 		} else {
 			let filePath = Path.normalizePath(this.componentMap[tagName]);
 			if(filePath) {
+				// TODO also relative-to-closest-component paths here? (and below in compileNode)
 				components[filePath] = true;
+				closestComponentFilePath = filePath;
 
 				if(this.components[filePath]) {
-					Object.assign(components, this.getComponentList(this.components[filePath].ast, rawMode));
+					Object.assign(components, this.getComponentList(this.components[filePath].ast, rawMode, filePath));
 				}
 			}
 		}
 
 		for(let child of (node.childNodes || [])) {
-			Object.assign(components, this.getComponentList(child, rawMode || tagName === "template"));
+			Object.assign(components, this.getComponentList(child, rawMode || tagName === "template", closestComponentFilePath));
 		}
 
 		return components;

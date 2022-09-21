@@ -1566,5 +1566,7 @@ test("getComponents API", async t => {
 		"./test/stubs/components/child-css-js-f.webc",
 		"./test/stubs/components/child-css-js-b.webc",
 		// no sibling
+		"./test/stubs/components/external.js",
+		"./test/stubs/components/external.css",
 	]);
 });
