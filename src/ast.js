@@ -872,7 +872,18 @@ class AstSerializer {
 		if(htmlAttribute) {
 			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
 			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let htmlContent = await fn.call(context);
+			const proxiedContext = new Proxy(context, {
+				get(target, propertyName) {
+					if(Reflect.has(target, propertyName)) {
+						return Reflect.get(target, propertyName);
+					}
+					throw new Error([
+						`'${propertyName}' not found when evalutating @html property with value '${htmlAttribute}'.`,
+						`Check attributes, properties or helpers are defined for '${propertyName}'.`
+					].join('\n'));
+				}
+			});
+			let htmlContent = await fn.call(proxiedContext);
 			componentHasContent = htmlContent.trim().length > 0;
 			content += htmlContent;
 		} else if(!options.rawMode && component) {

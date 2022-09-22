@@ -1418,6 +1418,15 @@ Template HTML Nokeep
 `);
 });
 
+test("Using @html with undefined properties or helpers", async (t) => {
+	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing.webc"), {
+		message: [
+			"'firstname' not found when evalutating @html property with value 'this.firstname'.",
+			"Check attributes, properties or helpers are defined for 'firstname'."
+		].join('\n')
+	});
+});
+
 test("Issue #3 slot inconsistency", async t => {
 	let component = new WebC();
 
