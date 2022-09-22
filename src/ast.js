@@ -596,18 +596,19 @@ class AstSerializer {
 			transformTypes = [];
 		}
 
-		let context = Object.assign({
-			attrs: AttributeSerializer.dedupeAttributes(node.attrs),
+		let context = {
 			filePath: this.filePath,
-			data: this.globalData,
 			helpers: this.helpers,
-		}, options.componentProps);
+			...this.globalData,
+			...AttributeSerializer.dedupeAttributes(node.attrs),
+			...options.componentProps,
+		};
 
 		for(let type of transformTypes) {
 			content = await this.transforms[type].call({
 				type,
 				...context
-			}, content, parentComponent, options.componentProps);
+			}, content, parentComponent);
 		}
 
 		return content;
