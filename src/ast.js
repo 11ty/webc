@@ -119,6 +119,7 @@ class AstSerializer {
 		ROOT: "webc:root",
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
+		ASSET_BUCKET: "webc:bucket", // css scoping
 		HTML: "@html",
 	};
 
@@ -908,15 +909,28 @@ class AstSerializer {
 							childContent = html;
 						}
 
-						let entryKey = options.closestParentComponent || this.filePath;
-						if(!options[key][entryKey]) {
-							options[key][entryKey] = new Set();
+						let bucket = this.getAttributeValue(node, AstSerializer.attrs.ASSET_BUCKET) || "default";
+						if(bucket !== "default") {
+							if(!options.assets.buckets[key]) {
+								options.assets.buckets[key] = new Set();
+							}
+							options.assets.buckets[key].add(bucket);
 						}
-						if(!options[key][entryKey].has(childContent)) {
+
+						let entryKey = options.closestParentComponent || this.filePath;
+						if(!options.assets[key][entryKey]) {
+							options.assets[key][entryKey] = {};
+						}
+						if(!options.assets[key][entryKey][bucket]) {
+							options.assets[key][entryKey][bucket] = new Set();
+						}
+						if(!options.assets[key][entryKey][bucket].has(childContent)) {
+							options.assets[key][entryKey][bucket].add( childContent );
+
+							// TODO should this entire branch be skipped and assets should always leave as-is when streaming?
 							this.streams.output(key, childContent);
 						}
 
-						options[key][entryKey].add( childContent );
 					} else { // Otherwise, leave as-is
 						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
 						content += childContent;
@@ -938,8 +952,11 @@ class AstSerializer {
 			rawMode: false, // plaintext output
 			isSlottedContent: false,
 			isMatchingSlotSource: false,
-			css: {},
-			js: {},
+			assets: {
+				buckets: {},
+				css: {},
+				js: {},
+			},
 			components: new DepGraph({ circular: true }),
 			closestParentComponent: this.filePath,
 		}, options);
@@ -961,13 +978,24 @@ class AstSerializer {
 			let compiled = await this.compileNode(node, slots, options);
 			let content = compiled.html;
 			let assets = new AssetManager(options.components);
-	
-			return {
+
+			let returnObject = {
 				html: content,
-				css: assets.getOrderedAssets(options.css),
-				js: assets.getOrderedAssets(options.js),
+				css: assets.getOrderedAssets(options.assets.css),
+				js: assets.getOrderedAssets(options.assets.js),
 				components: assets.orderedComponentList,
+				buckets: {},
 			};
+
+			for(let type in options.assets.buckets) {
+				returnObject.buckets[type] = {};
+
+				for(let bucket of options.assets.buckets[type]) {
+					returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
+				}
+			}
+
+			return returnObject;
 		} catch(e) {
 			this.streams.error("html", e);
 			return Promise.reject(e);

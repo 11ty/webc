@@ -1570,3 +1570,30 @@ test("getComponents API", async t => {
 		"./test/stubs/components/external.css",
 	]);
 });
+
+test("Using asset buckets", async t => {
+	let { html, css, js, components, buckets } = await testGetResultFor("./test/stubs/asset-buckets.webc");
+
+	t.deepEqual(js, [`/* Default bucket script */`]);
+	t.deepEqual(css, [`/* Default bucket style */`]);
+	t.deepEqual(buckets, {
+		css: {
+			async: [`/* async bucket style */`],
+			defer: [`/* defer bucket style */`],
+		},
+		js: {
+			async: [`/* async bucket script */`],
+			defer: [`/* defer bucket script */`],
+		},
+	});
+	t.deepEqual(components, [
+		"./test/stubs/asset-buckets.webc",
+	]);
+	t.is(html, `<p>Hi</p>
+
+
+
+
+
+`);
+});

@@ -1,0 +1,7 @@
+<p>Hi</p>
+<script>/* Default bucket script */</script>
+<style>/* Default bucket style */</style>
+<script webc:bucket="defer">/* defer bucket script */</script>
+<script webc:bucket="async">/* async bucket script */</script>
+<style webc:bucket="defer">/* defer bucket style */</style>
+<style webc:bucket="async">/* async bucket style */</style>
