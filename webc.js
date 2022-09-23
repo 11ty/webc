@@ -64,7 +64,7 @@ class WebC {
 	}
 
 	_getRawContent() {
-		if(this.rawInput) {
+		if(this.rawInput || this.rawInput === "") {
 			return this.rawInput;
 		} else if(this.filePath) {
 			if(!this._cachedContent) {
