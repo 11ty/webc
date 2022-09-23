@@ -106,7 +106,7 @@ class AstSerializer {
 
 	static prefixes = {
 		props: "@",
-		lookup: ":",
+		dynamic: ":",
 	}
 
 	/* Custom HTML attributes */
@@ -870,7 +870,7 @@ class AstSerializer {
 		let componentHasContent = null;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
-			let fn = ModuleScript.evaluateAttribute(htmlAttribute, this.filePath);
+			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
 			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 			let htmlContent = await fn.call(context);
 			componentHasContent = htmlContent.trim().length > 0;

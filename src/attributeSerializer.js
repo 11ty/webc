@@ -1,5 +1,5 @@
-import lodashGet from "lodash.get";
 import { AstSerializer } from "./ast.js";
+import { ModuleScript } from "./moduleScript.js";
 
 class AttributeSerializer {
 	static dedupeAttributes(attrs = []) {
@@ -25,6 +25,7 @@ class AttributeSerializer {
 				if(merged[name].value.length > 0 || value.trim().length === 0) {
 					attrs[j].skipped = true;
 				}
+
 				for(let splitVal of value.split(merged[name].splitDelimiter)) {
 					splitVal = splitVal.trim();
 					if(splitVal) {
@@ -60,19 +61,14 @@ class AttributeSerializer {
 		return attrObject;
 	}
 
-	static getDataValue(selector, data, globalData) {
-		let dataValue = lodashGet(data, selector, "");
-		if(dataValue === "") {
-			return lodashGet(globalData, selector, "");
-		}
-		return dataValue;
-	}
-
 	static normalizeAttribute(name, value, data, globalData) {
-		if(name.startsWith(AstSerializer.prefixes.lookup)) {
+		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
+			let fn = ModuleScript.evaluateAttribute(value);
+			let context = Object.assign({}, data, globalData);
+
 			return {
 				name: name.slice(1),
-				value: AttributeSerializer.getDataValue(value, data, globalData),
+				value: fn.call(context),
 			};
 		}
 		return {
@@ -86,7 +82,7 @@ class AttributeSerializer {
 		let data = Object.assign({}, attrs);
 		for(let name in data) {
 			if(name.startsWith(AstSerializer.prefixes.props)) {
-				let newName = name.slice(1);
+				let newName = name.slice(AstSerializer.prefixes.props.length);
 				data[newName] = data[name];
 				delete data[name];
 			}
@@ -103,7 +99,7 @@ class AttributeSerializer {
 
 		for(let key in attrObject) {
 			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data, globalData);
-			if(name.startsWith(AstSerializer.prefixes.props) || value === false) {
+			if(name.startsWith(AstSerializer.prefixes.props) || !value && value !== "") {
 				continue;
 			}
 

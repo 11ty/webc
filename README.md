@@ -401,9 +401,9 @@ Inside of your component definition, you can add attributes to the host componen
 
 * `class` and `style` attributes are merged as expected.
 
-#### Lookup attributes
+#### Dynamic attributes
 
-Make any attribute into a lookup attributes by prefixing it with a `:`. You have access to host component attribute and property names (as well as page data) here!
+Make any attribute into a dynamic attribute by prefixing it with a `:`. You have access to host component attribute and property names (as well as page data) here!
 
 `page.webc`:
 
@@ -414,10 +414,8 @@ Make any attribute into a lookup attributes by prefixing it with a `:`. You have
 `components/avatar-image.webc`:
 
 ```html
-<img :src="src" :alt="alt" class="avatar-image">
+<img :src="src" :alt="this.alt" class="avatar-image">
 ```
-
-Lookup attributes can accept any [Lodash compatible path selector](https://lodash.com/docs/#get) (for more complex nested data).
 
 #### Properties
 

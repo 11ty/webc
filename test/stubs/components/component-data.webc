@@ -1,1 +1,1 @@
-<div :key="attr"></div>
+<div :key="this.attr"></div>

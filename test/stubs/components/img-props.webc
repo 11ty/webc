@@ -1,1 +1,1 @@
-<img :src="localsrc">
+<img :src="this.localsrc">

@@ -6,9 +6,14 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static evaluateAttribute(content) {
+	static evaluateAsyncAttribute(content) {
 		const AsyncFunction = (async function () {}).constructor;
 		return new AsyncFunction(`return ${content};`);
+	}
+
+	static evaluateAttribute(content) {
+		const Function = (function () {}).constructor;
+		return new Function(`return ${content};`);
 	}
 
 	static getModule(content, filePath) {
