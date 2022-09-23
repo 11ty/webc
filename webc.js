@@ -136,7 +136,7 @@ class WebC {
 		}
 	}
 
-	defineComponents(globOrObject) {
+	static getComponentsMap(globOrObject) {
 		if(typeof globOrObject === "string" || Array.isArray(globOrObject)) {
 			let files = globOrObject;
 
@@ -148,7 +148,7 @@ class WebC {
 				});
 			}
 	
-			let obj = {}
+			let obj = {};
 			for(let file of files) {
 				let {name} = path.parse(file);
 				if(obj[name]) {
@@ -157,10 +157,14 @@ class WebC {
 				obj[name] = file;
 			}
 
-			this._defineComponentsObject(obj);
-		} else {
-			this._defineComponentsObject(globOrObject);
+			return obj;
 		}
+
+		return globOrObject;
+	}
+
+	defineComponents(globOrObject) {
+		this._defineComponentsObject(WebC.getComponentsMap(globOrObject));
 	}
 
 	async setup(options = {}) {
