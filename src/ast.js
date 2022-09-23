@@ -728,6 +728,15 @@ class AstSerializer {
 		}
 	}
 
+	getBucketName(node, tagName) {
+		let bucket = this.getAttributeValue(node, AstSerializer.attrs.ASSET_BUCKET);
+		if(bucket) {
+			return bucket;
+		}
+
+		return "default";
+	}
+
 	getExternalSource(tagName, node) {
 		if(this.isStylesheetNode(tagName, node)) {
 			return this.getAttributeValue(node, "href");
@@ -909,7 +918,7 @@ class AstSerializer {
 							childContent = html;
 						}
 
-						let bucket = this.getAttributeValue(node, AstSerializer.attrs.ASSET_BUCKET) || "default";
+						let bucket = this.getBucketName(node, tagName);
 						if(bucket !== "default") {
 							if(!options.assets.buckets[key]) {
 								options.assets.buckets[key] = new Set();

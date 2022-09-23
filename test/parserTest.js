@@ -1578,11 +1578,9 @@ test("Using asset buckets", async t => {
 	t.deepEqual(css, [`/* Default bucket style */`]);
 	t.deepEqual(buckets, {
 		css: {
-			async: [`/* async bucket style */`],
 			defer: [`/* defer bucket style */`],
 		},
 		js: {
-			async: [`/* async bucket script */`],
 			defer: [`/* defer bucket script */`],
 		},
 	});
@@ -1590,8 +1588,6 @@ test("Using asset buckets", async t => {
 		"./test/stubs/asset-buckets.webc",
 	]);
 	t.is(html, `<p>Hi</p>
-
-
 
 
 
