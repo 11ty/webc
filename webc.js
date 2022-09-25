@@ -32,7 +32,7 @@ class WebC {
 		this.customHelpers = {};
 		this.globalComponents = {};
 		this.astOptions = {};
-		this.bundlerMode = false;
+		this.bundlerMode = true;
 
 		if(input) {
 			this.rawInput = input;
