@@ -24,10 +24,12 @@ async function getStreamChunks(readableStream) {
 }
 
 async function testGetStreamResultFor(webc, components, slots, data) {
+	webc.setBundlerMode(true);
+
 	let { html, css, js } = await webc.stream({
 		slots,
 		components,
-		data
+		data,
 	});
 
 	return {
@@ -41,7 +43,6 @@ async function testGetStreamResultFor(webc, components, slots, data) {
 
 async function testGetResultFor(filename, components, slots, data) {
 	let component = new WebC();
-	
 	component.setInputPath(filename);
 
 	let { chunks } = await testGetStreamResultFor(component, components, slots, data);

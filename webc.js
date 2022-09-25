@@ -32,6 +32,7 @@ class WebC {
 		this.customHelpers = {};
 		this.globalComponents = {};
 		this.astOptions = {};
+		this.bundlerMode = false;
 
 		if(input) {
 			this.rawInput = input;
@@ -172,6 +173,7 @@ class WebC {
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
+		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setData(options.data);
 
@@ -196,6 +198,10 @@ class WebC {
 		let { ast, serializer } = setup;
 		let obj = serializer.getComponentList(ast);
 		return Object.keys(obj);
+	}
+
+	setBundlerMode(mode) {
+		this.bundlerMode = !!mode;
 	}
 
 	async stream(options = {}) {

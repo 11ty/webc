@@ -4,6 +4,19 @@ import typescript from "typescript";
 
 import { WebC } from "../webc.js";
 
+async function testGetResultFor(filename, components, slots, data) {
+	let component = new WebC();
+
+	component.setInputPath(filename);
+	component.setBundlerMode(true);
+
+	return component.compile({
+		slots,
+		components,
+		data,
+	});
+}
+
 test("Raw Input", async t => {
 	let component = new WebC();
 	component.setContent(`<div class="red"></div>`);
@@ -82,9 +95,9 @@ for(let filename in fileInputStubs) {
 	let stub = fileInputStubs[filename]
 	test(stub.description || filename, async t => {
 		let component = new WebC();
-		
 		component.setInputPath(filename);
-		
+		component.setBundlerMode(true);
+
 		let { html, css, js, components } = await component.compile();
 
 		t.deepEqual(js, []);
@@ -204,6 +217,7 @@ test("Two components using identical <style>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/two-style.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -222,6 +236,7 @@ test("<style webc:scoped>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/scoped.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -239,6 +254,7 @@ test("<style webc:scoped> selector tests", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/scoped-top.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -270,6 +286,8 @@ div:before {}
 		return `/* This is an override */`;
 	});
 
+	component.setBundlerMode(true);
+
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
@@ -283,6 +301,7 @@ div:before {}
 test("<style webc:scoped=\"hashOverride\">", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/scoped-override.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -482,18 +501,6 @@ test("Component in page mode (error case)", async t => {
 	]);
 	t.is(html, `<div>Test</div>`);
 });
-
-async function testGetResultFor(filename, components, slots, data) {
-	let component = new WebC();
-
-	component.setInputPath(filename);
-
-	return component.compile({
-		slots,
-		components,
-		data,
-	});
-}
 
 test("Using a web component without it being declared", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc");
@@ -798,6 +805,48 @@ After`);
 test("Using a web component with <style webc:keep>", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/components/nested-child-style-keep.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/nested-child-style-keep.webc",
+	]);
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with <style> and `bundlerMode: false` (default)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/nested.webc");
+
+	let {html, js, css, components} = await component.compile({
+		components: {
+			"web-component": "./test/stubs/components/nested-child-style.webc"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/nested-child-style.webc",
+	]);
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with <style webc:keep> and `bundlerMode: false` (default)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/nested.webc");
+
+	let {html, js, css, components} = await component.compile({
+		components: {
+			"web-component": "./test/stubs/components/nested-child-style-keep.webc"
+		}
 	});
 
 	t.deepEqual(js, []);
@@ -1139,6 +1188,7 @@ test("<script webc:type> with Typescript", async t => {
 		});
 		return ret.outputText;
 	});
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 

@@ -69,6 +69,9 @@ class AstSerializer {
 		// controls whether or not doctype, html, body are prepended to content
 		this.mode = "component";
 
+		// controls whether the assets are aggregated
+		this.bundlerMode = false;
+
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);
 
@@ -150,6 +153,10 @@ class AstSerializer {
 		track: true,
 		wbr: true,
 	};
+
+	setBundlerMode(mode) {
+		this.bundlerMode = !!mode;
+	}
 
 	setMode(mode = "component") {
 		this.mode = mode; // "page" or "component"
@@ -339,7 +346,7 @@ class AstSerializer {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
-	isTagIgnored(node, component, renderingMode) {
+	isTagIgnored(node, component, renderingMode, options = {}) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -385,8 +392,10 @@ class AstSerializer {
 		}
 
 		// aggregation tags
-		if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
-			return true;
+		if(this.bundlerMode) {
+			if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
+				return true;
+			}
 		}
 
 		return false;
@@ -565,7 +574,7 @@ class AstSerializer {
 				delete attrObject.slot;
 			}
 
-			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
 			}
 		}
@@ -581,7 +590,7 @@ class AstSerializer {
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				content += `</${tagName}>`;
 			}
 
@@ -711,18 +720,14 @@ class AstSerializer {
 	}
 
 	getAggregateAssetKey(tagName, node) {
-		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		if(!this.bundlerMode || this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
 			return false;
 		}
 
-		if(tagName === "style") {
+		if(tagName === "style" || this.isStylesheetNode(tagName, node)) {
 			return "css";
 		}
-		
-		if(this.isStylesheetNode(tagName, node)) {
-			return "css";
-		}
-		
+
 		if(tagName === "script") {
 			return "js"
 		}
@@ -907,11 +912,13 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					let key = this.getAggregateAssetKey(tagName, node);
+					let key = this.getAggregateAssetKey(tagName, node, options);
+
 					// Aggregate to CSS/JS bundles
 					if(key) {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
+							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
 							childContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
@@ -990,17 +997,22 @@ class AstSerializer {
 
 			let returnObject = {
 				html: content,
-				css: assets.getOrderedAssets(options.assets.css),
-				js: assets.getOrderedAssets(options.assets.js),
 				components: assets.orderedComponentList,
+				css: [],
+				js: [],
 				buckets: {},
 			};
 
-			for(let type in options.assets.buckets) {
-				returnObject.buckets[type] = {};
+			if(this.bundlerMode) {
+				returnObject.css = assets.getOrderedAssets(options.assets.css);
+				returnObject.js = assets.getOrderedAssets(options.assets.js);
 
-				for(let bucket of options.assets.buckets[type]) {
-					returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
+				for(let type in options.assets.buckets) {
+					returnObject.buckets[type] = {};
+	
+					for(let bucket of options.assets.buckets[type]) {
+						returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
+					}
 				}
 			}
 
