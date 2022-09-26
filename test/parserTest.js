@@ -29,13 +29,41 @@ test("Raw Input", async t => {
 	t.is(html, `<div class="red"></div>`);
 });
 
-test("Escaped content", async t => {
+test("Escaped content (<code>)", async t => {
 	let component = new WebC();
 	component.setContent(`<code>&lt;style&gt;</code>`);
 
 	let { html } = await component.compile();
 
 	t.is(html, `<code>&lt;style&gt;</code>`);
+});
+
+test("Escaped content (<pre>)", async t => {
+	let component = new WebC();
+	component.setContent(`<pre>&lt;style&gt;</pre>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<pre>&lt;style&gt;</pre>`);
+});
+
+test("Escaped content (<iframe>)", async t => {
+	let component = new WebC();
+	component.setContent(`<iframe>test > hi</iframe>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<iframe>test &gt; hi</iframe>`);
+});
+
+test("Not escaped content (template, script, style, noscript)", async t => {
+	let component = new WebC();
+	component.setBundlerMode(false);
+	component.setContent(`<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
 });
 
 test("No Quirks mode default (HTML file without doctype)", async t => {

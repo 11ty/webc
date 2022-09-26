@@ -810,6 +810,14 @@ class AstSerializer {
 		return components;
 	}
 
+	isUnescapedTagContent(parentNode) {
+		let tagName = parentNode?.tagName;
+		if(tagName === "style" || tagName === "script" || tagName === "noscript" || tagName === "template") {
+			return true;
+		}
+		return false;
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 		
@@ -830,8 +838,12 @@ class AstSerializer {
 		if(node.nodeName === "#text") {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
 				let unescaped = this.outputHtml(node.value, streamEnabled);
-				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
-				content += escapeText(unescaped);
+				if(options.rawMode || this.isUnescapedTagContent(node.parentNode)) {
+					content += unescaped;
+				} else {
+					// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
+					content += escapeText(unescaped);
+				}
 			} else {
 				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
 			}
