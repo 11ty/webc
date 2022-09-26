@@ -37,6 +37,7 @@
 		"@11ty/eleventy-utils": "^1.0.1",
 		"css-tree": "^2.2.1",
 		"dependency-graph": "^0.11.0",
+		"entities": "^4.4.0",
 		"fast-glob": "^3.2.12",
 		"parse5": "^7.1.1"
 	},

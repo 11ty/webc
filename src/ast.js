@@ -10,6 +10,7 @@ import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.js";
 import { Streams } from "./streams.js";
+import { escapeText } from 'entities/lib/escape.js';
 
 class FileSystemCache {
 	constructor() {
@@ -828,7 +829,9 @@ class AstSerializer {
 		let renderingMode = this.getMode(options.closestParentComponent);
 		if(node.nodeName === "#text") {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
-				content += this.outputHtml(node.value, streamEnabled);
+				let unescaped = this.outputHtml(node.value, streamEnabled);
+				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
+				content += escapeText(unescaped);
 			} else {
 				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
 			}

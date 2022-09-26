@@ -29,6 +29,15 @@ test("Raw Input", async t => {
 	t.is(html, `<div class="red"></div>`);
 });
 
+test("Escaped content", async t => {
+	let component = new WebC();
+	component.setContent(`<code>&lt;style&gt;</code>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<code>&lt;style&gt;</code>`);
+});
+
 test("No Quirks mode default (HTML file without doctype)", async t => {
 	let component = new WebC();
 	component.setContent(`<html><div class="red"></div></html>`);
@@ -730,9 +739,9 @@ test("Using different attribute delimiters and nested potential delimiters", asy
 	<div data-foo="no-nested-quotes"></div>
 	<div data-foo="using-single-quotes-without-nested-quotes"></div>
 	<div data-foo="still-valid-technically"></div>
-	<div data-foo='foo="bar"'></div>
+	<div data-foo="foo=&quot;bar&quot;"></div>
 	<div data-foo="foo='bar'"></div>
-	<div data-foo='foo="bar"'></div>
+	<div data-foo="foo=&quot;bar&quot;"></div>
 </div>`);
 });
 
