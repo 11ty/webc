@@ -71,7 +71,7 @@ class AstSerializer {
 		this.mode = "component";
 
 		// controls whether the assets are aggregated
-		this.bundlerMode = true;
+		this.bundlerMode = false;
 
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);

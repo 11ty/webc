@@ -62,6 +62,10 @@ import { WebC } from "@11ty/webc";
 
 let page = new WebC();
 
+// This enables aggregation of CSS and JS
+// As of 0.4.0+ this is disabled by default
+page.setBundlerMode(true);
+
 // File
 page.setInputPath("page.webc");
 
@@ -262,9 +266,13 @@ If your WebC component wants to _output_ a `<slot>` in the compiled markup for u
 
 ### Aggregating CSS and JS
 
+Enabling (off-by-default) Bundler Mode (`page.setBundlerMode(true)`) aggregates CSS and JS found in WebC components.
+
 As noted in the JavaScript API section above, the `compile` method returns four different properties:
 
 ```js
+page.setBundlerMode(true);
+
 let { html, css, js, components } = await page.compile();
 ```
 
@@ -293,6 +301,8 @@ my-component {
 Compilation results:
 
 ```js
+page.setBundlerMode(true);
+
 let results = await page.compile();
 
 // `results`:
@@ -332,6 +342,8 @@ We include a lightweight mechanism (`webc:scoped`) to scope component CSS. Selec
 Compilation results:
 
 ```js
+page.setBundlerMode(true);
+
 let results = await page.compile();
 
 // `results` (js and components omitted):

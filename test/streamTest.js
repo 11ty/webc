@@ -24,7 +24,7 @@ async function getStreamChunks(readableStream) {
 }
 
 async function testGetStreamResultFor(webc, components, slots, data) {
-	// webc.setBundlerMode(true);
+	webc.setBundlerMode(true);
 
 	let { html, css, js } = await webc.stream({
 		slots,
