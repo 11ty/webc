@@ -805,6 +805,22 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 	t.is(html, `<web-component>
 	SSR content
 </web-component>`);
+
+test("Using a web component to override the parent component tag", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
+		"web-component": "./test/stubs/components/override-parent.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`/* Hi */`]);
+	t.deepEqual(components, [
+		"./test/stubs/nested-content.webc",
+		"./test/stubs/components/override-parent.webc",
+	]);
+	t.is(html, `Before
+<button type="submit" data-attr="1">SSR content</button>
+
+After`);
 });
 
 test("Using a web component (style attribute merging)", async t => {

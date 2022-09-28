@@ -314,6 +314,9 @@ class AstSerializer {
 			}
 
 			if(this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				if(this.hasAttribute(child, AstSerializer.attrs.KEEP)) {
+					return true;
+				}
 				return false;
 			}
 		}
