@@ -430,6 +430,8 @@ class AstSerializer {
 
 	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
+
+		// webc:root Attributes
 		let tops = this.getTopLevelNodes(component, [], [AstSerializer.attrs.ROOT]);
 		for(let root of tops) {
 			for(let attr of root.attrs) {
@@ -583,6 +585,17 @@ class AstSerializer {
 			}
 
 			let attrs = this.getAttributes(node, component, options);
+			// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
+			let parentComponent = this.components[options.closestParentComponent];
+			if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+				if(parentComponent.scopedStyleHash) {
+					attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
+				}
+
+				for(let hostAttr of options.hostComponentNode.attrs) {
+					attrs.push(hostAttr);
+				}
+			}
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
 			if(options.isMatchingSlotSource) {
@@ -890,7 +903,7 @@ class AstSerializer {
 			}
 		}
 
-		// TODO warning if top level page component using a style hash but has no root element
+		// TODO warning if top level page component using a style hash but has no root element (text only?)
 
 		// Start tag
 		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, component, renderingMode, options);
@@ -911,6 +924,7 @@ class AstSerializer {
 			content += htmlContent;
 		} else if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
+			options.hostComponentNode = node;
 
 			let slots = this.getSlottedContentNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);

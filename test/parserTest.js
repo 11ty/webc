@@ -806,18 +806,35 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 });
 
 test("Using a web component to override the parent component tag", async t => {
-	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content-with-attr.webc", {
 		"web-component": "./test/stubs/components/override-parent.webc"
 	});
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, [`/* Hi */`]);
 	t.deepEqual(components, [
-		"./test/stubs/nested-content.webc",
+		"./test/stubs/nested-content-with-attr.webc",
 		"./test/stubs/components/override-parent.webc",
 	]);
 	t.is(html, `Before
-<button type="submit" data-attr="1">SSR content</button>
+<button type="submit" data-attr="1" attr="1" other="2">SSR content</button>
+
+After`);
+});
+
+test("Using a web component to override the parent component tag with scoped CSS", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content-with-attr.webc", {
+		"web-component": "./test/stubs/components/override-parent-scoped.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wb_lq-fmb{font-weight:bold}`]);
+	t.deepEqual(components, [
+		"./test/stubs/nested-content-with-attr.webc",
+		"./test/stubs/components/override-parent-scoped.webc",
+	]);
+	t.is(html, `Before
+<button type="submit" data-attr="1" class="wb_lq-fmb" attr="1" other="2">SSR content</button>
 
 After`);
 });
