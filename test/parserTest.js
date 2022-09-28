@@ -802,9 +802,8 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 		"./test/stubs/empty-class.webc",
 		"./test/stubs/components/child-root-empty-class.webc",
 	]);
-	t.is(html, `<web-component>
-	SSR content
-</web-component>`);
+	t.is(html, `<web-component>Light dom</web-component>`);
+});
 
 test("Using a web component to override the parent component tag", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content.webc", {

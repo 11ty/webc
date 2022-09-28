@@ -634,9 +634,7 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.is(html, `<web-component>
-	SSR content
-</web-component>`);
+	t.is(html, `<web-component>Light dom</web-component>`);
 });
 
 test("Using a web component (style attribute merging)", async t => {

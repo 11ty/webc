@@ -1,3 +1,1 @@
-<template webc:root class="">
-	SSR content
-</template>
+<div webc:root class=""><slot>SSR content</slot></div>
