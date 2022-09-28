@@ -270,10 +270,10 @@ class AstSerializer {
 		let prefix = "w";
 		let hashLength = 8;
 		let hash = createHash("sha256");
-		let root = this.getImplicitRootNode(component);
 
 		// <style webc:scoped> must be nested at the root
-		let styleNodes = this.findAllChildren(root, "style", [AstSerializer.attrs.SCOPED]);
+		let styleNodes = this.getTopLevelNodes(component, ["style"], [AstSerializer.attrs.SCOPED]);
+
 		for(let node of styleNodes) {
 			// Override hash with scoped="override"
 			let override = this.getAttributeValue(node, AstSerializer.attrs.SCOPED);
@@ -300,44 +300,45 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		let root = this.getImplicitRootNode(component);
-		if(!root) {
-			throw new Error("Unable to find component root element, expected an implicit <head> or <body>");
-		}
-
 		// Has <* webc:root> (has to be a root child, not script/style)
-		let roots = this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
-		for(let child of roots) {
+		let tops = this.getTopLevelNodes(component);
+		for(let child of tops) {
 			let tagName = this.getTagName(child);
 			if(tagName === "script" || tagName === "style") {
 				continue;
 			}
 
 			if(this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				// ignore if webc:root and webc:keep
 				if(this.hasAttribute(child, AstSerializer.attrs.KEEP)) {
 					return true;
 				}
+
+				// do not ignore if webc:root (but not webc:keep)
 				return false;
 			}
 		}
 
 		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
-		let children = this.findAllChildren(root, ["script", "style"]);
-		for(let child of children) {
-			if(!this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
-				if(this.hasTextContent(child)) {
-					return false;
-				}
-				// <script src=""> or <link rel="stylesheet" href="">
-				let tagName = this.getTagName(child);
-				if(this.getExternalSource(tagName, child)) {
-					return false;
-				}
+		for(let child of tops) {
+			let tagName = this.getTagName(child);
+			if(tagName !== "script" && tagName !== "style" || this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				continue;
+			}
+
+			if(this.hasTextContent(child)) {
+				return false;
+			}
+
+			// <script src=""> or <link rel="stylesheet" href="">
+			if(this.getExternalSource(tagName, child)) {
+				return false;
 			}
 		}
 
+
 		// Has <template shadowroot> (can be anywhere in the component body)
-		let shadowroot = this.findElement(root, "template", ["shadowroot"]);
+		let shadowroot = this.findElement(component, "template", ["shadowroot"]);
 		if(shadowroot) {
 			return false;
 		}
@@ -405,26 +406,36 @@ class AstSerializer {
 		return false;
 	}
 
-	getImplicitRootNode(node) {
-		let body = this.findElement(node, "body");
-		let head = this.findElement(node, "head");
-		if(head?.childNodes?.length > 0) {
-			return head;
-		}
-		return body;
+	getImplicitRootNodes(node) {
+		return [
+			this.findElement(node, "body"),
+			this.findElement(node, "head")
+		].filter(node => !!node);
 	}
 
-	getRootNodes(node) {
-		let root = this.getImplicitRootNode(node);
-		return this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
+	getTopLevelNodes(node, tagNames = [], webcAttrs = []) {
+		let roots = this.getImplicitRootNodes(node);
+		if(roots.length === 0) {
+			throw new Error("Unable to find component root, expected an implicit <head> or <body>");
+		}
+
+		let children = [];
+		for(let root of roots) {
+			for(let child of this.findAllChildren(root, tagNames, webcAttrs)) {
+				children.push(child);
+			}
+		}
+		return children;
 	}
 
 	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
-		let roots = this.getRootNodes(component);
-		for(let root of roots) {
-			for(let attr of root.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT)) {
-				attrs.push(attr);
+		let tops = this.getTopLevelNodes(component, [], [AstSerializer.attrs.ROOT]);
+		for(let root of tops) {
+			for(let attr of root.attrs) {
+				if(attr.name !== AstSerializer.attrs.ROOT) {
+					attrs.push(attr);
+				}
 			}
 		}
 
