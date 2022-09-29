@@ -10,7 +10,8 @@ import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.js";
 import { Streams } from "./streams.js";
-import { escapeText } from 'entities/lib/escape.js';
+import { escapeText } from "entities/lib/escape.js";
+import { nanoid } from "nanoid";
 
 class FileSystemCache {
 	constructor() {
@@ -181,6 +182,18 @@ class AstSerializer {
 
 	isVoidElement(tagName) {
 		return AstSerializer.voidElements[tagName] || false;
+	}
+
+	setUidFunction(fn) {
+		this.uidFn = fn;
+	}
+
+	getUid() {
+		if(this.uidFn && typeof this.uidFn === "function") {
+			return this.uidFn();
+		}
+
+		return 'webc-' + nanoid(5);
 	}
 
 	hasAttribute(node, attributeName) {
@@ -436,7 +449,7 @@ class AstSerializer {
 		for(let root of tops) {
 			for(let attr of root.attrs) {
 				if(attr.name !== AstSerializer.attrs.ROOT) {
-					attrs.push(attr);
+					attrs.push({ name: attr.name, value: attr.value });
 				}
 			}
 		}
@@ -585,8 +598,9 @@ class AstSerializer {
 			}
 
 			let attrs = this.getAttributes(node, component, options);
-			// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
 			let parentComponent = this.components[options.closestParentComponent];
+
+			// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
 			if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
 				if(parentComponent.scopedStyleHash) {
 					attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
@@ -596,6 +610,7 @@ class AstSerializer {
 					attrs.push(hostAttr);
 				}
 			}
+
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
 			if(options.isMatchingSlotSource) {
@@ -893,6 +908,14 @@ class AstSerializer {
 			component = this.getComponent(tagName);
 		}
 
+		if(component) {
+			options.closestParentUid = this.getUid();
+			// we need to set this so that the props of the host component are evaluated with the webc:root attributes inside the component definition
+			options.componentProps = {
+				uid: options.closestParentUid
+			};
+		}
+
 		let slotSource = this.getAttributeValue(node, "slot");
 		if(!options.rawMode && options.closestParentComponent) {
 			if(slotSource && options.isSlottedContent) {
@@ -910,7 +933,8 @@ class AstSerializer {
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
-			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs);
+			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs) || {};
+			options.componentProps.uid = options.closestParentUid;
 		}
 
 		// Component content (foreshadow dom)
@@ -1018,6 +1042,7 @@ class AstSerializer {
 			},
 			components: new DepGraph({ circular: true }),
 			closestParentComponent: this.filePath,
+			closestParentUid: this.getUid(),
 		}, options);
 
 		// parse the top level component
@@ -1027,6 +1052,9 @@ class AstSerializer {
 			}
 
 			options.components.addNode(this.filePath);
+			options.componentProps = {
+				uid: options.closestParentUid
+			};
 		}
 
 		try {

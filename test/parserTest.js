@@ -1732,3 +1732,55 @@ test("Using asset buckets", async t => {
 
 `);
 });
+
+test("Using component UID for accessibility", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/using-uid.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/with-uid.webc"
+	})
+
+	let i = 0;
+	component.setUidFunction(function() {
+		return `webc-${i++}`;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-uid.webc",
+		"./test/stubs/components/with-uid.webc"
+	]);
+
+	t.is(html, `<div id="webc-1"><input aria-controls="webc-1"></div>
+<div id="webc-2"><input aria-controls="webc-2"></div>
+<div id="webc-3"><input aria-controls="webc-3"></div>`);
+});
+
+test("Using component UID for accessibility (and webc:root)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/using-uid.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/with-uid-root.webc"
+	})
+
+	let i = 0;
+	component.setUidFunction(function() {
+		return `webc-${i++}`;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-uid.webc",
+		"./test/stubs/components/with-uid-root.webc"
+	]);
+
+	t.is(html, `<my-component id="webc-1"><input aria-controls="webc-1"></my-component>
+<my-component id="webc-2"><input aria-controls="webc-2"></my-component>
+<my-component id="webc-3"><input aria-controls="webc-3"></my-component>`);
+});

@@ -168,6 +168,10 @@ class WebC {
 		this._defineComponentsObject(WebC.getComponentsMap(globOrObject));
 	}
 
+	setUidFunction(fn) {
+		this.uidFn = fn;
+	}
+
 	async setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
@@ -176,6 +180,10 @@ class WebC {
 		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setData(options.data);
+
+		if(this.uidFn) {
+			ast.setUidFunction(this.uidFn);
+		}
 
 		for(let name in this.customTransforms) {
 			ast.setTransform(name, this.customTransforms[name]);
