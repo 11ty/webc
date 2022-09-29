@@ -542,6 +542,32 @@ test("Full page", async t => {
 </html>`);
 });
 
+test("Full page (with uppercase doctype) Issue #24", async t => {
+	let page = new WebC();
+	page.setInputPath("./test/stubs/page-capital-doctype-issue-24.webc");
+
+	let { html, css, js, components } = await page.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/page-capital-doctype-issue-24.webc"
+	]);
+	t.is(html, `<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content>
+	<title></title>
+</head>
+<body>
+
+
+</body>
+</html>`);
+});
+
 /* This can’t exist any more */
 test("Component in page mode (error case)", async t => {
 	let page = new WebC();
