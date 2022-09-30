@@ -18,7 +18,7 @@
 ### Implementations
 
 * [`@11ty/eleventy-plugin-webc`](https://github.com/11ty/eleventy-plugin-webc): Add WebC support to Eleventy
-* [`express-webc`](https://github.com/NickColley/express-webc) by @NickColley adds WebC to Express
+* [`express-webc`](https://github.com/NickColley/express-webc) by [@NickColley](https://github.com/NickColley/) adds WebC to Express
 
 ### Testimonials
 
