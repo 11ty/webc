@@ -15,9 +15,10 @@
 * The `.webc` file extension is recommended (not a requirement)—you _can_ use `.html`.
 	* Tip for Visual Studio Code users: go to `Preferences -> Settings -> Files: Associations` to add a mapping for `*.webc` to `html`.
 
-### Framework Implementations
+### Implementations
 
 * [`@11ty/eleventy-plugin-webc`](https://github.com/11ty/eleventy-plugin-webc): Add WebC support to Eleventy
+* [`express-webc`](https://github.com/NickColley/express-webc) by @NickColley adds WebC to Express
 
 ### Testimonials
 
