@@ -944,6 +944,9 @@ class AstSerializer {
 			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
 			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 			let htmlContent = await fn.call(context);
+			if(typeof htmlContent !== "string") {
+				htmlContent = `${htmlContent}`;
+			}
 			componentHasContent = htmlContent.trim().length > 0;
 			content += htmlContent;
 		} else if(!options.rawMode && component) {

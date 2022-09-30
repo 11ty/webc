@@ -1,0 +1,1 @@
+<span @html="2" :attr="2"></span>

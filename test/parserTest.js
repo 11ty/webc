@@ -1810,3 +1810,18 @@ test("Using component UID for accessibility (and webc:root)", async t => {
 <my-component id="webc-2"><input aria-controls="webc-2"></my-component>
 <my-component id="webc-3"><input aria-controls="webc-3"></my-component>`);
 });
+
+test("Setting @html and/or :attr to a number (non-string)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/html-number.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/html-number.webc",
+	]);
+
+	t.is(html, `<span attr="2">2</span>`);
+});
