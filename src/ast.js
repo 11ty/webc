@@ -704,7 +704,10 @@ class AstSerializer {
 
 	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
-		templateOptions.rawMode = true;
+		// Ensures shadowroot template is processed in raw mode while allowing template components to be processed in non-raw mode
+		if(this.hasAttribute(node, "shadowroot")) {
+			templateOptions.rawMode = true;
+		}
 		// no transformation on this content
 		delete templateOptions.currentTransformTypes;
 
@@ -855,6 +858,10 @@ class AstSerializer {
 	isUnescapedTagContent(parentNode) {
 		let tagName = parentNode?.tagName;
 		if(tagName === "style" || tagName === "script" || tagName === "noscript" || tagName === "template") {
+			return true;
+		}
+		// Ensures that template component content isn't unnecessarily escaped
+		if(parentNode.nodeName === "#document-fragment") {
 			return true;
 		}
 		return false;

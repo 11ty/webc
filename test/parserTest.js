@@ -1834,3 +1834,30 @@ test("Setting @html and/or :attr to a number (non-string)", async t => {
 
 	t.is(html, `<span attr="2">2</span>`);
 });
+
+const componentWithSlotsMacro = test.macro(async (t, { content, slots, expectedHtml }) => {
+	let component = new WebC();
+	component.setContent(content);
+
+	let { html } = await component.compile({ slots });
+
+	t.is(html, expectedHtml);
+});
+
+test("Using template component with slot (default) (Issue #31)", componentWithSlotsMacro, {
+	content: `<template><slot>Default content</slot></template>`,
+	slots: { default: "Overridden content" },
+	expectedHtml: `<template>Overridden content</template>`,
+});
+
+test("Using template component with slot (named) (Issue #31)", componentWithSlotsMacro, {
+	content: `<template><slot name="test">Default content</slot></template>`,
+	slots: { test: "Overridden content" },
+	expectedHtml: `<template>Overridden content</template>`,
+});
+
+test("Using template component (webc:root) with slot (default) (Issue #31)", componentWithSlotsMacro, {
+	content: `<template webc:root><slot>Default content</slot></template>`,
+	slots: { default: "Overridden content" },
+	expectedHtml: "Overridden content",
+});
