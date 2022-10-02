@@ -13,6 +13,23 @@ import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 
+/** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
+/** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
+/** @typedef {import('parse5/dist/tree-adapters/default').TextNode} TextNode */
+/** @typedef {{ [key: string]: Node | undefined, default?: Node | undefined }} Slots */
+/**
+ * @typedef {object} CompileOptions
+ * @property {boolean} rawMode
+ * @property {boolean} isSlottedContent
+ * @property {boolean} isMatchingSlotSource
+ * @property {string} closestParentComponent
+ * @property {string} closestParentUid
+ * @property {{ buckets: { [key: string]: Set<string> }, css: any, js: any }} assets
+ * @property {DepGraph<any>} components
+ * @property {{ uid: string }} [componentProps]
+ * @property {Array<"render" | "css:scoped">} [currentTransformTypes]
+ */
+
 class FileSystemCache {
 	constructor() {
 		this.contents = {};
@@ -685,6 +702,12 @@ class AstSerializer {
 
 	/**
 	 * Transforms text nodes which are JavaScript Render Functions (i.e. they belong to a `<script webc:type="render">`)
+	 *
+	 * @param {TextNode} node
+	 * @param {Slots} slots
+	 * @param {CompileOptions} options
+	 * @returns {Promise<string>}
+	 * @private
 	 */
 	async getContentForRenderFunction(node, slots, options) {
 		// Resolves the render function inside the text node
@@ -702,6 +725,13 @@ class AstSerializer {
 		return renderFunctionHtml;
 	}
 
+	/**
+	 * @param {Node} node
+	 * @param {Slots} slots
+	 * @param {CompileOptions} options
+	 * @returns {Promise<string>}
+	 * @private
+	 */
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
 		if(slots[slotName] || slotName !== "default") {
@@ -724,6 +754,13 @@ class AstSerializer {
 		return slotFallbackHtml;
 	}
 
+	/**
+	 * @param {Template} node
+	 * @param {Slots} slots
+	 * @param {CompileOptions} options
+	 * @returns {Promise<string>}
+	 * @private
+	 */
 	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
 		// Processes `<template webc:root>` as WebC (including slot resolution)
