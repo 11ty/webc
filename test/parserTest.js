@@ -1970,3 +1970,14 @@ test("Using template component with webc:root and slot *does* process slots (Iss
 	slots: { default: "Overridden content" },
 	expectedHtml: "Overridden content",
 });
+
+test("Render function result is resolves components", async (t) => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/render-child-component.webc");
+	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
+
+	let { html } = await component.compile();
+
+	t.is(html, `<h3>Title</h3>
+<a href="/project">Link text</a>`);
+});

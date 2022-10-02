@@ -1,0 +1,1 @@
+<a :href="this.href"><slot>Default link text</slot></a>

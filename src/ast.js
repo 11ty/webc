@@ -683,6 +683,25 @@ class AstSerializer {
 		return this.components[finalFilePath];
 	}
 
+	/**
+	 * Transforms text nodes which are JavaScript Render Functions (i.e. they belong to a `<script webc:type="render">`)
+	 */
+	async getContentForRenderFunction(node, slots, options) {
+		// Resolves the render function inside the text node
+		let renderFunctionContent = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+
+		// Prevents further render function content to also be processed as a render function
+		delete options.currentTransformTypes;
+
+		// Constructs an AST out of the render function result
+		let renderFunctionAst = await WebC.getASTFromString(renderFunctionContent);
+
+		// Passes the AST back to `compileNode` which can handle the rest
+		let { html: renderFunctionHtml } = await this.compileNode(renderFunctionAst, slots, options, false);
+
+		return renderFunctionHtml;
+	}
+
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
 		if(slots[slotName] || slotName !== "default") {
@@ -882,7 +901,7 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
-		// Short circuit for text nodes, comments, doctypes
+		// Short circuit for text nodes (except render function script content), comments, doctypes
 		let renderingMode = this.getMode(options.closestParentComponent);
 		if(node.nodeName === "#text") {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
@@ -893,10 +912,11 @@ class AstSerializer {
 					// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
 					content += escapeText(unescaped);
 				}
-			} else {
+				return { html: content };
+			} else if(!options.currentTransformTypes.includes("render")) {
 				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
+				return { html: content };
 			}
-			return { html: content };
 		} else if(node.nodeName === "#comment") {
 			return {
 				html: this.outputHtml(`<!--${node.data}-->`, streamEnabled)
@@ -971,7 +991,9 @@ class AstSerializer {
 		if(!componentHasContent) {
 			let externalSource = this.getExternalSource(tagName, node);
 
-			if(!options.rawMode && tagName === "slot") { // <slot> node
+			if(node.nodeName === "#text" && options.currentTransformTypes?.length > 0) { // #text node of <script webc:type="render">
+				content += this.outputHtml(await this.getContentForRenderFunction(node, slots, options), streamEnabled);
+			} else if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottedContent = true;
 
 				content += await this.getContentForSlot(node, slots, options);
