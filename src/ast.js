@@ -945,7 +945,6 @@ class AstSerializer {
 		let componentHasContent = null;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
-			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
 			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 			let proxiedContext = new Proxy(context, {
 				get(target, propertyName) {
@@ -957,6 +956,9 @@ Check that '${propertyName}' is a valid attribute or property name, is present i
 				}
 			});
 
+			// Wraps attribute referring to an existing variable in `context` in `this["variable"]` to allow for using variables without the `this` keyword.
+			let attribute = htmlAttribute in context && (!htmlAttribute.startsWith('this[') || !htmlAttribute.startsWith('this.')) ? `this["${htmlAttribute}"]` : htmlAttribute;
+			let fn = ModuleScript.evaluateAsyncAttribute(attribute);
 			let htmlContent = await fn.call(proxiedContext);
 			if(typeof htmlContent !== "string") {
 				htmlContent = `${htmlContent}`;

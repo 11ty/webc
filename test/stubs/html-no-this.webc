@@ -1,0 +1,5 @@
+<p @html="variable">variable (without this)</p>
+<p @html="this.variable">variable (with this)</p>
+<p @html="2">number literal (not in context)</p>
+<p @html="3">number literal (in context)</p>
+<p @html="process.env.NODE_ENV">you know people are gonna try it</p>

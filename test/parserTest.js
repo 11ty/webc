@@ -1592,6 +1592,31 @@ test("Using @html with undefined properties or helpers", async (t) => {
 	});
 });
 
+test("Using @html without “this”", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/html-no-this.webc");
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			variable: "value",
+			3: "number key"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/html-no-this.webc",
+	]);
+
+	t.is(html, `<p>value</p>
+<p>value</p>
+<p>2</p>
+<p>number key</p>
+<p>test</p>`);
+});
+
 test("Issue #3 slot inconsistency", async t => {
 	let component = new WebC();
 
