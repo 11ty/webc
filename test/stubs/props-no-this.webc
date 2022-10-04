@@ -1,0 +1,5 @@
+<p :key="variable"></p>
+<p :key="this.variable"></p>
+<p :key="2"></p>
+<p :key="3"></p>
+<p :key="process.env.NODE_ENV"></p>

@@ -64,8 +64,10 @@ class AttributeSerializer {
 
 	static normalizeAttribute(name, value, data, globalData) {
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
-			let fn = ModuleScript.evaluateAttribute(value);
+			// Wraps attribute referring to an existing variable in `context` in `this["variable"]` to allow for using variables without the `this` keyword.
 			let context = Object.assign({}, data, globalData);
+			let attribute = value in context && (!value.startsWith('this[') || !value.startsWith('this.')) ? `this["${value}"]` : value;
+			let fn = ModuleScript.evaluateAttribute(attribute);
 
 			return {
 				name: name.slice(1),
