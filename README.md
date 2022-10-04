@@ -15,10 +15,10 @@
 * The `.webc` file extension is recommended (not a requirement)—you _can_ use `.html`.
 	* Tip for Visual Studio Code users: go to `Preferences -> Settings -> Files: Associations` to add a mapping for `*.webc` to `html`.
 
-### Implementations
+### Integrations/Plugins
 
-* [`@11ty/eleventy-plugin-webc`](https://github.com/11ty/eleventy-plugin-webc): Add WebC support to Eleventy
-* [`express-webc`](https://github.com/NickColley/express-webc) by [@NickColley](https://github.com/NickColley/) adds WebC to Express
+* [`@11ty/eleventy-plugin-webc`](https://www.11ty.dev/docs/languages/webc/) adds WebC to [Eleventy](https://www.11ty.dev/)
+* [`express-webc`](https://github.com/NickColley/express-webc) by [@NickColley](https://github.com/NickColley/) adds WebC to [Express](https://expressjs.com/)
 
 ### Testimonials
 
@@ -37,6 +37,8 @@ Folks doing similar things with Web Components: check them out!
 * [Lit SSR](https://lit.dev/docs/ssr/overview/) with plugins for [Eleventy](https://github.com/lit/lit/tree/main/packages/labs/eleventy-plugin-lit#lit-labseleventy-plugin-lit), [Astro](https://docs.astro.build/en/guides/integrations-guide/lit/), and [Rocket](https://rocket.modern-web.dev/docs/basics/components/)
 
 ## Installation
+
+Note: if you’re **not** building a plugin or integration for WebC, you can probably skip this section!
 
 It’s available on [npm as `@11ty/webc`](https://www.npmjs.com/package/@11ty/webc):
 
@@ -85,7 +87,7 @@ let { html, css, js } = await page.stream();
 
 ### It’s HTML
 
-If this looks familiar, that’s because WebC *is* HTML. These are single file HTML components but don’t require any special element conventions (for example Vue’s single file component uses a top-level `<template>` for markup). Using `<template>` in a WebC file will output 👀 a `<template>` element.
+If WebC looks familiar, that’s because WebC *is* HTML. These are single file HTML components but don’t require any special element conventions (for example Vue’s single file component uses a top-level `<template>` for markup). Using `<template>` in a WebC file will output 👀 a `<template>` element.
 
 ```html
 <!doctype html>
@@ -100,7 +102,7 @@ If this looks familiar, that’s because WebC *is* HTML. These are single file H
 </html>
 ```
 
-* Uses [`parse5`](https://github.com/inikulin/parse5) to parse HTML as modern browsers do (credit to [@DasSurma’s](https://twitter.com/DasSurma/status/1559159122964127744) work with [Vite](https://twitter.com/patak_dev/status/1564265006627176449) here)
+* Uses [`parse5`](https://github.com/inikulin/parse5) to parse WebC HTML as modern browsers do (credit to [@DasSurma’s](https://twitter.com/DasSurma/status/1559159122964127744) work with [Vite](https://twitter.com/patak_dev/status/1564265006627176449) here)
 * `<!doctype html>` is optional (added if omitted).
 * Throws a helpful error if encounters quirks mode markup.
 
@@ -434,7 +436,7 @@ Make any attribute into a dynamic attribute by prefixing it with a `:`. You have
 <img :src="src" :alt="this.alt" class="avatar-image">
 ```
 
-#### Properties
+#### Properties (or Props)
 
 Properties are pretend-attributes that will not be rendered in the resulting markup. Prefix the attribute name with `@` to make it a property.
 
