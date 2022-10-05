@@ -8,7 +8,7 @@
 * Compilation tools to aggregate component-level assets (CSS or JS) for critical CSS or client JavaScript.
 * Opt-in to scope your component CSS using WebC’s built-in CSS prefixer.
 	* Or, use browser-native Shadow DOM style scoping (for future-compatibility when Declarative Shadow DOM browser support is ubiquitous)
-* Progress-enhancement friendly. 
+* Progressive-enhancement friendly. 
 * Streaming friendly.
 * Shadow DOM friendly.
 * Async friendly.
