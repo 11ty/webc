@@ -704,8 +704,12 @@ class AstSerializer {
 
 	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
-		// Ensures shadowroot template is processed in raw mode while allowing template components to be processed in non-raw mode
-		if(this.hasAttribute(node, "shadowroot")) {
+
+		// if <template webc:root> process the content as webc
+		// if <template> process the content in raw mode (handles shadowroot or webc:keep or *)
+		if(this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
+			// do nothing
+		} else {
 			templateOptions.rawMode = true;
 		}
 		// no transformation on this content

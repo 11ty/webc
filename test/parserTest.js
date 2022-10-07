@@ -1847,13 +1847,13 @@ const componentWithSlotsMacro = test.macro(async (t, { content, slots, expectedH
 test("Using template component with slot (default) (Issue #31)", componentWithSlotsMacro, {
 	content: `<template><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
-	expectedHtml: `<template>Overridden content</template>`,
+	expectedHtml: `<template><slot>Default content</slot></template>`,
 });
 
 test("Using template component with slot (named) (Issue #31)", componentWithSlotsMacro, {
 	content: `<template><slot name="test">Default content</slot></template>`,
 	slots: { test: "Overridden content" },
-	expectedHtml: `<template>Overridden content</template>`,
+	expectedHtml: `<template><slot name="test">Default content</slot></template>`,
 });
 
 test("Using template component (webc:root) with slot (default) (Issue #31)", componentWithSlotsMacro, {
