@@ -32,6 +32,7 @@ class WebC {
 		this.customHelpers = {};
 		this.globalComponents = {};
 		this.astOptions = {};
+		this.bundlerMode = false;
 
 		if(input) {
 			this.rawInput = input;
@@ -56,7 +57,7 @@ class WebC {
 	}
 
 	getRenderingMode(content) {
-		if(!content.startsWith("<!doctype") && !content.startsWith("<html")) {
+		if(!content.startsWith("<!doctype") && !content.startsWith("<!DOCTYPE") && !content.startsWith("<html")) {
 			return "component";
 		}
 
@@ -84,7 +85,7 @@ class WebC {
 		let mode = this.getRenderingMode(content);
 
 		// prepend for no-quirks mode on components or implicit page rendering modes (starts with <html>)
-		if(mode === "component" || !content.startsWith("<!doctype ")) {
+		if(mode === "component" || !content.startsWith("<!doctype ") && !content.startsWith("<!DOCTYPE")) {
 			content = `<!doctype html>${content}`;
 		}
 		
@@ -167,13 +168,22 @@ class WebC {
 		this._defineComponentsObject(WebC.getComponentsMap(globOrObject));
 	}
 
+	setUidFunction(fn) {
+		this.uidFn = fn;
+	}
+
 	async setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
+		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setData(options.data);
+
+		if(this.uidFn) {
+			ast.setUidFunction(this.uidFn);
+		}
 
 		for(let name in this.customTransforms) {
 			ast.setTransform(name, this.customTransforms[name]);
@@ -196,6 +206,10 @@ class WebC {
 		let { ast, serializer } = setup;
 		let obj = serializer.getComponentList(ast);
 		return Object.keys(obj);
+	}
+
+	setBundlerMode(mode) {
+		this.bundlerMode = !!mode;
 	}
 
 	async stream(options = {}) {

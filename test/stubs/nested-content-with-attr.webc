@@ -1,0 +1,3 @@
+Before
+<web-component attr="1" other="2">Child content</web-component>
+After

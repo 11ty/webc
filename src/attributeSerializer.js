@@ -1,5 +1,6 @@
 import { AstSerializer } from "./ast.js";
 import { ModuleScript } from "./moduleScript.js";
+import { escapeAttribute } from 'entities/lib/escape.js';
 
 class AttributeSerializer {
 	static dedupeAttributes(attrs = []) {
@@ -107,8 +108,11 @@ class AttributeSerializer {
 			if (value !== "") {
 				// Note that backslash does *not* escape nested quotes in HTML
 				// e.g. <* attrName="\"test"> parses as <* attrName="\" test"="">
-				let quoteType = value.includes(`"`) ? `'` : `"`
-				value = `=${quoteType}${value}${quoteType}`
+				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
+				if(typeof value !== "string") {
+					value = `${value}`;
+				}
+				value = `="${escapeAttribute(value)}"`
 			}
 
 			str.push(` ${name}${value}`);

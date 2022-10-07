@@ -54,6 +54,7 @@ test("Uses a global component with CSS and JS", async t => {
 	let component = new WebC();
 	component.setContent(`<other-custom-element></other-custom-element>`);
 	component.defineComponents("./test/stubs/global-components/*");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 

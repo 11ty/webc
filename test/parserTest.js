@@ -4,6 +4,19 @@ import typescript from "typescript";
 
 import { WebC } from "../webc.js";
 
+async function testGetResultFor(filename, components, slots, data) {
+	let component = new WebC();
+
+	component.setInputPath(filename);
+	component.setBundlerMode(true);
+
+	return component.compile({
+		slots,
+		components,
+		data,
+	});
+}
+
 test("Raw Input", async t => {
 	let component = new WebC();
 	component.setContent(`<div class="red"></div>`);
@@ -14,6 +27,43 @@ test("Raw Input", async t => {
 	t.deepEqual(css, []);
 	t.deepEqual(components, []);
 	t.is(html, `<div class="red"></div>`);
+});
+
+test("Escaped content (<code>)", async t => {
+	let component = new WebC();
+	component.setContent(`<code>&lt;style&gt;</code>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<code>&lt;style&gt;</code>`);
+});
+
+test("Escaped content (<pre>)", async t => {
+	let component = new WebC();
+	component.setContent(`<pre>&lt;style&gt;</pre>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<pre>&lt;style&gt;</pre>`);
+});
+
+test("Escaped content (<iframe>)", async t => {
+	let component = new WebC();
+	component.setContent(`<iframe>test > hi</iframe>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<iframe>test &gt; hi</iframe>`);
+});
+
+test("Not escaped content (template, script, style, noscript)", async t => {
+	let component = new WebC();
+	component.setBundlerMode(false);
+	component.setContent(`<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
 });
 
 test("No Quirks mode default (HTML file without doctype)", async t => {
@@ -82,9 +132,9 @@ for(let filename in fileInputStubs) {
 	let stub = fileInputStubs[filename]
 	test(stub.description || filename, async t => {
 		let component = new WebC();
-		
 		component.setInputPath(filename);
-		
+		component.setBundlerMode(true);
+
 		let { html, css, js, components } = await component.compile();
 
 		t.deepEqual(js, []);
@@ -204,6 +254,7 @@ test("Two components using identical <style>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/two-style.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -218,10 +269,11 @@ test("Two components using identical <style>", async t => {
 <web-component>SSR content</web-component>`);
 });
 
-test("<style webc:scoped>", async t => {
+test("<style webc:scoped> bundler mode enabled", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/scoped.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -235,10 +287,29 @@ test("<style webc:scoped>", async t => {
 Light dom content</web-component>`);
 });
 
+test("<style webc:scoped> bundler mode disabled", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/scoped.webc");
+	// component.setBundlerMode(false);
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/scoped.webc",
+		"./test/stubs/components/scoped-style.webc",
+	]);
+	t.is(html.trim(), `<web-component class="whukf8ig4"><style>.whukf8ig4 div{color:purple}</style>
+Light dom content</web-component>`);
+});
+
 test("<style webc:scoped> selector tests", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/scoped-top.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -270,6 +341,8 @@ div:before {}
 		return `/* This is an override */`;
 	});
 
+	component.setBundlerMode(true);
+
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
@@ -283,6 +356,7 @@ div:before {}
 test("<style webc:scoped=\"hashOverride\">", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/scoped-override.webc");
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -468,6 +542,32 @@ test("Full page", async t => {
 </html>`);
 });
 
+test("Full page (with uppercase doctype) Issue #24", async t => {
+	let page = new WebC();
+	page.setInputPath("./test/stubs/page-capital-doctype-issue-24.webc");
+
+	let { html, css, js, components } = await page.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/page-capital-doctype-issue-24.webc"
+	]);
+	t.is(html, `<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="description" content>
+	<title></title>
+</head>
+<body>
+
+
+</body>
+</html>`);
+});
+
 /* This can’t exist any more */
 test("Component in page mode (error case)", async t => {
 	let page = new WebC();
@@ -482,18 +582,6 @@ test("Component in page mode (error case)", async t => {
 	]);
 	t.is(html, `<div>Test</div>`);
 });
-
-async function testGetResultFor(filename, components, slots, data) {
-	let component = new WebC();
-
-	component.setInputPath(filename);
-
-	return component.compile({
-		slots,
-		components,
-		data,
-	});
-}
 
 test("Using a web component without it being declared", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc");
@@ -723,9 +811,9 @@ test("Using different attribute delimiters and nested potential delimiters", asy
 	<div data-foo="no-nested-quotes"></div>
 	<div data-foo="using-single-quotes-without-nested-quotes"></div>
 	<div data-foo="still-valid-technically"></div>
-	<div data-foo='foo="bar"'></div>
+	<div data-foo="foo=&quot;bar&quot;"></div>
 	<div data-foo="foo='bar'"></div>
-	<div data-foo='foo="bar"'></div>
+	<div data-foo="foo=&quot;bar&quot;"></div>
 </div>`);
 });
 
@@ -740,9 +828,41 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 		"./test/stubs/empty-class.webc",
 		"./test/stubs/components/child-root-empty-class.webc",
 	]);
-	t.is(html, `<web-component>
-	SSR content
-</web-component>`);
+	t.is(html, `<web-component>Light dom</web-component>`);
+});
+
+test("Using a web component to override the parent component tag", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content-with-attr.webc", {
+		"web-component": "./test/stubs/components/override-parent.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`/* Hi */`]);
+	t.deepEqual(components, [
+		"./test/stubs/nested-content-with-attr.webc",
+		"./test/stubs/components/override-parent.webc",
+	]);
+	t.is(html, `Before
+<button type="submit" data-attr="1" attr="1" other="2">SSR content</button>
+
+After`);
+});
+
+test("Using a web component to override the parent component tag with scoped CSS", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-content-with-attr.webc", {
+		"web-component": "./test/stubs/components/override-parent-scoped.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wb_lq-fmb{font-weight:bold}`]);
+	t.deepEqual(components, [
+		"./test/stubs/nested-content-with-attr.webc",
+		"./test/stubs/components/override-parent-scoped.webc",
+	]);
+	t.is(html, `Before
+<button type="submit" data-attr="1" class="wb_lq-fmb" attr="1" other="2">SSR content</button>
+
+After`);
 });
 
 test("Using a web component (style attribute merging)", async t => {
@@ -798,6 +918,50 @@ After`);
 test("Using a web component with <style webc:keep>", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/components/nested-child-style-keep.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/nested-child-style-keep.webc",
+	]);
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with <style> and `bundlerMode: false`", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/nested.webc");
+	// component.setBundlerMode(false);
+
+	let {html, js, css, components} = await component.compile({
+		components: {
+			"web-component": "./test/stubs/components/nested-child-style.webc"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/nested-child-style.webc",
+	]);
+	t.is(html, `Before
+<web-component>SSR content<style>p { color: red; }</style></web-component>
+After`);
+});
+
+test("Using a web component with <style webc:keep> and `bundlerMode: false`", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/nested.webc");
+	// component.setBundlerMode(false);
+
+	let {html, js, css, components} = await component.compile({
+		components: {
+			"web-component": "./test/stubs/components/nested-child-style-keep.webc"
+		}
 	});
 
 	t.deepEqual(js, []);
@@ -1139,6 +1303,7 @@ test("<script webc:type> with Typescript", async t => {
 		});
 		return ret.outputText;
 	});
+	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
@@ -1601,4 +1766,71 @@ test("Using asset buckets", async t => {
 
 
 `);
+});
+
+test("Using component UID for accessibility", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/using-uid.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/with-uid.webc"
+	})
+
+	let i = 0;
+	component.setUidFunction(function() {
+		return `webc-${i++}`;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-uid.webc",
+		"./test/stubs/components/with-uid.webc"
+	]);
+
+	t.is(html, `<div id="webc-1"><input aria-controls="webc-1"></div>
+<div id="webc-2"><input aria-controls="webc-2"></div>
+<div id="webc-3"><input aria-controls="webc-3"></div>`);
+});
+
+test("Using component UID for accessibility (and webc:root)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/using-uid.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/with-uid-root.webc"
+	})
+
+	let i = 0;
+	component.setUidFunction(function() {
+		return `webc-${i++}`;
+	});
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/using-uid.webc",
+		"./test/stubs/components/with-uid-root.webc"
+	]);
+
+	t.is(html, `<my-component id="webc-1"><input aria-controls="webc-1"></my-component>
+<my-component id="webc-2"><input aria-controls="webc-2"></my-component>
+<my-component id="webc-3"><input aria-controls="webc-3"></my-component>`);
+});
+
+test("Setting @html and/or :attr to a number (non-string)", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/html-number.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/html-number.webc",
+	]);
+
+	t.is(html, `<span attr="2">2</span>`);
 });

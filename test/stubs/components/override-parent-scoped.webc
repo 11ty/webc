@@ -1,0 +1,2 @@
+<button webc:root webc:keep type="submit" data-attr="1">SSR content</button>
+<style webc:scoped>:host { font-weight: bold; }</style>

@@ -10,6 +10,8 @@ import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.js";
 import { Streams } from "./streams.js";
+import { escapeText } from "entities/lib/escape.js";
+import { nanoid } from "nanoid";
 
 class FileSystemCache {
 	constructor() {
@@ -68,6 +70,9 @@ class AstSerializer {
 
 		// controls whether or not doctype, html, body are prepended to content
 		this.mode = "component";
+
+		// controls whether the assets are aggregated
+		this.bundlerMode = false;
 
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);
@@ -151,6 +156,10 @@ class AstSerializer {
 		wbr: true,
 	};
 
+	setBundlerMode(mode) {
+		this.bundlerMode = !!mode;
+	}
+
 	setMode(mode = "component") {
 		this.mode = mode; // "page" or "component"
 	}
@@ -173,6 +182,18 @@ class AstSerializer {
 
 	isVoidElement(tagName) {
 		return AstSerializer.voidElements[tagName] || false;
+	}
+
+	setUidFunction(fn) {
+		this.uidFn = fn;
+	}
+
+	getUid() {
+		if(this.uidFn && typeof this.uidFn === "function") {
+			return this.uidFn();
+		}
+
+		return 'webc-' + nanoid(5);
 	}
 
 	hasAttribute(node, attributeName) {
@@ -262,10 +283,10 @@ class AstSerializer {
 		let prefix = "w";
 		let hashLength = 8;
 		let hash = createHash("sha256");
-		let root = this.getImplicitRootNode(component);
 
 		// <style webc:scoped> must be nested at the root
-		let styleNodes = this.findAllChildren(root, "style", [AstSerializer.attrs.SCOPED]);
+		let styleNodes = this.getTopLevelNodes(component, ["style"], [AstSerializer.attrs.SCOPED]);
+
 		for(let node of styleNodes) {
 			// Override hash with scoped="override"
 			let override = this.getAttributeValue(node, AstSerializer.attrs.SCOPED);
@@ -292,41 +313,45 @@ class AstSerializer {
 	}
 
 	ignoreComponentParentTag(component) {
-		let root = this.getImplicitRootNode(component);
-		if(!root) {
-			throw new Error("Unable to find component root element, expected an implicit <head> or <body>");
-		}
-
 		// Has <* webc:root> (has to be a root child, not script/style)
-		let roots = this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
-		for(let child of roots) {
+		let tops = this.getTopLevelNodes(component);
+		for(let child of tops) {
 			let tagName = this.getTagName(child);
 			if(tagName === "script" || tagName === "style") {
 				continue;
 			}
 
 			if(this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				// ignore if webc:root and webc:keep
+				if(this.hasAttribute(child, AstSerializer.attrs.KEEP)) {
+					return true;
+				}
+
+				// do not ignore if webc:root (but not webc:keep)
 				return false;
 			}
 		}
 
 		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
-		let children = this.findAllChildren(root, ["script", "style"]);
-		for(let child of children) {
-			if(!this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
-				if(this.hasTextContent(child)) {
-					return false;
-				}
-				// <script src=""> or <link rel="stylesheet" href="">
-				let tagName = this.getTagName(child);
-				if(this.getExternalSource(tagName, child)) {
-					return false;
-				}
+		for(let child of tops) {
+			let tagName = this.getTagName(child);
+			if(tagName !== "script" && tagName !== "style" || this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+				continue;
+			}
+
+			if(this.hasTextContent(child)) {
+				return false;
+			}
+
+			// <script src=""> or <link rel="stylesheet" href="">
+			if(this.getExternalSource(tagName, child)) {
+				return false;
 			}
 		}
 
+
 		// Has <template shadowroot> (can be anywhere in the component body)
-		let shadowroot = this.findElement(root, "template", ["shadowroot"]);
+		let shadowroot = this.findElement(component, "template", ["shadowroot"]);
 		if(shadowroot) {
 			return false;
 		}
@@ -339,7 +364,7 @@ class AstSerializer {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
-	isTagIgnored(node, component, renderingMode) {
+	isTagIgnored(node, component, renderingMode, options = {}) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -385,33 +410,47 @@ class AstSerializer {
 		}
 
 		// aggregation tags
-		if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
-			return true;
+		if(this.bundlerMode) {
+			if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
+				return true;
+			}
 		}
 
 		return false;
 	}
 
-	getImplicitRootNode(node) {
-		let body = this.findElement(node, "body");
-		let head = this.findElement(node, "head");
-		if(head?.childNodes?.length > 0) {
-			return head;
-		}
-		return body;
+	getImplicitRootNodes(node) {
+		return [
+			this.findElement(node, "body"),
+			this.findElement(node, "head")
+		].filter(node => !!node);
 	}
 
-	getRootNodes(node) {
-		let root = this.getImplicitRootNode(node);
-		return this.findAllChildren(root, [], [AstSerializer.attrs.ROOT]);
+	getTopLevelNodes(node, tagNames = [], webcAttrs = []) {
+		let roots = this.getImplicitRootNodes(node);
+		if(roots.length === 0) {
+			throw new Error("Unable to find component root, expected an implicit <head> or <body>");
+		}
+
+		let children = [];
+		for(let root of roots) {
+			for(let child of this.findAllChildren(root, tagNames, webcAttrs)) {
+				children.push(child);
+			}
+		}
+		return children;
 	}
 
 	getRootAttributes(component, scopedStyleHash) {
 		let attrs = [];
-		let roots = this.getRootNodes(component);
-		for(let root of roots) {
-			for(let attr of root.attrs.filter(entry => entry.name !== AstSerializer.attrs.ROOT)) {
-				attrs.push(attr);
+
+		// webc:root Attributes
+		let tops = this.getTopLevelNodes(component, [], [AstSerializer.attrs.ROOT]);
+		for(let root of tops) {
+			for(let attr of root.attrs) {
+				if(attr.name !== AstSerializer.attrs.ROOT) {
+					attrs.push({ name: attr.name, value: attr.value });
+				}
 			}
 		}
 
@@ -559,13 +598,26 @@ class AstSerializer {
 			}
 
 			let attrs = this.getAttributes(node, component, options);
+			let parentComponent = this.components[options.closestParentComponent];
+
+			// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
+			if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+				if(parentComponent.scopedStyleHash) {
+					attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
+				}
+
+				for(let hostAttr of options.hostComponentNode.attrs) {
+					attrs.push(hostAttr);
+				}
+			}
+
 			attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
 			if(options.isMatchingSlotSource) {
 				delete attrObject.slot;
 			}
 
-			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
 			}
 		}
@@ -581,7 +633,7 @@ class AstSerializer {
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				content += `</${tagName}>`;
 			}
 
@@ -711,18 +763,14 @@ class AstSerializer {
 	}
 
 	getAggregateAssetKey(tagName, node) {
-		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		if(!this.bundlerMode || this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
 			return false;
 		}
 
-		if(tagName === "style") {
+		if(tagName === "style" || this.isStylesheetNode(tagName, node)) {
 			return "css";
 		}
-		
-		if(this.isStylesheetNode(tagName, node)) {
-			return "css";
-		}
-		
+
 		if(tagName === "script") {
 			return "js"
 		}
@@ -804,6 +852,14 @@ class AstSerializer {
 		return components;
 	}
 
+	isUnescapedTagContent(parentNode) {
+		let tagName = parentNode?.tagName;
+		if(tagName === "style" || tagName === "script" || tagName === "noscript" || tagName === "template") {
+			return true;
+		}
+		return false;
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 		
@@ -823,7 +879,13 @@ class AstSerializer {
 		let renderingMode = this.getMode(options.closestParentComponent);
 		if(node.nodeName === "#text") {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
-				content += this.outputHtml(node.value, streamEnabled);
+				let unescaped = this.outputHtml(node.value, streamEnabled);
+				if(options.rawMode || this.isUnescapedTagContent(node.parentNode)) {
+					content += unescaped;
+				} else {
+					// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
+					content += escapeText(unescaped);
+				}
 			} else {
 				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
 			}
@@ -846,6 +908,14 @@ class AstSerializer {
 			component = this.getComponent(tagName);
 		}
 
+		if(component) {
+			options.closestParentUid = this.getUid();
+			// we need to set this so that the props of the host component are evaluated with the webc:root attributes inside the component definition
+			options.componentProps = {
+				uid: options.closestParentUid
+			};
+		}
+
 		let slotSource = this.getAttributeValue(node, "slot");
 		if(!options.rawMode && options.closestParentComponent) {
 			if(slotSource && options.isSlottedContent) {
@@ -856,14 +926,15 @@ class AstSerializer {
 			}
 		}
 
-		// TODO warning if top level page component using a style hash but has no root element
+		// TODO warning if top level page component using a style hash but has no root element (text only?)
 
 		// Start tag
 		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
-			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs);
+			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs) || {};
+			options.componentProps.uid = options.closestParentUid;
 		}
 
 		// Component content (foreshadow dom)
@@ -884,10 +955,14 @@ class AstSerializer {
 				}
 			});
 			let htmlContent = await fn.call(proxiedContext);
+			if(typeof htmlContent !== "string") {
+				htmlContent = `${htmlContent}`;
+			}
 			componentHasContent = htmlContent.trim().length > 0;
 			content += htmlContent;
 		} else if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
+			options.hostComponentNode = node;
 
 			let slots = this.getSlottedContentNodes(node);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
@@ -918,11 +993,13 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					let key = this.getAggregateAssetKey(tagName, node);
+					let key = this.getAggregateAssetKey(tagName, node, options);
+
 					// Aggregate to CSS/JS bundles
 					if(key) {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
+							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
 							childContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
@@ -979,6 +1056,7 @@ class AstSerializer {
 			},
 			components: new DepGraph({ circular: true }),
 			closestParentComponent: this.filePath,
+			closestParentUid: this.getUid(),
 		}, options);
 
 		// parse the top level component
@@ -988,6 +1066,9 @@ class AstSerializer {
 			}
 
 			options.components.addNode(this.filePath);
+			options.componentProps = {
+				uid: options.closestParentUid
+			};
 		}
 
 		try {
@@ -1001,17 +1082,22 @@ class AstSerializer {
 
 			let returnObject = {
 				html: content,
-				css: assets.getOrderedAssets(options.assets.css),
-				js: assets.getOrderedAssets(options.assets.js),
 				components: assets.orderedComponentList,
+				css: [],
+				js: [],
 				buckets: {},
 			};
 
-			for(let type in options.assets.buckets) {
-				returnObject.buckets[type] = {};
+			if(this.bundlerMode) {
+				returnObject.css = assets.getOrderedAssets(options.assets.css);
+				returnObject.js = assets.getOrderedAssets(options.assets.js);
 
-				for(let bucket of options.assets.buckets[type]) {
-					returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
+				for(let type in options.assets.buckets) {
+					returnObject.buckets[type] = {};
+	
+					for(let bucket of options.assets.buckets[type]) {
+						returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
+					}
 				}
 			}
 
