@@ -1587,7 +1587,7 @@ test("Using @html with undefined properties or helpers", async (t) => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing.webc"), {
 		message: [
 			"'firstname' not found when evalutating @html property with value 'this.firstname'.",
-			"Check attributes, properties or helpers are defined for 'firstname'."
+			"Check that 'firstname' is a valid attribute or property name, is present in global data, or is a helper."
 		].join('\n')
 	});
 });
