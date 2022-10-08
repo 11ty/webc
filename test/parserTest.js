@@ -1566,7 +1566,12 @@ test("Using props without “this”", async t => {
 	let { html, css, js, components } = await component.compile({
 		data: {
 			variable: "value",
-			3: "number key"
+			3: "number key",
+			nested: {
+				object: {
+					fn: () => 'Boo!',
+				},
+			},
 		}
 	});
 
@@ -1580,7 +1585,8 @@ test("Using props without “this”", async t => {
 <p key="value"></p>
 <p key="2"></p>
 <p key="number key"></p>
-<p key="test"></p>`);
+<p key="test"></p>
+<p key="Boo!"></p>`);
 });
 
 test("Using @html", async t => {
