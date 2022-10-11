@@ -433,7 +433,7 @@ Make any attribute into a dynamic attribute by prefixing it with a `:`. You have
 `components/avatar-image.webc`:
 
 ```html
-<img :src="src" :alt="this.alt" class="avatar-image">
+<img :src="this.src" :alt="this.alt" class="avatar-image">
 ```
 
 #### Properties (or Props)
