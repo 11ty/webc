@@ -704,7 +704,11 @@ class AstSerializer {
 
 	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
-		templateOptions.rawMode = true;
+		// Processes `<template webc:root>` as WebC (including slot resolution)
+		// Processes `<template>` in raw mode (handles general templates, shadowroots, or webc:keep).
+		if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
+			templateOptions.rawMode = true;
+		}
 		// no transformation on this content
 		delete templateOptions.currentTransformTypes;
 
@@ -789,7 +793,7 @@ class AstSerializer {
 		if(this.isStylesheetNode(tagName, node)) {
 			return this.getAttributeValue(node, "href");
 		}
-		
+
 		if(tagName === "script") {
 			return this.getAttributeValue(node, "src");
 		}
@@ -828,7 +832,7 @@ class AstSerializer {
 			// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
 			components[importSource] = true;
 			closestComponentFilePath = importSource;
-			
+
 			if(this.components[importSource]) {
 				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode, importSource));
 			}
@@ -862,7 +866,7 @@ class AstSerializer {
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
-		
+
 		let tagName = this.getTagName(node);
 		let content = "";
 
@@ -968,7 +972,7 @@ Check that '${propertyName}' is a valid attribute or property name, is present i
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
 		}
-		
+
 		// Skip the remaining content is we have foreshadow dom!
 		if(!componentHasContent) {
 			let externalSource = this.getExternalSource(tagName, node);
@@ -1093,7 +1097,7 @@ Check that '${propertyName}' is a valid attribute or property name, is present i
 
 				for(let type in options.assets.buckets) {
 					returnObject.buckets[type] = {};
-	
+
 					for(let bucket of options.assets.buckets[type]) {
 						returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
 					}
