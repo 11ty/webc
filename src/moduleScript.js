@@ -1,4 +1,5 @@
 import { Module } from "module";
+import { AstSerializer } from "./ast.js";
 
 class ModuleScript {
 
@@ -6,28 +7,53 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
+	static ASYNC_CONSTRUCTOR = (async function () {}).constructor;
+	static SYNC_CONSTRUCTOR = (function () {}).constructor;
+
 	static getProxiedContext(context, propertyReferenceKey, propertyValue) {
 		let proxiedContext = new Proxy(context, {
 			get(target, propertyName) {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
 				}
-				throw new Error(`'${propertyName}' not found when evalutating ${propertyReferenceKey} with value '${propertyValue}'.
-Check that '${propertyName}' is a valid attribute or property name, is present in global data, or is a helper.`);
+				// TODO show file name!!
+				throw new Error(`'${propertyName}' not found when evaluating ${propertyReferenceKey}="${propertyValue}".
+Check that '${propertyName}' is a helper, attribute name, property name, or is present in global data.`);
 			}
 		});
 
 		return proxiedContext;
 	}
 
-	static evaluateAsyncAttribute(content) {
-		const AsyncFunction = (async function () {}).constructor;
-		return new AsyncFunction(`return ${content};`);
+	static addDestructuredWith(content, data = {}) {
+		let keys = Object.keys(data).map(attr => attr.startsWith(AstSerializer.prefixes.dynamic) ? attr.slice(1) : attr);
+		return `return ({${keys.join(",")}}) => ${content};`;
 	}
 
-	static evaluateAttribute(content) {
-		const Function = (function () {}).constructor;
-		return new Function(`return ${content};`);
+	static getAttributeFunction(constructor, nameDescription, content, data) {
+		let fnContent = ModuleScript.addDestructuredWith(content, data);
+		let fn = new constructor(fnContent);
+		let context = ModuleScript.getProxiedContext(data, nameDescription, content);
+		return fn.call(context);
+	}
+
+	static _evaluateAttribute(fn, name, content, data, options = {}) {
+		try {
+			return fn(data);
+		} catch(e) {
+			throw new Error(`Error compiling ${name} with content '${content}'${options.filePath ? ` in '${options.filePath}'` : ""}:\n${e}`);
+		}
+	}
+
+	// Combine async/sync functions together
+	static async evaluateAsyncAttribute(name, content, data, options) {
+		let fn = await ModuleScript.getAttributeFunction(ModuleScript.ASYNC_CONSTRUCTOR, name, content, data);
+		return ModuleScript._evaluateAttribute(fn, name, content, data, options);
+	}
+
+	static evaluateAttribute(name, content, data, options) {
+		let fn = ModuleScript.getAttributeFunction(ModuleScript.SYNC_CONSTRUCTOR, name, content, data);
+		return ModuleScript._evaluateAttribute(fn, name, content, data, options);
 	}
 
 	static getModule(content, filePath) {

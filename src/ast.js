@@ -619,7 +619,9 @@ class AstSerializer {
 
 			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-				content += `<${tagName}${AttributeSerializer.getString(attrObject, data)}>`;
+				content += `<${tagName}${AttributeSerializer.getString(attrObject, data, {
+					filePath: options.closestParentComponent || this.filePath
+				})}>`;
 			}
 		}
 
@@ -946,9 +948,10 @@ class AstSerializer {
 		let componentHasContent = null;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
-			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
-			let context = ModuleScript.getProxiedContext(Object.assign({}, this.helpers, options.componentProps, this.globalData), "@html property", htmlAttribute);
-			let htmlContent = await fn.call(context);
+			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+			let htmlContent = await ModuleScript.evaluateAsyncAttribute("@html", htmlAttribute, data, {
+				filePath: options.closestParentComponent || this.filePath
+			});
 			if(typeof htmlContent !== "string") {
 				htmlContent = `${htmlContent}`;
 			}

@@ -1593,26 +1593,73 @@ test("Using a helper in dynamic attribute and @html", async(t) => {
 	t.is(html, `<template key="otherBlue">testBlue</template>`);
 });
 
+test("Using a helper (without this) in dynamic attribute and @html", async(t) => {
+	let component = new WebC();
+	component.setHelper("helper", (a) => { return a+"Blue"; });
+	component.setContent(`<template :key="helper('other')" @html="helper('test')"></template>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<template key="otherBlue">testBlue</template>`);
+});
+
+
 test("Try to use @html with undefined properties or helpers", async (t) => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing.webc"), {
 		message: [
-			"'firstname' not found when evalutating @html property with value 'this.firstname'.",
-			"Check that 'firstname' is a valid attribute or property name, is present in global data, or is a helper."
+			"Error compiling @html with content 'this.firstname' in './test/stubs/components/html-evaluating-props.webc':",
+			"Error: 'firstname' not found when evaluating @html=\"this.firstname\".",
+			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data."
 		].join('\n')
 	});
 });
 
-test("Try to use a missing helper in a dynamic attribute", async (t) => {
+test("Try to use @html with undefined properties or helpers (without this)", async (t) => {
+	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing-nothis.webc"), {
+		message: [
+			"Error compiling @html with content 'firstname' in './test/stubs/components/html-evaluating-props-nothis.webc':",
+			"ReferenceError: firstname is not defined",
+		].join('\n')
+	});
+});
+
+test("Try to use a missing property in a dynamic attribute", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template :key="this.firstname"></template>`);
 
 	await t.throwsAsync(component.compile(), {
 		message: [
-			"'firstname' not found when evalutating :key attribute with value 'this.firstname'.",
-			"Check that 'firstname' is a valid attribute or property name, is present in global data, or is a helper."
+			"Error compiling :key with content 'this.firstname':",
+			"Error: 'firstname' not found when evaluating :key=\"this.firstname\".",
+			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data."
 		].join('\n')
 	});
 });
+
+test("Try to use a missing property in a dynamic attribute (without this)", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template :key="firstname"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: [
+			"Error compiling :key with content 'firstname':",
+			"ReferenceError: firstname is not defined",
+		].join('\n')
+	});
+});
+
+test("Try to use a missing helper function in a dynamic attribute (without this)", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template :key="helper()"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: [
+			"Error compiling :key with content 'helper()':",
+			"ReferenceError: helper is not defined",
+		].join('\n')
+	});
+});
+
 
 test("Issue #3 slot inconsistency", async t => {
 	let component = new WebC();
