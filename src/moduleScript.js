@@ -6,6 +6,20 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
+	static getProxiedContext(context, propertyReferenceKey, propertyValue) {
+		let proxiedContext = new Proxy(context, {
+			get(target, propertyName) {
+				if(Reflect.has(target, propertyName)) {
+					return Reflect.get(target, propertyName);
+				}
+				throw new Error(`'${propertyName}' not found when evalutating ${propertyReferenceKey} with value '${propertyValue}'.
+Check that '${propertyName}' is a valid attribute or property name, is present in global data, or is a helper.`);
+			}
+		});
+
+		return proxiedContext;
+	}
+
 	static evaluateAsyncAttribute(content) {
 		const AsyncFunction = (async function () {}).constructor;
 		return new AsyncFunction(`return ${content};`);

@@ -1583,10 +1583,32 @@ Template HTML Nokeep
 `);
 });
 
-test("Using @html with undefined properties or helpers", async (t) => {
+test("Using a helper in dynamic attribute and @html", async(t) => {
+	let component = new WebC();
+	component.setHelper("helper", (a) => { return a+"Blue"; });
+	component.setContent(`<template :key="this.helper('other')" @html="this.helper('test')"></template>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<template key="otherBlue">testBlue</template>`);
+});
+
+test("Try to use @html with undefined properties or helpers", async (t) => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing.webc"), {
 		message: [
 			"'firstname' not found when evalutating @html property with value 'this.firstname'.",
+			"Check that 'firstname' is a valid attribute or property name, is present in global data, or is a helper."
+		].join('\n')
+	});
+});
+
+test("Try to use a missing helper in a dynamic attribute", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template :key="this.firstname"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: [
+			"'firstname' not found when evalutating :key attribute with value 'this.firstname'.",
 			"Check that 'firstname' is a valid attribute or property name, is present in global data, or is a helper."
 		].join('\n')
 	});

@@ -618,7 +618,8 @@ class AstSerializer {
 			}
 
 			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
-				content += `<${tagName}${AttributeSerializer.getString(attrObject, options.componentProps, this.globalData)}>`;
+				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+				content += `<${tagName}${AttributeSerializer.getString(attrObject, data)}>`;
 			}
 		}
 
@@ -946,18 +947,8 @@ class AstSerializer {
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
 			let fn = ModuleScript.evaluateAsyncAttribute(htmlAttribute);
-			let context = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let proxiedContext = new Proxy(context, {
-				get(target, propertyName) {
-					if(Reflect.has(target, propertyName)) {
-						return Reflect.get(target, propertyName);
-					}
-					throw new Error(`'${propertyName}' not found when evalutating @html property with value '${htmlAttribute}'.
-Check that '${propertyName}' is a valid attribute or property name, is present in global data, or is a helper.`);
-				}
-			});
-
-			let htmlContent = await fn.call(proxiedContext);
+			let context = ModuleScript.getProxiedContext(Object.assign({}, this.helpers, options.componentProps, this.globalData), "@html property", htmlAttribute);
+			let htmlContent = await fn.call(context);
 			if(typeof htmlContent !== "string") {
 				htmlContent = `${htmlContent}`;
 			}

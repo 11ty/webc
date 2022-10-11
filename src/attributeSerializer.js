@@ -62,10 +62,10 @@ class AttributeSerializer {
 		return attrObject;
 	}
 
-	static normalizeAttribute(name, value, data, globalData) {
+	static normalizeAttribute(name, value, data) {
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
 			let fn = ModuleScript.evaluateAttribute(value);
-			let context = Object.assign({}, data, globalData);
+			let context = ModuleScript.getProxiedContext(data, `${name} attribute`, value);
 
 			return {
 				name: name.slice(1),
@@ -91,7 +91,7 @@ class AttributeSerializer {
 		return data;
 	}
 
-	static getString(attrs, data, globalData) {
+	static getString(attrs, data) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {
@@ -99,7 +99,7 @@ class AttributeSerializer {
 		}
 
 		for(let key in attrObject) {
-			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data, globalData);
+			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
 			if(name.startsWith(AstSerializer.prefixes.props) || !value && value !== "") {
 				continue;
 			}
