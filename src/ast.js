@@ -703,7 +703,7 @@ class AstSerializer {
 	}
 
 	/**
-	 * Transforms text nodes which are JavaScript Render Functions (i.e. they belong to a `<script webc:type="render">`)
+	 * Reprocesses content returned from <template> or <* webc:is="template"> text nodes as WebC.
 	 *
 	 * @param {TextNode} node
 	 * @param {Slots} slots
@@ -711,14 +711,14 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async getContentForRenderFunction(node, slots, options) {
+	async getReprocessedContent(node, slots, options) {
 		// Resolves the render function inside the text node
 		let renderFunctionContent = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 
 		// Prevents further render function content to also be processed as a render function
 		delete options.currentTransformTypes;
 
-		// Constructs an AST out of the render function result
+		// Constructs an AST out of the string returned from the render function
 		let renderFunctionAst = await WebC.getASTFromString(renderFunctionContent);
 
 		// Passes the AST back to `compileNode` which can handle the rest
@@ -770,6 +770,7 @@ class AstSerializer {
 	 */
 	async getContentForTemplate(node, slots, options) {
 		let templateOptions = Object.assign({}, options);
+
 		// Processes `<template webc:root>` as WebC (including slot resolution)
 		// Processes `<template>` in raw mode (handles general templates, shadowroots, or webc:keep).
 		if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
@@ -783,6 +784,7 @@ class AstSerializer {
 		if(options.currentTransformTypes) {
 			return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 		}
+
 		return rawContent;
 	}
 
@@ -934,6 +936,7 @@ class AstSerializer {
 		options = Object.assign({}, options);
 
 		let tagName = this.getTagName(node);
+		let parentTagName = node.parentNode ? this.getTagName(node.parentNode) : false;
 		let content = "";
 
 		let transformTypes = this.getTransformTypes(node);
@@ -945,7 +948,7 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
-		// Short circuit for text nodes (except render function script content), comments, doctypes
+		// Short circuit for text nodes, comments, doctypes
 		let renderingMode = this.getMode(options.closestParentComponent);
 		if(node.nodeName === "#text") {
 			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
@@ -957,8 +960,14 @@ class AstSerializer {
 					content += escapeText(unescaped);
 				}
 				return { html: content };
-			} else if(!options.currentTransformTypes.includes("render")) {
-				content += this.outputHtml(await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options), streamEnabled);
+			} else if(parentTagName === "template") { // reprocess any <template>
+				// reprocess output as WebC
+				let c = await this.getReprocessedContent(node, slots, options);
+				content += this.outputHtml(c, streamEnabled);
+				return { html: content };
+			} else {
+				let c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+				content += this.outputHtml(c, streamEnabled);
 				return { html: content };
 			}
 		} else if(node.nodeName === "#comment") {
@@ -1035,9 +1044,7 @@ class AstSerializer {
 		if(!componentHasContent) {
 			let externalSource = this.getExternalSource(tagName, node);
 
-			if(node.nodeName === "#text" && options.currentTransformTypes?.length > 0) { // #text node of <script webc:type="render">
-				content += this.outputHtml(await this.getContentForRenderFunction(node, slots, options), streamEnabled);
-			} else if(!options.rawMode && tagName === "slot") { // <slot> node
+			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottedContent = true;
 
 				content += await this.getContentForSlot(node, slots, options);
