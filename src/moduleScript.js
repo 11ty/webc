@@ -26,7 +26,12 @@ Check that '${propertyName}' is a helper, attribute name, property name, or is p
 	}
 
 	static addDestructuredWith(content, data = {}) {
-		let keys = Object.keys(data).map(attr => attr.startsWith(AstSerializer.prefixes.dynamic) ? attr.slice(1) : attr);
+		let keys = Object.keys(data).filter(attr => {
+			// Don’t destructure numbers: {3, abc} throws an error
+			return ""+Number(attr) !== attr;
+		}).map(attr => {
+			return attr.startsWith(AstSerializer.prefixes.dynamic) ? attr.slice(1) : attr;
+		});
 		return `return ({${keys.join(",")}}) => ${content};`;
 	}
 

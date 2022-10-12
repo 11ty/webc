@@ -1558,6 +1558,42 @@ test("Using props", async t => {
 	t.is(html, `<img src="my-src.png">`);
 });
 
+test("Using props without “this”", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/props-no-this.webc");
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			variable: "value",
+			3: "number key",
+			"3.1": "lol",
+			3.1: "float key",
+			nested: {
+				object: {
+					fn: () => 'Boo!',
+				},
+			},
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/props-no-this.webc",
+	]);
+
+	t.is(html, `<p key="value"></p>
+<p key="value"></p>
+<p key="2"></p>
+<p key="3"></p>
+<p key="number key"></p>
+<p key="3.1"></p>
+<p key="float key"></p>
+<p key="test"></p>
+<p key="Boo!"></p>`);
+});
+
 test("Using @html", async t => {
 	let component = new WebC();
 
