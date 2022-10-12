@@ -479,6 +479,20 @@ for(let filename in slotsStubs) {
 	});
 }
 
+test("Component falling back to default slot content (Issue #37)", async t => {
+	let component = new WebC();
+
+	component.setContent(`<web-component></web-component>`);
+
+	let {html} = await component.compile({
+		components: {
+			"web-component": "./test/stubs/slot-fallback-content.webc",
+		},
+	});
+
+	t.is(html, `<div>Fallback content</div>`);
+});
+
 test("<slot webc:raw>", async t => {
 	let component = new WebC();
 
