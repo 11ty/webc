@@ -540,6 +540,7 @@ class AstSerializer {
 	getSlottedContentNodes(node) {
 		let slots = {};
 		let defaultSlot = [];
+
 		// Slot definitions must be top level (this matches browser-based Web Components behavior)
 		for(let child of node.childNodes) {
 			let slotName = this.getAttributeValue(child, "slot");
@@ -549,6 +550,7 @@ class AstSerializer {
 				defaultSlot.push(child);
 			}
 		}
+
 		// faking a real AST by returning an object with childNodes
 		slots.default = { childNodes: defaultSlot };
 
@@ -685,8 +687,13 @@ class AstSerializer {
 
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
-		if(slots[slotName] || slotName !== "default") {
-			let slotAst = slots[slotName];
+		let slotAst = slots[slotName];
+
+		if(
+			(typeof slotAst === "object" && slotAst.childNodes?.length > 0) || // might be a childNodes: []
+			(typeof slotAst !== "object" && slotAst) || // might be a string
+			slotName !== "default"
+		) {
 			if(typeof slotAst === "string") {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
