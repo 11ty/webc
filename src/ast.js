@@ -685,8 +685,13 @@ class AstSerializer {
 
 	async getContentForSlot(node, slots, options) {
 		let slotName = this.getAttributeValue(node, "name") || "default";
-		if(slots[slotName] || slotName !== "default") {
-			let slotAst = slots[slotName];
+		let slotAst = slots[slotName];
+
+		if(
+			(typeof slotAst === "object" && slotAst.childNodes.length > 0) ||
+			(typeof slotAst !== "object" && slotAst) ||
+			slotName !== "default"
+		) {
 			if(typeof slotAst === "string") {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
