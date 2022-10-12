@@ -99,6 +99,7 @@ class AttributeSerializer {
 
 		for(let key in attrObject) {
 			let {name, value} = await AttributeSerializer.normalizeAttribute(key, attrObject[key], data, options);
+			// Note we filter any falsy attributes (except "")
 			if(name.startsWith(AstSerializer.prefixes.props) || !value && value !== "") {
 				continue;
 			}

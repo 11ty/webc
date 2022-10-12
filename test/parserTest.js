@@ -1595,7 +1595,6 @@ test("Using props without “this”", async t => {
 <p key="number key"></p>
 <p key="3.1"></p>
 <p key="float key"></p>
-<p key="test"></p>
 <p key="Boo!"></p>
 <p key="2"></p>
 <p key="-urns!"></p>`);

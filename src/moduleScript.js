@@ -25,15 +25,6 @@ Check that '${propertyName}' is a helper, attribute name, property name, or is p
 
 	static async evaluateAttribute(name, content, data, options) {
 		let context = ModuleScript.getProxiedContext(data, name, content, options.filePath);
-
-		// alias for environment variables
-		if(!("process" in context)) {
-			context.process = {};
-		}
-		if(!("env" in context.process)) {
-			context.process.env = process.env;
-		}
-
 		return vm.runInNewContext(content, context);
 	}
 
