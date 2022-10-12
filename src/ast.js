@@ -587,7 +587,7 @@ class AstSerializer {
 		return str;
 	}
 
-	renderStartTag(node, tagName, component, renderingMode, options) {
+	async renderStartTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 		let attrObject;
 
@@ -619,7 +619,7 @@ class AstSerializer {
 
 			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
 				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-				content += `<${tagName}${AttributeSerializer.getString(attrObject, data, {
+				content += `<${tagName}${await AttributeSerializer.getString(attrObject, data, {
 					filePath: options.closestParentComponent || this.filePath
 				})}>`;
 			}
@@ -949,7 +949,7 @@ class AstSerializer {
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		if(htmlAttribute) {
 			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let htmlContent = await ModuleScript.evaluateAsyncAttribute("@html", htmlAttribute, data, {
+			let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
 				filePath: options.closestParentComponent || this.filePath
 			});
 			if(typeof htmlContent !== "string") {

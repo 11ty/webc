@@ -7,3 +7,5 @@
 <p :key="this[3.1]"></p>
 <p :key="process.env.NODE_ENV"></p>
 <p :key="this.nested.object.fn()"></p>
+<p :key="false ? 3 : 2"></p>
+<p :key="this.nested.object.asyncfn()"></p>

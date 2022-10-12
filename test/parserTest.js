@@ -1572,6 +1572,11 @@ test("Using props without “this”", async t => {
 			nested: {
 				object: {
 					fn: () => 'Boo!',
+					asyncfn:  async () => {
+						return new Promise(resolve => {
+							setTimeout(() => resolve("-urns!"), 100);
+						})
+					}
 				},
 			},
 		}
@@ -1591,7 +1596,9 @@ test("Using props without “this”", async t => {
 <p key="3.1"></p>
 <p key="float key"></p>
 <p key="test"></p>
-<p key="Boo!"></p>`);
+<p key="Boo!"></p>
+<p key="2"></p>
+<p key="-urns!"></p>`);
 });
 
 test("Using @html", async t => {
@@ -1643,8 +1650,7 @@ test("Using a helper (without this) in dynamic attribute and @html", async(t) =>
 test("Try to use @html with undefined properties or helpers", async (t) => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing.webc"), {
 		message: [
-			"Error compiling @html with content 'this.firstname' in './test/stubs/components/html-evaluating-props.webc':",
-			"Error: 'firstname' not found when evaluating @html=\"this.firstname\".",
+			`'firstname' not found when evaluating @html=\"this.firstname\" in './test/stubs/components/html-evaluating-props.webc'.`,
 			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data."
 		].join('\n')
 	});
@@ -1653,8 +1659,8 @@ test("Try to use @html with undefined properties or helpers", async (t) => {
 test("Try to use @html with undefined properties or helpers (without this)", async (t) => {
 	await t.throwsAsync(testGetResultFor("./test/stubs/props-missing-nothis.webc"), {
 		message: [
-			"Error compiling @html with content 'firstname' in './test/stubs/components/html-evaluating-props-nothis.webc':",
-			"ReferenceError: firstname is not defined",
+			`'firstname' not found when evaluating @html="firstname" in './test/stubs/components/html-evaluating-props-nothis.webc'.`,
+			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data.",
 		].join('\n')
 	});
 });
@@ -1665,8 +1671,7 @@ test("Try to use a missing property in a dynamic attribute", async (t) => {
 
 	await t.throwsAsync(component.compile(), {
 		message: [
-			"Error compiling :key with content 'this.firstname':",
-			"Error: 'firstname' not found when evaluating :key=\"this.firstname\".",
+			"'firstname' not found when evaluating :key=\"this.firstname\".",
 			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data."
 		].join('\n')
 	});
@@ -1678,8 +1683,8 @@ test("Try to use a missing property in a dynamic attribute (without this)", asyn
 
 	await t.throwsAsync(component.compile(), {
 		message: [
-			"Error compiling :key with content 'firstname':",
-			"ReferenceError: firstname is not defined",
+			`'firstname' not found when evaluating :key="firstname".`,
+			"Check that 'firstname' is a helper, attribute name, property name, or is present in global data."
 		].join('\n')
 	});
 });
@@ -1690,8 +1695,8 @@ test("Try to use a missing helper function in a dynamic attribute (without this)
 
 	await t.throwsAsync(component.compile(), {
 		message: [
-			"Error compiling :key with content 'helper()':",
-			"ReferenceError: helper is not defined",
+			`'helper' not found when evaluating :key="helper()".`,
+			"Check that 'helper' is a helper, attribute name, property name, or is present in global data.",
 		].join('\n')
 	});
 });
