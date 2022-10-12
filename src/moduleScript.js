@@ -1,4 +1,6 @@
 import { Module } from "module";
+import vm from "vm";
+import { AstSerializer } from "./ast.js";
 
 class ModuleScript {
 
@@ -6,30 +8,27 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context, propertyReferenceKey, propertyValue) {
+	static getProxiedContext(context, propertyReferenceKey, propertyValue, fileName) {
 		let proxiedContext = new Proxy(context, {
 			get(target, propertyName) {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
 				}
-				throw new Error(`'${propertyName}' not found when evalutating ${propertyReferenceKey} with value '${propertyValue}'.
-Check that '${propertyName}' is a valid attribute or property name, is present in global data, or is a helper.`);
+
+				throw new Error(`'${propertyName}' not found when evaluating ${propertyReferenceKey}="${propertyValue}"${fileName ? ` in '${fileName}'` : ""}.
+Check that '${propertyName}' is a helper, attribute name, property name, or is present in global data.`);
 			}
 		});
 
 		return proxiedContext;
 	}
 
-	static evaluateAsyncAttribute(content) {
-		const AsyncFunction = (async function () {}).constructor;
-		return new AsyncFunction(`return ${content};`);
+	static async evaluateAttribute(name, content, data, options) {
+		let context = ModuleScript.getProxiedContext(data, name, content, options.filePath);
+		return vm.runInNewContext(content, context);
 	}
 
-	static evaluateAttribute(content) {
-		const Function = (function () {}).constructor;
-		return new Function(`return ${content};`);
-	}
-
+	// TODO use the `vm` approach from `evaluateAttribute` above.
 	static getModule(content, filePath) {
 		let m = new Module();
 		// m.paths = module.paths;

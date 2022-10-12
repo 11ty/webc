@@ -62,14 +62,13 @@ class AttributeSerializer {
 		return attrObject;
 	}
 
-	static normalizeAttribute(name, value, data) {
+	static async normalizeAttribute(name, value, data, options) {
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
-			let fn = ModuleScript.evaluateAttribute(value);
-			let context = ModuleScript.getProxiedContext(data, `${name} attribute`, value);
+			let attrValue = await ModuleScript.evaluateAttribute(name, value, data, options);
 
 			return {
 				name: name.slice(1),
-				value: fn.call(context),
+				value: attrValue,
 			};
 		}
 		return {
@@ -91,7 +90,7 @@ class AttributeSerializer {
 		return data;
 	}
 
-	static getString(attrs, data) {
+	static async getString(attrs, data, options) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {
@@ -99,7 +98,8 @@ class AttributeSerializer {
 		}
 
 		for(let key in attrObject) {
-			let {name, value} = AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
+			let {name, value} = await AttributeSerializer.normalizeAttribute(key, attrObject[key], data, options);
+			// Note we filter any falsy attributes (except "")
 			if(name.startsWith(AstSerializer.prefixes.props) || !value && value !== "") {
 				continue;
 			}
