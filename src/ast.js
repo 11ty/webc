@@ -703,31 +703,6 @@ class AstSerializer {
 	}
 
 	/**
-	 * Reprocesses content returned from <template> or <* webc:is="template"> text nodes as WebC.
-	 *
-	 * @param {TextNode} node
-	 * @param {Slots} slots
-	 * @param {CompileOptions} options
-	 * @returns {Promise<string>}
-	 * @private
-	 */
-	async getReprocessedContent(node, slots, options) {
-		// Resolves the render function inside the text node
-		let renderFunctionContent = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
-
-		// Prevents further render function content to also be processed as a render function
-		delete options.currentTransformTypes;
-
-		// Constructs an AST out of the string returned from the render function
-		let renderFunctionAst = await WebC.getASTFromString(renderFunctionContent);
-
-		// Passes the AST back to `compileNode` which can handle the rest
-		let { html: renderFunctionHtml } = await this.compileNode(renderFunctionAst, slots, options, false);
-
-		return renderFunctionHtml;
-	}
-
-	/**
 	 * @param {Node} node
 	 * @param {Slots} slots
 	 * @param {CompileOptions} options
@@ -769,23 +744,51 @@ class AstSerializer {
 	 * @private
 	 */
 	async getContentForTemplate(node, slots, options) {
+		if(!node.content) {
+			throw new Error(`Invalid node passed to getContentForTemplate: must be a <template> with a \`content\` property. Received: ${node.nodeName}.`);
+		}
+
 		let templateOptions = Object.assign({}, options);
 
 		// Processes `<template webc:root>` as WebC (including slot resolution)
-		// Processes `<template>` in raw mode (handles general templates, shadowroots, or webc:keep).
+		// Processes `<template>` in raw mode (for plain template, shadowroots, webc:keep, etc).
 		if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
 			templateOptions.rawMode = true;
 		}
-		// no transformation on this content
+
+		// No transformation on this content during first compilation
 		delete templateOptions.currentTransformTypes;
 
-		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions, false);
 		// Get plaintext from <template> .content
-		if(options.currentTransformTypes) {
-			return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions, false);
+
+		if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
+			return rawContent;
 		}
 
-		return rawContent;
+		return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+	}
+
+	/**
+	 * Reprocesses content returned from <template> or <* webc:is="template"> text nodes as WebC.
+	 *
+	 * @param {String} content
+	 * @param {Slots} slots
+	 * @param {CompileOptions} options
+	 * @returns {Promise<string>}
+	 * @private
+	 */
+	async reprocessContent(content, slots, options) {
+		// Constructs an AST out of the string returned from the render function
+		let renderFunctionAst = await WebC.getASTFromString(content);
+
+		// no further transforms
+		delete options.currentTransformTypes;
+
+		// Passes the AST back to `compileNode` which can handle the rest
+		let { html: renderFunctionHtml } = await this.compileNode(renderFunctionAst, slots, options, false);
+
+		return renderFunctionHtml;
 	}
 
 	// Transforms can alter HTML content e.g. <template webc:type="markdown">
@@ -936,7 +939,6 @@ class AstSerializer {
 		options = Object.assign({}, options);
 
 		let tagName = this.getTagName(node);
-		let parentTagName = node.parentNode ? this.getTagName(node.parentNode) : false;
 		let content = "";
 
 		let transformTypes = this.getTransformTypes(node);
@@ -950,25 +952,26 @@ class AstSerializer {
 
 		// Short circuit for text nodes, comments, doctypes
 		let renderingMode = this.getMode(options.closestParentComponent);
+
 		if(node.nodeName === "#text") {
-			if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
-				let unescaped = this.outputHtml(node.value, streamEnabled);
-				if(options.rawMode || this.isUnescapedTagContent(node.parentNode)) {
-					content += unescaped;
-				} else {
-					// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
-					content += escapeText(unescaped);
+			let c = node.value;
+
+			// Run transforms
+			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
+				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+
+				// only reprocess text nodes in a <* webc:is="template">
+				if(node.parentNode && this.getTagName(node.parentNode) === "template") {
+					c = await this.reprocessContent(c, slots, options);
 				}
-				return { html: content };
-			} else if(parentTagName === "template") { // reprocess any <template>
-				// reprocess output as WebC
-				let c = await this.getReprocessedContent(node, slots, options);
-				content += this.outputHtml(c, streamEnabled);
-				return { html: content };
+			}
+
+			let unescaped = this.outputHtml(c, streamEnabled);
+			if(options.rawMode || this.isUnescapedTagContent(node.parentNode)) {
+				return { html: unescaped };
 			} else {
-				let c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
-				content += this.outputHtml(c, streamEnabled);
-				return { html: content };
+				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
+				return { html: escapeText(unescaped) };
 			}
 		} else if(node.nodeName === "#comment") {
 			return {
@@ -1048,8 +1051,14 @@ class AstSerializer {
 				options.isSlottedContent = true;
 
 				content += await this.getContentForSlot(node, slots, options);
-			} else if(node.content) { // <template> content
-				content += this.outputHtml(await this.getContentForTemplate(node, slots, options), streamEnabled);
+			} else if(node.content) {
+				let c = await this.getContentForTemplate(node, slots, options);
+
+				if(transformTypes.length > 0) { // only reprocess <template webc:type>
+					c = await this.reprocessContent(c, slots, options);
+				}
+
+				content += this.outputHtml(c, streamEnabled);
 			} else if(node.childNodes?.length > 0 || externalSource) {
 				// Fallback to light DOM if no component dom exists (default slot content)
 				if(componentHasContent === false) {

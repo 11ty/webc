@@ -1985,7 +1985,7 @@ test("Using template component with webc:root and slot *does* process slots (Iss
 	expectedHtml: "Overridden content",
 });
 
-test("Render function result is resolves components", async (t) => {
+test("Render function result is resolves components (reprocessing, issue #33)", async (t) => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/render-child-component.webc");
 	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
@@ -1994,4 +1994,18 @@ test("Render function result is resolves components", async (t) => {
 
 	t.is(html, `<h3>Title</h3>
 <a href="/project">Link text</a>`);
+});
+
+test("Transform result will resolves components (reprocessing, issue #33)", async (t) => {
+	let component = new WebC();
+	component.setTransform("text-link-component", (content) => {
+		return `<text-link href="/project">Link text</text-link>`
+	});
+
+	component.setInputPath("./test/stubs/plaintext-transform.webc");
+	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
+
+	let { html } = await component.compile();
+
+	t.is(html, `<a href="/project">Link text</a>`);
 });
