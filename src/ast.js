@@ -960,7 +960,7 @@ class AstSerializer {
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
 				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 
-				// only reprocess text nodes in a <* webc:is="template">
+				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(node.parentNode && this.getTagName(node.parentNode) === "template") {
 					c = await this.compileString(c, slots, options);
 				}
@@ -1054,7 +1054,7 @@ class AstSerializer {
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
 
-				if(transformTypes.length > 0) { // only reprocess <template webc:type>
+				if(transformTypes.length > 0) { // reprocess <template webc:type>
 					c = await this.compileString(c, slots, options);
 				}
 
