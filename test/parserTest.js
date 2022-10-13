@@ -1984,3 +1984,33 @@ test("Using template component with webc:root and slot *does* process slots (Iss
 	slots: { default: "Overridden content" },
 	expectedHtml: "Overridden content",
 });
+
+test("Render function result is resolves components (reprocessing, issue #33)", async (t) => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/render-child-component.webc");
+	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
+
+	let { html, css } = await component.compile();
+
+	t.is(html, `<h3>Title</h3>
+<text-link><a href="/project">Link text</a>
+</text-link>`);
+	t.deepEqual(css, [`/* CSS */`]);
+});
+
+test("Transform result will resolves components (reprocessing, issue #33)", async (t) => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setTransform("text-link-component", (content) => {
+		return `<text-link @href="/project">Link text</text-link>`
+	});
+
+	component.setInputPath("./test/stubs/plaintext-transform.webc");
+	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
+
+	let { html, css } = await component.compile();
+	t.is(html, `<text-link><a href="/project">Link text</a>
+</text-link>`);
+	t.deepEqual(css, [`/* CSS */`]);
+});
