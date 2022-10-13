@@ -788,6 +788,7 @@ class AstSerializer {
 		// Passes the AST back to `compileNode` which can handle the rest
 		let { html: renderFunctionHtml } = await this.compileNode(renderFunctionAst, slots, options, false);
 
+		// Note that asset buckets are passed through options
 		return renderFunctionHtml;
 	}
 
