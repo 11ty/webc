@@ -770,17 +770,17 @@ class AstSerializer {
 	}
 
 	/**
-	 * Reprocesses content returned from <template> or <* webc:is="template"> text nodes as WebC.
+	 * Compiles (reprocesses, issue #33) content returned from <template> or <* webc:is="template"> text nodes as WebC.
 	 *
-	 * @param {String} content
+	 * @param {String} rawContent
 	 * @param {Slots} slots
 	 * @param {CompileOptions} options
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async reprocessContent(content, slots, options) {
+	async compileString(rawContent, slots, options) {
 		// Constructs an AST out of the string returned from the render function
-		let renderFunctionAst = await WebC.getASTFromString(content);
+		let renderFunctionAst = await WebC.getASTFromString(rawContent);
 
 		// no further transforms
 		delete options.currentTransformTypes;
@@ -962,7 +962,7 @@ class AstSerializer {
 
 				// only reprocess text nodes in a <* webc:is="template">
 				if(node.parentNode && this.getTagName(node.parentNode) === "template") {
-					c = await this.reprocessContent(c, slots, options);
+					c = await this.compileString(c, slots, options);
 				}
 			}
 
@@ -1055,7 +1055,7 @@ class AstSerializer {
 				let c = await this.getContentForTemplate(node, slots, options);
 
 				if(transformTypes.length > 0) { // only reprocess <template webc:type>
-					c = await this.reprocessContent(c, slots, options);
+					c = await this.compileString(c, slots, options);
 				}
 
 				content += this.outputHtml(c, streamEnabled);
