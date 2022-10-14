@@ -8,15 +8,14 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context, propertyReferenceKey, propertyValue, fileName) {
+	static getProxiedContext(context) {
 		let proxiedContext = new Proxy(context, {
 			get(target, propertyName) {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
 				}
 
-				throw new Error(`'${propertyName}' not found when evaluating ${propertyReferenceKey}="${propertyValue}"${fileName ? ` in '${fileName}'` : ""}.
-Check that '${propertyName}' is a helper, attribute name, property name, or is present in global data.`);
+				return undefined;
 			}
 		});
 
