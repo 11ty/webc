@@ -1,4 +1,13 @@
-on: push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+env:
+  YARN_GPG: no
+
 jobs:
   build:
     runs-on: ${{ matrix.os }}
@@ -9,12 +18,19 @@ jobs:
     name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v3
+
       - name: Setup node
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node }}
-          # cache: npm
+
+      - name: Cache node_modules
+        uses: actions/cache@v3
+        id: cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package.json') }}
+
       - run: npm install
+
       - run: npm test
-env:
-  YARN_GPG: no
