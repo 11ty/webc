@@ -791,6 +791,8 @@ class AstSerializer {
 		// Constructs an AST out of the string returned from the render function
 		let renderFunctionAst = await WebC.getASTFromString(rawContent);
 
+		options.renderingModeOverride = "component";
+
 		// no further transforms
 		delete options.currentTransformTypes;
 
@@ -945,28 +947,28 @@ class AstSerializer {
 		return false;
 	}
 
-	async getHtmlPropAst(node, slots, options) {
-		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
-		if(htmlAttribute) {
-			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
-				filePath: options.closestParentComponent || this.filePath
-			});
-
-			if(typeof htmlContent !== "string") {
-				htmlContent = `${htmlContent || ""}`;
-			}
-
-			// Reprocess content
-			htmlContent = await this.compileString(htmlContent, slots, options);
-
-			return {
-				nodeName: "#text",
-				value: htmlContent,
-				_webCProcessed: true,
-			};
+	async getHtmlPropAst(htmlAttribute, slots, options) {
+		if(!htmlAttribute) {
+			return false;
 		}
-		return false;
+
+		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+		let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
+			filePath: options.closestParentComponent || this.filePath
+		});
+
+		if(typeof htmlContent !== "string") {
+			htmlContent = `${htmlContent || ""}`;
+		}
+
+		// Reprocess content
+		htmlContent = await this.compileString(htmlContent, slots, options);
+
+		return {
+			nodeName: "#text",
+			value: htmlContent,
+			_webCProcessed: true,
+		};
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
@@ -984,9 +986,9 @@ class AstSerializer {
 			options.rawMode = true;
 		}
 
-		// Short circuit for text nodes, comments, doctypes
-		let renderingMode = this.getMode(options.closestParentComponent);
+		let renderingMode = options.renderingModeOverride || this.getMode(options.closestParentComponent);
 
+		// Short circuit for text nodes, comments, doctypes
 		if(node.nodeName === "#text") {
 			let c = node.value;
 
@@ -1057,7 +1059,8 @@ class AstSerializer {
 		// @html is an alias for default slot content when used on a host component
 		let componentHasContent = null;
 		let defaultSlotNodes = [];
-		let htmlContentNode = await this.getHtmlPropAst(node, slots, options);
+		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
+		let htmlContentNode = await this.getHtmlPropAst(htmlProp, slots, options);
 		let assetKey = this.getAggregateAssetKey(tagName, node, options);
 		if(htmlContentNode !== false) {
 			if(!options.rawMode && component) {
