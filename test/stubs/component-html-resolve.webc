@@ -1,0 +1,1 @@
+<p @html="this.sampleChildMarkup"></p>

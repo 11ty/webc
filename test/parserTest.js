@@ -2014,3 +2014,40 @@ test("Transform result will resolves components (reprocessing, issue #33)", asyn
 </text-link>`);
 	t.deepEqual(css, [`/* CSS */`]);
 });
+
+test("Using a component with @html should still aggregate assets (issue #29)", async (t) => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+
+	component.setInputPath("./test/stubs/component-html-assets.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/assets.webc",
+	});
+
+	let { html, css, js } = await component.compile();
+	t.is(html, `<my-component>HTML
+<p>Test</p>
+
+</my-component>`);
+t.deepEqual(css, [`/* CSS */`]);
+t.deepEqual(js, [`/* JS */`]);
+});
+
+test("Returning component markup from @html should resolve components (via issue #29)", async (t) => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+
+	component.setInputPath("./test/stubs/component-html-resolve.webc");
+	component.defineComponents({
+		"child": "./test/stubs/components/nested-child.webc",
+	});
+
+	let { html, css, js } = await component.compile({
+		data: {
+			sampleChildMarkup: "<child></child>"
+		}
+	});
+	t.is(html, `<p>SSR content</p>`);
+t.deepEqual(css, []);
+t.deepEqual(js, []);
+});

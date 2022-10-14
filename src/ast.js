@@ -554,9 +554,8 @@ class AstSerializer {
 		return map;
 	}
 
-	getSlottedContentNodes(node) {
+	getSlottedContentNodes(node, defaultSlot = []) {
 		let slots = {};
-		let defaultSlot = [];
 
 		// Slot definitions must be top level (this matches browser-based Web Components behavior)
 		for(let child of node.childNodes) {
@@ -962,7 +961,7 @@ class AstSerializer {
 				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
-				if(node.parentNode && this.getTagName(node.parentNode) === "template") {
+				if(!node._webCProcessed && node.parentNode && this.getTagName(node.parentNode) === "template") {
 					c = await this.compileString(c, slots, options);
 				}
 			}
@@ -1021,30 +1020,46 @@ class AstSerializer {
 			options.componentProps.uid = options.closestParentUid;
 		}
 
-		// Component content (foreshadow dom)
+		// @html is an alias for default slot content
 		let componentHasContent = null;
 		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
+		let defaultSlotNodes = [];
 		if(htmlAttribute) {
 			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 			let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
 				filePath: options.closestParentComponent || this.filePath
 			});
 			if(typeof htmlContent !== "string") {
-				htmlContent = `${htmlContent}`;
+				htmlContent = `${htmlContent || ""}`;
 			}
-			componentHasContent = htmlContent.trim().length > 0;
-			content += htmlContent;
-		} else if(!options.rawMode && component) {
+			// Reprocess content!
+			htmlContent = await this.compileString(htmlContent, slots, options);
+
+			if(!options.rawMode && component) {
+				// Fake AST text node
+				defaultSlotNodes.push({
+					nodeName: "#text",
+					value: htmlContent,
+					_webCProcessed: true,
+				});
+			} else {
+				componentHasContent = htmlContent.trim().length > 0;
+				content += htmlContent;
+			}
+		}
+
+		// Component content (foreshadow dom)
+		if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
 			options.hostComponentNode = node;
 
-			let slots = this.getSlottedContentNodes(node);
+			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
 		}
 
-		// Skip the remaining content is we have foreshadow dom!
+		// Skip the remaining content if we have foreshadow dom!
 		if(!componentHasContent) {
 			let externalSource = this.getExternalSource(tagName, node);
 
@@ -1055,7 +1070,7 @@ class AstSerializer {
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
 
-				if(transformTypes.length > 0) { // reprocess <template webc:type>
+				if(transformTypes.length > 0 && !node._webCProcessed) { // reprocess <template webc:type>
 					c = await this.compileString(c, slots, options);
 				}
 

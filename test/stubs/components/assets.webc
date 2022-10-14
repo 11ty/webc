@@ -1,0 +1,4 @@
+HTML
+<p><slot></slot></p>
+<style>/* CSS */</style>
+<script>/* JS */</script>
