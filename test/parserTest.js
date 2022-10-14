@@ -2051,3 +2051,21 @@ test("Returning component markup from @html should resolve components (via issue
 t.deepEqual(css, []);
 t.deepEqual(js, []);
 });
+
+test("script @html should bundle (issue #16, maybe via issue #29)", async (t) => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/component-script-html.webc");
+	component.defineComponents({
+		"my-component": "./test/stubs/components/script-html.webc",
+	});
+
+	let { html, css, js } = await component.compile({
+		data: {
+			sampleScript: "alert('hi');"
+		}
+	});
+	t.is(html, ``);
+t.deepEqual(css, []);
+t.deepEqual(js, [`alert('hi');`]);
+});

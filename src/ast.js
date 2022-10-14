@@ -381,7 +381,7 @@ class AstSerializer {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
-	isTagIgnored(node, component, renderingMode, options = {}) {
+	isTagIgnored(node, component, renderingMode) {
 		let tagName = this.getTagName(node);
 
 		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -398,7 +398,8 @@ class AstSerializer {
 			return true;
 		}
 
-		if(this.hasAttribute(node, AstSerializer.attrs.HTML)) {
+		let isBundledTag = this.bundlerMode && (tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node));
+		if(!isBundledTag && this.hasAttribute(node, AstSerializer.attrs.HTML)) {
 			return false;
 		}
 
@@ -427,10 +428,8 @@ class AstSerializer {
 		}
 
 		// aggregation tags
-		if(this.bundlerMode) {
-			if(tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node)) {
-				return true;
-			}
+		if(isBundledTag) {
+			return true;
 		}
 
 		return false;
@@ -635,7 +634,7 @@ class AstSerializer {
 				delete attrObject.slot;
 			}
 
-			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
+			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 				content += `<${tagName}${await AttributeSerializer.getString(attrObject, data, {
 					filePath: options.closestParentComponent || this.filePath
@@ -654,7 +653,7 @@ class AstSerializer {
 		if(tagName) {
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode, options)) {
+			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				content += `</${tagName}>`;
 			}
 
@@ -935,6 +934,30 @@ class AstSerializer {
 		return false;
 	}
 
+	async getHtmlPropAst(node, slots, options) {
+		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
+		if(htmlAttribute) {
+			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+			let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
+				filePath: options.closestParentComponent || this.filePath
+			});
+
+			if(typeof htmlContent !== "string") {
+				htmlContent = `${htmlContent || ""}`;
+			}
+
+			// Reprocess content!
+			htmlContent = await this.compileString(htmlContent, slots, options);
+
+			return {
+				nodeName: "#text",
+				value: htmlContent,
+				_webCProcessed: true,
+			};
+		}
+		return false;
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 
@@ -1020,31 +1043,23 @@ class AstSerializer {
 			options.componentProps.uid = options.closestParentUid;
 		}
 
-		// @html is an alias for default slot content
+		// @html is an alias for default slot content when used on a host component
 		let componentHasContent = null;
-		let htmlAttribute = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		let defaultSlotNodes = [];
-		if(htmlAttribute) {
-			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
-				filePath: options.closestParentComponent || this.filePath
-			});
-			if(typeof htmlContent !== "string") {
-				htmlContent = `${htmlContent || ""}`;
-			}
-			// Reprocess content!
-			htmlContent = await this.compileString(htmlContent, slots, options);
-
+		let htmlContentNode = await this.getHtmlPropAst(node, slots, options);
+		let assetKey = this.getAggregateAssetKey(tagName, node, options);
+		if(htmlContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
-				defaultSlotNodes.push({
-					nodeName: "#text",
-					value: htmlContent,
-					_webCProcessed: true,
-				});
+				defaultSlotNodes.push(htmlContentNode);
+			} else if(assetKey) { // assets for aggregation
+				if(!node.childNodes) {
+					node.childNodes = [];
+				}
+				node.childNodes.push(htmlContentNode);
 			} else {
-				componentHasContent = htmlContent.trim().length > 0;
-				content += htmlContent;
+				componentHasContent = htmlContentNode.value.trim().length > 0;
+				content += htmlContentNode.value;
 			}
 		}
 
@@ -1088,10 +1103,8 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					let key = this.getAggregateAssetKey(tagName, node, options);
-
 					// Aggregate to CSS/JS bundles
-					if(key) {
+					if(assetKey) {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
 							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
@@ -1103,24 +1116,24 @@ class AstSerializer {
 
 						let bucket = this.getBucketName(node, tagName);
 						if(bucket !== "default") {
-							if(!options.assets.buckets[key]) {
-								options.assets.buckets[key] = new Set();
+							if(!options.assets.buckets[assetKey]) {
+								options.assets.buckets[assetKey] = new Set();
 							}
-							options.assets.buckets[key].add(bucket);
+							options.assets.buckets[assetKey].add(bucket);
 						}
 
 						let entryKey = options.closestParentComponent || this.filePath;
-						if(!options.assets[key][entryKey]) {
-							options.assets[key][entryKey] = {};
+						if(!options.assets[assetKey][entryKey]) {
+							options.assets[assetKey][entryKey] = {};
 						}
-						if(!options.assets[key][entryKey][bucket]) {
-							options.assets[key][entryKey][bucket] = new Set();
+						if(!options.assets[assetKey][entryKey][bucket]) {
+							options.assets[assetKey][entryKey][bucket] = new Set();
 						}
-						if(!options.assets[key][entryKey][bucket].has(childContent)) {
-							options.assets[key][entryKey][bucket].add( childContent );
+						if(!options.assets[assetKey][entryKey][bucket].has(childContent)) {
+							options.assets[assetKey][entryKey][bucket].add( childContent );
 
 							// TODO should this entire branch be skipped and assets should always leave as-is when streaming?
-							this.streams.output(key, childContent);
+							this.streams.output(assetKey, childContent);
 						}
 
 					} else { // Otherwise, leave as-is
