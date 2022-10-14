@@ -33,8 +33,9 @@ class WebC {
 		this.globalComponents = {};
 		this.astOptions = {};
 		this.bundlerMode = false;
+		this.reprocessingMode = true;
 
-		if(input) {
+		if(input || input === "") {
 			this.rawInput = input;
 		}
 		if(file) {
@@ -178,6 +179,7 @@ class WebC {
 
 		let ast = new AstSerializer(this.astOptions);
 		ast.setBundlerMode(this.bundlerMode);
+		ast.setReprocessingMode(this.reprocessingMode);
 		ast.setMode(mode);
 		ast.setData(options.data);
 
@@ -210,6 +212,10 @@ class WebC {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
+	}
+
+	setReprocessingMode(mode) {
+		this.reprocessingMode = !!mode;
 	}
 
 	async stream(options = {}) {

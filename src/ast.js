@@ -91,6 +91,9 @@ class AstSerializer {
 		// controls whether the assets are aggregated
 		this.bundlerMode = false;
 
+		// controls whether @html, <template webc:type>, <* webc:is="template" webc:type> nodes are reprocessed
+		this.reprocessingMode = true;
+
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);
 
@@ -175,6 +178,10 @@ class AstSerializer {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
+	}
+	
+	setReprocessingMode(mode) {
+		this.reprocessingMode = !!mode;
 	}
 
 	setMode(mode = "component") {
@@ -777,6 +784,10 @@ class AstSerializer {
 	 * @private
 	 */
 	async compileString(rawContent, slots, options) {
+		if(!this.reprocessingMode) {
+			return rawContent;
+		}
+
 		// Constructs an AST out of the string returned from the render function
 		let renderFunctionAst = await WebC.getASTFromString(rawContent);
 
@@ -946,7 +957,7 @@ class AstSerializer {
 				htmlContent = `${htmlContent || ""}`;
 			}
 
-			// Reprocess content!
+			// Reprocess content
 			htmlContent = await this.compileString(htmlContent, slots, options);
 
 			return {
