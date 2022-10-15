@@ -1,6 +1,5 @@
 import { Module } from "module";
 import vm from "vm";
-import { AstSerializer } from "./ast.js";
 
 class ModuleScript {
 
