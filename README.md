@@ -548,7 +548,7 @@ p { color: rebeccapurple; }
 
 ### `<head>` Components
 
-There are a few wrinkles when using an HTML parser with custom elements. Notably, the parser tries to force custom element children in the `<head>` over to the `<body>`. To workaround this limitation, use `web:is`. Here are a few example workarounds:
+There are a few wrinkles when using an HTML parser with custom elements. Notably, the parser tries to force custom element children in the `<head>` over to the `<body>`. To workaround this limitation, use `webc:is`. Here are a few example workarounds:
 
 ```html
 <head webc:is="my-custom-head">
