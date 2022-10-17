@@ -2100,3 +2100,21 @@ test("Template should be unparsed raw content, issue #48", async t => {
 	let { html } = await component.compile();
 	t.is(html.trim(), `hi`);
 });
+
+test("Template should input unparsed raw content and reprocess output, issue #48", async t => {
+	t.plan(2);
+
+	let component = new WebC();
+
+	component.setContent(`<template webc:type="custom"><foo id={this.uid}>test</test></template>`);
+	component.defineComponents({
+		"child": "./test/stubs/components/nested-child.webc",
+	});
+	component.setTransform("custom", content => {
+		t.is(content, `<foo id={this.uid}>test</test>`);
+		return "<child></child>";
+	})
+
+	let { html } = await component.compile();
+	t.is(html.trim(), `SSR content`);
+});
