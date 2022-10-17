@@ -22,8 +22,23 @@ class ModuleScript {
 	}
 
 	static async evaluateAttribute(name, content, data, options) {
-		let context = ModuleScript.getProxiedContext(data, name, content, options.filePath);
-		return vm.runInNewContext(content, context);
+		try {
+			let context = ModuleScript.getProxiedContext(data, name, content, options.filePath);
+			let returnValue = vm.runInNewContext(content, context, {
+				contextCodeGeneration: {
+					strings: false
+				}
+			});
+			return returnValue;
+		} catch(e) {
+			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
+			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {
+				throw new Error(`\`class\` is a reserved word in JavaScript. You may have tried to use it in a dynamic attribute: \`${name}="${content}"\`. Change \`class\` to \`this.class\` instead!
+Original error message: ${e.message}`);
+			}
+
+			throw e;
+		}
 	}
 
 	// TODO use the `vm` approach from `evaluateAttribute` above.

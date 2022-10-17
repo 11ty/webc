@@ -2057,3 +2057,31 @@ test("script @html should bundle (issue #16, maybe via issue #29)", async (t) =>
 t.deepEqual(css, []);
 t.deepEqual(js, [`alert('hi');`]);
 });
+
+test("Throw a better error message when attempting to use `class` in dynamic attributes without this #45", async (t) => {
+	let component = new WebC();
+	component.setContent(`<div :class="class"></div>`);
+	component.setInputPath("./test/stubs/component-script-html.webc");
+
+	await t.throwsAsync(component.compile({
+		data: {
+			class: "test-class"
+		}
+	}), {
+		message: `\`class\` is a reserved word in JavaScript. You may have tried to use it in a dynamic attribute: \`:class="class"\`. Change \`class\` to \`this.class\` instead!
+Original error message: Unexpected end of input`
+	});
+});
+
+test("You can use real `class` in dynamic attributes though #45", async (t) => {
+	let component = new WebC();
+	component.setContent(`<div :class="let b = class {}; 'inline'"></div>`);
+	component.setInputPath("./test/stubs/component-script-html.webc");
+
+	let { html } = await component.compile({
+		data: {
+			class: "test-class"
+		}
+	});
+	t.is(html, `<div class="inline"></div>`);
+});
