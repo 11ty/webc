@@ -788,18 +788,19 @@ class AstSerializer {
 			throw new Error(`Invalid node passed to getContentForTemplate: must be a <template> with a \`content\` property. Received: ${node.nodeName}.`);
 		}
 
-		let templateOptions = Object.assign({}, options);
-
-		// Processes `<template webc:root>` as WebC (including slot resolution)
-		// Processes `<template>` in raw mode (for plain template, shadowroots, webc:keep, etc).
-		if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
-			templateOptions.rawMode = true;
-		}
-
 		let rawContent;
-		if(templateOptions.rawMode) {
+		// <template webc:raw> or <template webc:type> for transformin’
+		if(this.hasAttribute(node, AstSerializer.attrs.RAW) || this.hasAttribute(node, AstSerializer.attrs.TYPE)) {
 			rawContent = this.getPreparsedRawTextContent(node, options.closestParentComponent);
 		} else {
+			let templateOptions = Object.assign({}, options);
+
+			// Processes `<template webc:root>` as WebC (including slot resolution)
+			// Processes `<template>` in raw mode (for plain template, shadowroots, webc:keep, etc).
+			if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
+				templateOptions.rawMode = true;
+			}
+
 			// No transformation on this content during first compilation
 			delete templateOptions.currentTransformTypes;
 	
@@ -1052,6 +1053,7 @@ class AstSerializer {
 
 		// Short circuit for text nodes, comments, doctypes
 		if(node.nodeName === "#text") {
+			// Should we use getPreparsedRawTextContent here instead? My hunch is that node.value is okay for now
 			let c = node.value;
 
 			// Run transforms
