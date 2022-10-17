@@ -142,6 +142,8 @@ class AstSerializer {
 
 	static FAKE_FS_PATH = "_webc_raw_input_string";
 
+	static EOL = "\n";
+
 	static prefixes = {
 		props: "@",
 		dynamic: ":",
@@ -201,7 +203,8 @@ class AstSerializer {
 		let lineStarts = [];
 		let sum = 0;
 		let lineEnding = "\n";
-		for(let line of content.split(lineEnding)) { // TODO CLRF
+		// this should work okay with \r\n too, \r will just be treated as another character
+		for(let line of content.split(lineEnding)) {
 			lineStarts.push(sum);
 			sum += line.length + lineEnding.length;
 		}
@@ -649,7 +652,7 @@ class AstSerializer {
 		if(tagName) {
 			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
 			if(renderingMode === "page" && tagName === "head") {
-				content += `\n`;
+				content += AstSerializer.EOL;
 			}
 
 			let attrs = this.getAttributes(node, component, options);
@@ -696,7 +699,7 @@ class AstSerializer {
 			}
 
 			if(renderingMode === "page" && tagName === "body") {
-				content += `\n`;
+				content += AstSerializer.EOL;
 			}
 		}
 		return content;
@@ -1019,7 +1022,8 @@ class AstSerializer {
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
 
-		return content.slice(startIndex, endIndex);
+		// Also normalizes new lines
+		return content.slice(startIndex, endIndex).replace(/\r\n/g, AstSerializer.EOL);
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
@@ -1066,7 +1070,7 @@ class AstSerializer {
 			};
 		} else if(renderingMode === "page" && node.nodeName === "#documentType") {
 			return {
-				html: this.outputHtml(`<!doctype ${node.name}>\n`, streamEnabled)
+				html: this.outputHtml(`<!doctype ${node.name}>${AstSerializer.EOL}`, streamEnabled)
 			};
 		}
 
