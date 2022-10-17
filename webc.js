@@ -15,6 +15,7 @@ class AstCache {
 		if(!this.ast[contents]) {
 			this.ast[contents] = parse(contents, {
 				scriptingEnabled: true,
+				sourceCodeLocationInfo: true,
 			});
 		}
 
@@ -104,12 +105,25 @@ class WebC {
 		return wc.getAST(content);
 	}
 
+	// @deprecated for getFromFilePath
 	static async getASTFromFilePath(filePath) {
 		let wc = new WebC({
 			file: filePath
 		});
 		let { content } = wc.getContent();
 		return wc.getAST(content);
+	}
+
+	static async getFromFilePath(filePath) {
+		let wc = new WebC({
+			file: filePath
+		});
+		let { content } = wc.getContent();
+
+		return {
+			content,
+			ast: await wc.getAST(content)
+		};
 	}
 
 	getAST(content) {
@@ -181,6 +195,7 @@ class WebC {
 		ast.setBundlerMode(this.bundlerMode);
 		ast.setReprocessingMode(this.reprocessingMode);
 		ast.setMode(mode);
+		ast.setContent(content);
 		ast.setData(options.data);
 
 		if(this.uidFn) {

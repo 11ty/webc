@@ -85,6 +85,9 @@ class AstSerializer {
 			filePath: undefined,
 		}, options);
 
+		// Raw content parsed by AST (used for raw processing)
+		this.content;
+
 		// controls whether or not doctype, html, body are prepended to content
 		this.mode = "component";
 
@@ -128,6 +131,16 @@ class AstSerializer {
 
 		this.fileCache = new FileSystemCache();
 	}
+
+	set filePath(value) {
+		this._filePath = value;
+	}
+
+	get filePath() {
+		return this._filePath || AstSerializer.FAKE_FS_PATH;
+	}
+
+	static FAKE_FS_PATH = "_webc_raw_input_string";
 
 	static prefixes = {
 		props: "@",
@@ -182,6 +195,21 @@ class AstSerializer {
 	
 	setReprocessingMode(mode) {
 		this.reprocessingMode = !!mode;
+	}
+
+	getNewLineStartIndeces(content) {
+		let lineStarts = [];
+		let sum = 0;
+		let lineEnding = "\n";
+		for(let line of content.split(lineEnding)) { // TODO CLRF
+			lineStarts.push(sum);
+			sum += line.length + lineEnding.length;
+		}
+		return lineStarts;
+	}
+
+	setContent(content) {
+		this.content = content;
 	}
 
 	setMode(mode = "component") {
@@ -485,22 +513,25 @@ class AstSerializer {
 		return attrs;
 	}
 
-	async preparseComponent(filePath, ast) {
+	async preparseComponent(filePath, ast, content) {
 		if(this.components[filePath]) {
 			// already parsed
 			return;
 		}
 
 		let isTopLevelComponent = !!ast; // ast is passed in for Top Level components
-
 		if(!ast) {
-			ast = await WebC.getASTFromFilePath(filePath);
+			let parsed = await WebC.getFromFilePath(filePath);
+			ast = parsed.ast;
+			content = parsed.content;
 		}
 
 		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
 		this.components[filePath] = {
 			filePath,
 			ast,
+			content,
+			newLineStartIndeces: this.getNewLineStartIndeces(content),
 			// if ast is provided, this is the top level component
 			mode: isTopLevelComponent ? this.mode : "component",
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
@@ -761,11 +792,16 @@ class AstSerializer {
 			templateOptions.rawMode = true;
 		}
 
-		// No transformation on this content during first compilation
-		delete templateOptions.currentTransformTypes;
-
-		// Get plaintext from <template> .content
-		let { html: rawContent } = await this.compileNode(node.content, slots, templateOptions, false);
+		let rawContent;
+		if(templateOptions.rawMode) {
+			rawContent = this.getPreparsedRawTextContent(node, options.closestParentComponent);
+		} else {
+			// No transformation on this content during first compilation
+			delete templateOptions.currentTransformTypes;
+	
+			let { html } = await this.compileNode(node.content, slots, templateOptions, false);
+			rawContent= html;
+		}
 
 		if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
 			return rawContent;
@@ -969,6 +1005,21 @@ class AstSerializer {
 			value: htmlContent,
 			_webCProcessed: true,
 		};
+	}
+
+	// Requires parse5’s sourceLocationInfo option to be set to true
+	getPreparsedRawTextContent(node, closestParentComponent) {
+		if(!node.sourceCodeLocation) {
+			throw new Error("`getPreparsedRawTextContent` requires `parse5->parse->sourceLocationInfo: true`. This is a WebC error that needs to be filed on the issue tracker: https://github.com/11ty/webc/issues/");
+		}
+
+		let {newLineStartIndeces, content} = this.components[closestParentComponent];
+		let start = node.sourceCodeLocation.startTag;
+		let end = node.sourceCodeLocation.endTag;
+		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
+		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
+
+		return content.slice(startIndex, endIndex);
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
@@ -1182,16 +1233,14 @@ class AstSerializer {
 		}, options);
 
 		// parse the top level component
-		if(this.filePath) {
-			if(!this.components[this.filePath]) {
-				await this.preparseComponent(this.filePath, node);
-			}
-
-			options.components.addNode(this.filePath);
-			options.componentProps = {
-				uid: options.closestParentUid
-			};
+		if(!this.components[this.filePath]) {
+			await this.preparseComponent(this.filePath, node, this.content);
 		}
+
+		options.components.addNode(this.filePath);
+		options.componentProps = {
+			uid: options.closestParentUid
+		};
 
 		try {
 			if(node.mode === "quirks") {
@@ -1204,7 +1253,7 @@ class AstSerializer {
 
 			let returnObject = {
 				html: content,
-				components: assets.orderedComponentList,
+				components: assets.orderedComponentList.filter(entry => entry !== AstSerializer.FAKE_FS_PATH),
 				css: [],
 				js: [],
 				buckets: {},

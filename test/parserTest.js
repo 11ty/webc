@@ -2085,3 +2085,18 @@ test("You can use real `class` in dynamic attributes though #45", async (t) => {
 	});
 	t.is(html, `<div class="inline"></div>`);
 });
+
+test("Template should be unparsed raw content, issue #48", async t => {
+	t.plan(2);
+
+	let component = new WebC();
+
+	component.setContent(`<template webc:type="custom"><foo id={this.uid}>test</test></template>`);
+	component.setTransform("custom", content => {
+		t.is(content, `<foo id={this.uid}>test</test>`);
+		return "hi";
+	})
+
+	let { html } = await component.compile();
+	t.is(html.trim(), `hi`);
+});
