@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
 
@@ -1022,8 +1023,14 @@ class AstSerializer {
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
 
-		// Also normalizes new lines
-		return content.slice(startIndex, endIndex).replace(/\r\n/g, AstSerializer.EOL);
+		let rawContent = content.slice(startIndex, endIndex);
+
+		if(os.EOL !== AstSerializer.EOL) {
+			// Replace with replaceAll(os.EOL) when we drop support for Node 14 (see node.green)
+			return rawContent.replace(/\r\n/g, AstSerializer.EOL);
+		}
+
+		return rawContent;
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
