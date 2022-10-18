@@ -509,7 +509,7 @@ We provide a special `@html` property to override any tag content with custom Ja
 
 #### Helper Functions
 
-If you want to add custom JavaScript functions for use in render functions or `@html`, you can use the `setHelper` method.
+If you want to add custom JavaScript functions for use in render functions, `@html`, or dynamic attributes you can use the `setHelper` method.
 
 ```js
 import { WebC } from "@11ty/webc";
