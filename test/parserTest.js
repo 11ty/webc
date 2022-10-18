@@ -66,6 +66,22 @@ test("Not escaped content (template, script, style, noscript)", async t => {
 	t.is(html, `<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
 });
 
+test("Not escaped content bundler mode (template, script, style, noscript)", async t => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setContent(`<style>* > * {}</style><script>if(1>2) {}</script><script>
+console.log('test');
+</script><template>></template><noscript><a href=""></a></noscript>`);
+
+	let { html, css, js } = await component.compile();
+
+	t.is(html, `<template>></template><noscript><a href=""></a></noscript>`);
+	t.deepEqual(css, [`* > * {}`]);
+	t.deepEqual(js, [`if(1>2) {}`, `
+console.log('test');
+`]);
+});
+
 test("No Quirks mode default (HTML file without doctype)", async t => {
 	let component = new WebC();
 	component.setContent(`<html><div class="red"></div></html>`);
