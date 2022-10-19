@@ -200,7 +200,7 @@ class AstSerializer {
 		this.reprocessingMode = !!mode;
 	}
 
-	getNewLineStartIndeces(content) {
+	static getNewLineStartIndeces(content) {
 		let lineStarts = [];
 		let sum = 0;
 		let lineEnding = "\n";
@@ -535,7 +535,12 @@ class AstSerializer {
 			filePath,
 			ast,
 			content,
-			newLineStartIndeces: this.getNewLineStartIndeces(content),
+			get newLineStartIndeces() {
+				if(!this._lineStarts) {
+					this._lineStarts = AstSerializer.getNewLineStartIndeces(content);
+				}
+				return this._lineStarts;
+			},
 			// if ast is provided, this is the top level component
 			mode: isTopLevelComponent ? this.mode : "component",
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
@@ -1018,9 +1023,17 @@ class AstSerializer {
 			throw new Error("`getPreparsedRawTextContent` requires `parse5->parse->sourceLocationInfo: true`. This is a WebC error that needs to be filed on the issue tracker: https://github.com/11ty/webc/issues/");
 		}
 
-		let {newLineStartIndeces, content} = this.components[closestParentComponent];
 		let start = node.sourceCodeLocation.startTag;
 		let end = node.sourceCodeLocation.endTag;
+
+		// Skip out early if the component has no content (not even whitespace)
+		// TODO possible improvement to use `hasTextContent` to ignore whitespace only children
+		//      Would we ever want to use webc:raw to output just whitespace?
+		if(start.endLine === end.startLine && start.endCol === end.startCol) {
+			return "";
+		}
+
+		let {newLineStartIndeces, content} = this.components[closestParentComponent];
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
 
