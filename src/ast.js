@@ -119,6 +119,12 @@ class AstSerializer {
 			let fn = ModuleScript.getModule(content, this.filePath);
 			return fn.call(this);
 		});
+		
+		// Same as "render" above but this name is better 😭
+		this.setTransform(AstSerializer.transformTypes.MODULE, async function(content) {
+			let fn = ModuleScript.getModule(content, this.filePath);
+			return fn.call(this);
+		});
 
 		// Component cache
 		this.componentMap = {};
@@ -166,6 +172,7 @@ class AstSerializer {
 
 	static transformTypes = {
 		RENDER: "render",
+		MODULE: "module", // alias for render
 		SCOPED: "css:scoped",
 	};
 

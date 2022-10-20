@@ -21,9 +21,9 @@ class ModuleScript {
 		return proxiedContext;
 	}
 
-	static async evaluateAttribute(name, content, data, options) {
+	static async evaluateAttribute(name, content, data) {
 		try {
-			let context = ModuleScript.getProxiedContext(data, name, content, options.filePath);
+			let context = ModuleScript.getProxiedContext(data);
 			let returnValue = vm.runInNewContext(content, context, {
 				contextCodeGeneration: {
 					strings: false
