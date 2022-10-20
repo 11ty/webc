@@ -1762,6 +1762,19 @@ test("External script src and stylesheet", async t => {
 `);
 });
 
+test("External scoped stylesheet", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-scoped.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.wqwornefz{color:red}`]);
+	t.deepEqual(components, [
+		"./test/stubs/externals/externals-scoped.webc",
+	]);
+
+	t.is(html, `<p class="wqwornefz">This is another global component.</p>
+`);
+});
+
 test("External script src and stylesheet webc:keep", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-keep.webc");
 

@@ -1,0 +1,2 @@
+<p>This is another global component.</p>
+<link rel="stylesheet" href="my-style-scoped.css" webc:scoped>

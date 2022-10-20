@@ -2,6 +2,9 @@ import { generate, parse, walk } from "css-tree";
 
 class CssPrefixer {
 	constructor(prefix) {
+		if(!prefix) {
+			throw new Error("No prefix was passed to the CSS prefixer!");
+		}
 		this.prefix = prefix;
 	}
 

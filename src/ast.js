@@ -348,9 +348,14 @@ class AstSerializer {
 		let hash = createHash("sha256");
 
 		// <style webc:scoped> must be nested at the root
-		let styleNodes = this.getTopLevelNodes(component, ["style"], [AstSerializer.attrs.SCOPED]);
+		let styleNodes = this.getTopLevelNodes(component, [], [AstSerializer.attrs.SCOPED]);
 
 		for(let node of styleNodes) {
+			let tagName = this.getTagName(node);
+			if(tagName !== "style" && !this.isStylesheetNode(tagName, node)) {
+				continue;
+			}
+
 			// Override hash with scoped="override"
 			let override = this.getAttributeValue(node, AstSerializer.attrs.SCOPED);
 			if(override) {
@@ -365,9 +370,15 @@ class AstSerializer {
 				return override;
 			}
 
-			// TODO handle <script webc:type="render" webc:is="style" webc:scoped> (see render-css.webc)
-			let hashContent = this.getTextContent(node).toString();
-			hash.update(hashContent);
+			if(tagName === "style") {
+				// hash based on the text content
+				// TODO this does *not* process script e.g. <script webc:type="render" webc:is="style" webc:scoped> (see render-css.webc)
+				let hashContent = this.getTextContent(node).toString();
+				hash.update(hashContent);
+			} else { // link stylesheet
+				// hash based on the file name
+				hash.update(this.getAttributeValue(node, "href"));
+			}
 		}
 
 		if(styleNodes.length) { // don’t return a hash if empty
@@ -1206,7 +1217,9 @@ class AstSerializer {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
 							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
-							childContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
+
+							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
+							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;
