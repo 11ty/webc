@@ -103,7 +103,7 @@ If WebC looks familiar, that’s because WebC *is* HTML. These are single file H
 ```
 
 * Uses [`parse5`](https://github.com/inikulin/parse5) to parse WebC HTML as modern browsers do (credit to [@DasSurma’s](https://twitter.com/DasSurma/status/1559159122964127744) work with [Vite](https://twitter.com/patak_dev/status/1564265006627176449) here)
-* `<!doctype html>` is optional (added if omitted).
+* `<!doctype html>` is optional (will be added automatically if the content starts with `<html`).
 * Throws a helpful error if encounters quirks mode markup.
 
 ### HTML Imports (kidding… kinda)
@@ -134,6 +134,7 @@ And now you can use them in your WebC files without importing!
 Consider this `page.webc` file:
 
 ```html
+<!doctype html>
 <title>WebC Example</title>
 <my-component></my-component>
 ```
@@ -171,6 +172,7 @@ _Important note:_ `webc:` attributes are always removed from the resulting compi
 `page.webc`:
 
 ```html
+<!doctype html>
 <title>WebC Example</title>
 <any-tag-name webc:import="components/my-component.webc"></any-tag-name>
 ```
