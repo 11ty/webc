@@ -1,0 +1,37 @@
+<div test2="2"></div>
+<script webc:type="render" webc:is="template">
+const Image = require("@11ty/eleventy-img");
+
+module.exports = function() {
+	return Image.generateHTML({
+		webp: [
+			{
+				format: 'webp',
+				width: 300,
+				height: 300,
+				filename: '6dfd7ac6-300.webp',
+				outputPath: 'img/6dfd7ac6-300.webp',
+				url: '/img/6dfd7ac6-300.webp',
+				sourceType: 'image/webp',
+				srcset: '/img/6dfd7ac6-300.webp 300w',
+				size: 10184
+			}
+		],
+		jpeg: [
+			{
+				format: 'jpeg',
+				width: 300,
+				height: 300,
+				filename: '6dfd7ac6-300.jpeg',
+				outputPath: 'img/6dfd7ac6-300.jpeg',
+				url: '/img/6dfd7ac6-300.jpeg',
+				sourceType: 'image/jpeg',
+				srcset: '/img/6dfd7ac6-300.jpeg 300w',
+				size: 15616
+			}
+		]
+	}, {
+		alt: "Hi"
+	});
+}
+</script>

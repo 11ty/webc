@@ -1,5 +1,5 @@
 import { AstSerializer } from "./ast.js";
-import { ModuleScript } from "./moduleScript.js";
+import { ModuleScript } from "./moduleScript.cjs";
 import { escapeAttribute } from 'entities/lib/escape.js';
 
 class AttributeSerializer {

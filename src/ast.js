@@ -9,7 +9,7 @@ import { Path } from "./path.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
-import { ModuleScript } from "./moduleScript.js";
+import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";

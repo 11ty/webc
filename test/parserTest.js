@@ -1437,6 +1437,19 @@ This is sample content.
 </div>`);
 });
 
+test("Scripted render function with a require", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-require.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-require.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+});
+
 test("Scripted render function whitespace variation", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render2.webc");
 

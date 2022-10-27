@@ -1,5 +1,5 @@
-import { Module, createRequire } from "module";
-import vm from "vm";
+const { Module } = require("module");
+const vm = require("vm");
 
 class ModuleScript {
 
@@ -44,8 +44,10 @@ Original error message: ${e.message}`);
 	// TODO use the `vm` approach from `evaluateAttribute` above.
 	static getModule(content, filePath) {
 		let m = new Module();
-    const require = createRequire(import.meta.url);
-		m.paths = require.main.paths;
+
+		// This requires CJS (as the internal render function is technically CJS, too)
+		m.paths = module.paths;
+
 		let trimmed = content.trim();
 
 		// replace `export default` with `module.exports`
@@ -69,4 +71,4 @@ Original error message: ${e.message}`);
 	}
 }
 
-export { ModuleScript };
+module.exports = { ModuleScript };
