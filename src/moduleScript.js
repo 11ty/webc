@@ -1,4 +1,4 @@
-import { Module } from "module";
+import { Module, createRequire } from "module";
 import vm from "vm";
 
 class ModuleScript {
@@ -44,7 +44,8 @@ Original error message: ${e.message}`);
 	// TODO use the `vm` approach from `evaluateAttribute` above.
 	static getModule(content, filePath) {
 		let m = new Module();
-		// m.paths = module.paths;
+    const require = createRequire(import.meta.url);
+		m.paths = require.main.paths;
 		let trimmed = content.trim();
 
 		// replace `export default` with `module.exports`
