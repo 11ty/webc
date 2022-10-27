@@ -118,11 +118,12 @@ class WebC {
 		let wc = new WebC({
 			file: filePath
 		});
-		let { content } = wc.getContent();
+		let { content, mode } = wc.getContent();
 
 		return {
 			content,
-			ast: await wc.getAST(content)
+			ast: await wc.getAST(content),
+			mode,
 		};
 	}
 

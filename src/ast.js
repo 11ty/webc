@@ -556,10 +556,15 @@ class AstSerializer {
 		}
 
 		let isTopLevelComponent = !!ast; // ast is passed in for Top Level components
+
+		// if ast is provided, this is the top level component
+		let mode = isTopLevelComponent ? this.mode : "component";
+
 		if(!ast) {
 			let parsed = await WebC.getFromFilePath(filePath);
 			ast = parsed.ast;
 			content = parsed.content;
+			mode = parsed.mode;
 		}
 
 		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
@@ -573,8 +578,8 @@ class AstSerializer {
 				}
 				return this._lineStarts;
 			},
-			// if ast is provided, this is the top level component
-			mode: isTopLevelComponent ? this.mode : "component",
+			
+			mode,
 			ignoreRootTag: this.ignoreComponentParentTag(ast),
 			scopedStyleHash,
 			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
@@ -866,10 +871,16 @@ class AstSerializer {
 			return rawContent;
 		}
 
+		// Short circuit if rawContent has no < for tags
+		if(!rawContent.includes("<")) {
+			return rawContent;
+		}
+
 		// Constructs an AST out of the string returned from the render function
 		let renderFunctionAst = await WebC.getASTFromString(rawContent);
 
 		options.renderingModeOverride = "component";
+		options.rawMode = false;
 
 		// no further transforms
 		delete options.currentTransformTypes;
