@@ -1,2 +1,2 @@
 <!doctype html>
-<render-slots><template webc:nokeep>This is content that I want to be raw in JS</template></render-slots>
+<render-slots>This is content <nested-child></nested-child> that I want to be raw in JS</render-slots>

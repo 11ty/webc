@@ -1,2 +1,0 @@
-<!doctype html>
-<render-slots><template webc:raw webc:nokeep>This is content that I want to be raw in JS</template></render-slots>

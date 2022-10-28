@@ -755,21 +755,19 @@ class AstSerializer {
 			transformTypes = [];
 		}
 
-		// TODO expand to all slots?
 		let slotHtmlObject = {}
 		if(slots && slots.default) {
 			let o = Object.assign({}, options);
 			delete o.currentTransformTypes;
-			o.isHostComponentMarkup = true;
+			o.useHostComponentMarkup = true;
 
-			let { html: slotHtml } = await this.compileNode(slots.default, {}, o, false);
-			slotHtmlObject.default = slotHtml;
+			slotHtmlObject.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
 		let context = {
 			filePath: this.filePath,
 			helpers: this.helpers,
-			slots: slotHtmlObject,
+			slotsRaw: slotHtmlObject,
 			...this.globalData,
 			...AttributeSerializer.dedupeAttributes(node.attrs),
 			...options.componentProps,
@@ -1110,7 +1108,7 @@ class AstSerializer {
 		let {closestParentComponent} = options;
 
 		// The template resides in the host component child content
-		if(options.isHostComponentMarkup && options.hostComponentContextFilePath) {
+		if(options.useHostComponentMarkup && options.hostComponentContextFilePath) {
 			closestParentComponent = options.hostComponentContextFilePath;
 		}
 

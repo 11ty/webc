@@ -1496,6 +1496,7 @@ test("Scripted render function with access to slots", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/render-slots-parent.webc");
+	component.defineComponents("./test/stubs/components/nested-child.webc");
 	component.defineComponents("./test/stubs/components/render-slots.webc");
 
 	let { html, css, js, components } = await component.compile();
@@ -1505,32 +1506,33 @@ test("Scripted render function with access to slots", async t => {
 	t.deepEqual(components, [
 		"./test/stubs/render-slots-parent.webc",
 		"./test/stubs/components/render-slots.webc",
+		"./test/stubs/components/nested-child.webc",
 	]);
 
 	t.is(html, `<!doctype html>
 <html>
-<head></head><body>STARTThis is content that I want to be raw in JSEND</body>
+<head></head><body>STARTThis is content SSR content that I want to be raw in JSEND</body>
 </html>`);
 });
 
 test("Scripted render function with access to slots raw template", async t => {
 	let component = new WebC();
 
-	component.setInputPath("./test/stubs/render-slots-parent-raw.webc");
-	component.defineComponents("./test/stubs/components/render-slots.webc");
+	component.setInputPath("./test/stubs/render-slots-parent.webc");
+	component.defineComponents({"render-slots": "./test/stubs/components/render-slots-raw.webc"});
 
 	let { html, css, js, components } = await component.compile();
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 	t.deepEqual(components, [
-		"./test/stubs/render-slots-parent-raw.webc",
-		"./test/stubs/components/render-slots.webc",
+		"./test/stubs/render-slots-parent.webc",
+		"./test/stubs/components/render-slots-raw.webc",
 	]);
 
 	t.is(html, `<!doctype html>
 <html>
-<head></head><body>STARTThis is content that I want to be raw in JSEND</body>
+<head></head><body>STARTThis is content <nested-child></nested-child> that I want to be raw in JSEND</body>
 </html>`);
 });
 
