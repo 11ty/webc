@@ -1,0 +1,2 @@
+<!doctype html>
+<html><body><template webc:nokeep webc:raw @html="content"></template></body></html>

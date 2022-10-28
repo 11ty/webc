@@ -1437,6 +1437,47 @@ This is sample content.
 </div>`);
 });
 
+test("Scripted render function with a webc:raw", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/render-raw.webc");
+	component.defineComponents("./test/stubs/components/nested-child.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-raw.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+<template><nested-child>This is sample content.</nested-child></template>
+</div>`);
+});
+
+test("Scripted render function with a webc:raw webc:nokeep", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/render-raw-nokeep.webc");
+	component.defineComponents("./test/stubs/components/nested-child.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-raw-nokeep.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<div parentattribute="test">
+<nested-child>This is sample content.</nested-child>
+</div>`);
+});
+
+
 test("Scripted render function with a require", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-require.webc");
 
@@ -1492,6 +1533,31 @@ test("Scripted render function with access to slots raw template", async t => {
 <head></head><body>STARTThis is content that I want to be raw in JSEND</body>
 </html>`);
 });
+
+test("raw template with nokeep and @html", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/webc-raw-html-prop.webc");
+	component.defineComponents("./test/stubs/components/nested-child.webc");
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			content: "<nested-child></nested-child>"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/webc-raw-html-prop.webc",
+	]);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body><nested-child></nested-child></body>
+</html>`);
+});
+
 
 test("Scripted render function whitespace variation", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render2.webc");

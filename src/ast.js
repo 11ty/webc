@@ -894,13 +894,13 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async compileString(rawContent, slots, options) {
+	async compileString(rawContent, node, slots, options) {
 		if(!this.reprocessingMode) {
 			return rawContent;
 		}
 
 		// Short circuit if rawContent has no < for tags
-		if(!rawContent.includes("<")) {
+		if(!rawContent.includes("<") || this.hasAttribute(node, AstSerializer.attrs.RAW)) {
 			return rawContent;
 		}
 
@@ -1067,7 +1067,7 @@ class AstSerializer {
 		return false;
 	}
 
-	async getHtmlPropAst(htmlAttribute, slots, options) {
+	async getHtmlPropAst(node, htmlAttribute, slots, options) {
 		if(!htmlAttribute) {
 			return false;
 		}
@@ -1082,7 +1082,7 @@ class AstSerializer {
 		}
 
 		// Reprocess content
-		htmlContent = await this.compileString(htmlContent, slots, options);
+		htmlContent = await this.compileString(htmlContent, node, slots, options);
 
 		return {
 			nodeName: "#text",
@@ -1156,7 +1156,7 @@ class AstSerializer {
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(!node._webCProcessed && node.parentNode && this.getTagName(node.parentNode) === "template") {
-					c = await this.compileString(c, slots, options);
+					c = await this.compileString(c, node.parentNode, slots, options);
 				}
 			}
 
@@ -1218,7 +1218,7 @@ class AstSerializer {
 		let componentHasContent = null;
 		let defaultSlotNodes = [];
 		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
-		let htmlContentNode = await this.getHtmlPropAst(htmlProp, slots, options);
+		let htmlContentNode = await this.getHtmlPropAst(node, htmlProp, slots, options);
 		let assetKey = this.getAggregateAssetKey(tagName, node, options);
 		if(htmlContentNode !== false) {
 			if(!options.rawMode && component) {
@@ -1258,7 +1258,7 @@ class AstSerializer {
 				let c = await this.getContentForTemplate(node, slots, options);
 
 				if(transformTypes.length > 0 && !node._webCProcessed) { // reprocess <template webc:type>
-					c = await this.compileString(c, slots, options);
+					c = await this.compileString(c, node, slots, options);
 				}
 
 				content += this.outputHtml(c, streamEnabled);
