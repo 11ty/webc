@@ -718,7 +718,8 @@ class AstSerializer {
 				delete attrObject.slot;
 			}
 
-			if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
+			if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 				content += `<${tagName}${await AttributeSerializer.getString(attrObject, data, {
 					filePath: options.closestParentComponent || this.filePath
@@ -735,9 +736,10 @@ class AstSerializer {
 	renderEndTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 		if(tagName) {
+			let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(options.rawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			} else if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
 				content += `</${tagName}>`;
 			}
 
@@ -748,14 +750,26 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformTypes, node, parentComponent, options) {
+	async transformContent(content, transformTypes, node, parentComponent, slots, options) {
 		if(!transformTypes) {
 			transformTypes = [];
+		}
+
+		// TODO expand to all slots?
+		let slotHtmlObject = {}
+		if(slots && slots.default) {
+			let o = Object.assign({}, options);
+			delete o.currentTransformTypes;
+			o.isHostComponentMarkup = true;
+
+			let { html: slotHtml } = await this.compileNode(slots.default, {}, o, false);
+			slotHtmlObject.default = slotHtml;
 		}
 
 		let context = {
 			filePath: this.filePath,
 			helpers: this.helpers,
+			slots: slotHtmlObject,
 			...this.globalData,
 			...AttributeSerializer.dedupeAttributes(node.attrs),
 			...options.componentProps,
@@ -785,16 +799,17 @@ class AstSerializer {
 	}
 
 	/**
-	 * @param {Node} node
+	 * @param {String} slotName
 	 * @param {Slots} slots
+	 * @param {Node} node
 	 * @param {CompileOptions} options
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async getContentForSlot(node, slots, options) {
-		let slotName = this.getAttributeValue(node, "name") || "default";
-		let slotAst = slots[slotName];
+	 async getContentForNamedSlot(slotName, slots, node, options) {
+		slotName = slotName || "default";
 
+		let slotAst = slots[slotName];
 		if(
 			(typeof slotAst === "object" && slotAst.childNodes?.length > 0) || // might be a childNodes: []
 			(typeof slotAst !== "object" && slotAst) || // might be a string
@@ -804,6 +819,7 @@ class AstSerializer {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
 
+			// not found in slots object
 			if(!slotAst && slotName !== "default") {
 				let { html: mismatchedSlotHtml } = await this.getChildContent(node, slots, options, true);
 				return mismatchedSlotHtml;
@@ -816,6 +832,18 @@ class AstSerializer {
 		// Use light dom fallback content in <slot> if no slot source exists to fill it
 		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, true);
 		return slotFallbackHtml;
+	}
+
+	/**
+	 * @param {Node} node
+	 * @param {Slots} slots
+	 * @param {CompileOptions} options
+	 * @returns {Promise<string>}
+	 * @private
+	 */
+	async getContentForSlot(node, slots, options) {
+		let slotName = this.getAttributeValue(node, "name");
+		return this.getContentForNamedSlot(slotName, slots, node, options);
 	}
 
 	/**
@@ -833,7 +861,7 @@ class AstSerializer {
 		let rawContent;
 		// <template webc:raw> or <template webc:type> for transformin’
 		if(this.hasAttribute(node, AstSerializer.attrs.RAW) || this.hasAttribute(node, AstSerializer.attrs.TYPE)) {
-			rawContent = this.getPreparsedRawTextContent(node, options.closestParentComponent);
+			rawContent = this.getPreparsedRawTextContent(node, options);
 		} else {
 			let templateOptions = Object.assign({}, options);
 
@@ -854,7 +882,7 @@ class AstSerializer {
 			return rawContent;
 		}
 
-		return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+		return this.transformContent(rawContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], slots, options);
 	}
 
 	/**
@@ -929,6 +957,9 @@ class AstSerializer {
 
 			options.components.addDependency(options.closestParentComponent, componentFilePath);
 		}
+
+		// save the previous
+		options.hostComponentContextFilePath = options.closestParentComponent;
 
 		// reset for next time
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
@@ -1061,7 +1092,7 @@ class AstSerializer {
 	}
 
 	// Requires parse5’s sourceLocationInfo option to be set to true
-	getPreparsedRawTextContent(node, closestParentComponent) {
+	getPreparsedRawTextContent(node, options) {
 		if(!node.sourceCodeLocation) {
 			throw new Error("`getPreparsedRawTextContent` requires `parse5->parse->sourceLocationInfo: true`. This is a WebC error that needs to be filed on the issue tracker: https://github.com/11ty/webc/issues/");
 		}
@@ -1076,6 +1107,13 @@ class AstSerializer {
 			return "";
 		}
 
+		let {closestParentComponent} = options;
+
+		// The template resides in the host component child content
+		if(options.isHostComponentMarkup && options.hostComponentContextFilePath) {
+			closestParentComponent = options.hostComponentContextFilePath;
+		}
+
 		let {newLineStartIndeces, content} = this.components[closestParentComponent];
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
@@ -1083,7 +1121,7 @@ class AstSerializer {
 		let rawContent = content.slice(startIndex, endIndex);
 
 		if(os.EOL !== AstSerializer.EOL) {
-			// Replace with replaceAll(os.EOL) when we drop support for Node 14 (see node.green)
+			// Use replaceAll(os.EOL) when we drop support for Node 14 (see node.green)
 			return rawContent.replace(/\r\n/g, AstSerializer.EOL);
 		}
 
@@ -1114,7 +1152,7 @@ class AstSerializer {
 
 			// Run transforms
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
-				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.components[options.closestParentComponent], slots, options);
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(!node._webCProcessed && node.parentNode && this.getTagName(node.parentNode) === "template") {
@@ -1244,7 +1282,7 @@ class AstSerializer {
 							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
 
 							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
-							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], options);
+							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], slots, options);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;

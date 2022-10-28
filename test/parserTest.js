@@ -1448,6 +1448,49 @@ test("Scripted render function with a require", async t => {
 
 	t.is(html, `<div test2="2"></div>
 <picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
+test("Scripted render function with access to slots", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/render-slots-parent.webc");
+	component.defineComponents("./test/stubs/components/render-slots.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-slots-parent.webc",
+		"./test/stubs/components/render-slots.webc",
+	]);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>STARTThis is content that I want to be raw in JSEND</body>
+</html>`);
+});
+
+test("Scripted render function with access to slots raw template", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/render-slots-parent-raw.webc");
+	component.defineComponents("./test/stubs/components/render-slots.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-slots-parent-raw.webc",
+		"./test/stubs/components/render-slots.webc",
+	]);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>STARTThis is content that I want to be raw in JSEND</body>
+</html>`);
 });
 
 test("Scripted render function whitespace variation", async t => {

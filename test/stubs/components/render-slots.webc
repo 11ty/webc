@@ -1,0 +1,6 @@
+<script webc:type="render" webc:is="template">
+async function() {
+	let content = await this.slots.default;
+	return `START${content}END`;
+}
+</script>
