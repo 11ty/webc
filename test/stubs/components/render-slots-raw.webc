@@ -1,5 +1,5 @@
 <script webc:type="render" webc:is="template" webc:raw webc:nokeep>
 	function() {
-		return `START${this.slotsRaw.default}END`;
+		return `START${this.slots.text.default}END`;
 	}
 	</script>

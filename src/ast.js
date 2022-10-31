@@ -755,19 +755,21 @@ class AstSerializer {
 			transformTypes = [];
 		}
 
-		let slotHtmlObject = {}
+		let slotsText = {}
 		if(slots && slots.default) {
 			let o = Object.assign({}, options);
 			delete o.currentTransformTypes;
 			o.useHostComponentMarkup = true;
 
-			slotHtmlObject.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
+			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
 		let context = {
 			filePath: this.filePath,
 			helpers: this.helpers,
-			slotsRaw: slotHtmlObject,
+			slots: {
+				text: slotsText,
+			},
 			...this.globalData,
 			...AttributeSerializer.dedupeAttributes(node.attrs),
 			...options.componentProps,
@@ -787,6 +789,7 @@ class AstSerializer {
 		if(!this.filePath) {
 			throw new Error("Dynamic component import requires a filePath to be set.")
 		}
+
 		let parsed = path.parse(this.filePath);
 		let relativeFromRoot = path.join(parsed.dir, filePath);
 		let finalFilePath = Path.normalizePath(`.${path.sep}${relativeFromRoot}`);
