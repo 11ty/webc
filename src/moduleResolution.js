@@ -1,5 +1,6 @@
 import { TemplatePath } from "@11ty/eleventy-utils";
 import path from "path";
+import { Path } from "./path.js";
 
 class ModuleResolution {
 	constructor(aliases) {
@@ -67,11 +68,11 @@ class ModuleResolution {
 
 		// direct link to a webc file
 		if(resolvedPath.endsWith(".webc")) {
-			return resolvedPath;
+			return Path.normalizePath(resolvedPath);
 		}
 
 		// Add the webc suffix
-		return `${resolvedPath}.webc`;
+		return Path.normalizePath(`${resolvedPath}.webc`);
 	}
 }
 

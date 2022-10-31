@@ -14,7 +14,6 @@ import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
-import { TemplatePath } from "@11ty/eleventy-utils";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
