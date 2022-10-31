@@ -61,18 +61,18 @@ class ModuleResolution {
 	// npm:@11ty/eleventy/module.webc direct reference is not supported
 	resolve(fullPath) {
 		// resolve aliases first
-		let resolvedPath = this.resolveAliases(fullPath);
+		let resolvedPath = Path.normalizePath(this.resolveAliases(fullPath));
 
 		// make sure file is local to the project
 		this.checkLocalPath(resolvedPath);
 
 		// direct link to a webc file
 		if(resolvedPath.endsWith(".webc")) {
-			return Path.normalizePath(resolvedPath);
+			return resolvedPath;
 		}
 
 		// Add the webc suffix
-		return Path.normalizePath(`${resolvedPath}.webc`);
+		return `${resolvedPath}.webc`;
 	}
 }
 
