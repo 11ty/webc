@@ -13,6 +13,8 @@ import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
+import { ModuleResolution } from "./moduleResolution.js";
+import { TemplatePath } from "@11ty/eleventy-utils";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -107,6 +109,9 @@ class AstSerializer {
 		// helper functions are used in @html and render functions
 		// TODO lookup attributes too?
 		this.helpers = {};
+
+		// Module resolution aliases
+		this.aliases = {};
 
 		// transform scoped CSS with a hash prefix
 		this.setTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
@@ -205,6 +210,10 @@ class AstSerializer {
 	
 	setReprocessingMode(mode) {
 		this.reprocessingMode = !!mode;
+	}
+
+	setAliases(aliases = {}) {
+		this.aliases = aliases;
 	}
 
 	static getNewLineStartIndeces(content) {
@@ -790,10 +799,22 @@ class AstSerializer {
 			throw new Error("Dynamic component import requires a filePath to be set.")
 		}
 
-		let parsed = path.parse(this.filePath);
-		let relativeFromRoot = path.join(parsed.dir, filePath);
-		let finalFilePath = Path.normalizePath(`.${path.sep}${relativeFromRoot}`);
+		let resolver = new ModuleResolution();
+		resolver.setAliases(this.aliases)
 
+		let relativeFrom;
+		// aliased imports are relative to the project root
+		if(resolver.hasValidAlias(filePath)) {
+			relativeFrom = ".";
+		} else {
+			// webc:import is relative to the component file!
+			let parsed = path.parse(this.filePath);
+			relativeFrom = parsed.dir;
+		}
+
+		let resolvedPath = resolver.resolve(filePath);
+		let relativeFromRoot = path.join(relativeFrom, resolvedPath);
+		let finalFilePath = Path.normalizePath(`.${path.sep}${relativeFromRoot}`);
 		await this.preparseComponent(finalFilePath);
 
 		return this.components[finalFilePath];

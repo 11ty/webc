@@ -143,6 +143,14 @@ class WebC {
 		this.customHelpers[key] = callback;
 	}
 
+	setAlias(key, folder) {
+		if(!this.aliases) {
+			this.aliases = {};
+		}
+
+		this.aliases[key] = folder;
+	}
+
 	async _defineComponentsObject(obj = {}) {
 		for(let name in obj) {
 			let file = obj[name];
@@ -198,6 +206,10 @@ class WebC {
 		ast.setMode(mode);
 		ast.setContent(content);
 		ast.setData(options.data);
+
+		if(this.aliases && Object.keys(this.aliases).length) {
+			ast.setAliases(this.aliases);
+		}
 
 		if(this.uidFn) {
 			ast.setUidFunction(this.uidFn);

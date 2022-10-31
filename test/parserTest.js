@@ -811,6 +811,45 @@ test("Circular dependencies check (fail)", async t => {
 	}));
 });
 
+test("Importing with an alias", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/import-alias.webc");
+	// aliases are from project root
+	component.setAlias("npm", "./test/stubs/fake_node_modules/");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/import-alias.webc",
+		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc"
+	]);
+	t.is(html, `Before
+<pre language="html">This is a paragraph—we still cool?</pre>
+After`);
+});
+
+test("Importing with an alias that already has a suffix", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/import-alias-suffix.webc");
+	// aliases are from project root
+	component.setAlias("npm", "./test/stubs/fake_node_modules/");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/import-alias-suffix.webc",
+		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc"
+	]);
+	t.is(html, `Before
+<pre language="html">This is a paragraph—we still cool?</pre>
+After`);
+});
+
+
 test("Using a web component (class attribute merging)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
 		"web-component": "./test/stubs/components/child-root.webc"

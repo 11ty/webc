@@ -1,0 +1,78 @@
+import { TemplatePath } from "@11ty/eleventy-utils";
+import path from "path";
+
+class ModuleResolution {
+	constructor(aliases) {
+		this.setAliases(aliases);
+	}
+
+	static REGEX = {
+		startsWithAlias: /^([^\:]+)\:/i
+	};
+
+	setAliases(aliases = {}) {
+		// TODO project root alias?
+		this.aliases = Object.assign({
+			"npm": "./node_modules/"
+		}, aliases);
+	}
+
+	checkLocalPath(resolvedPath) {
+		let projectDir = TemplatePath.getWorkingDir();
+		let modulePath = TemplatePath.absolutePath(projectDir, resolvedPath);
+
+		// No references outside of the project are allowed
+		if (!modulePath.startsWith(projectDir)) {
+			throw new Error("Invalid import reference (must be in the project root), received: " + resolvedPath );
+		}
+	}
+
+	hasValidAlias(fullPath) {
+		let alias = this.getAlias(fullPath);
+		return alias && this.aliases[alias];
+	}
+
+	getAlias(fullPath) {
+		let match = fullPath.match(ModuleResolution.REGEX.startsWithAlias);
+		if(match && match[1]) {
+			return match[1];
+		}
+		return undefined;
+	}
+
+	resolveAliases(fullPath) {
+		let alias = this.getAlias(fullPath);
+
+		// unaliased, relative from component path
+		if(!alias) {
+			return TemplatePath.addLeadingDotSlash(fullPath);
+		} else if(!this.aliases[alias]) {
+			throw new Error(`Invalid WebC aliased import path, requested: ${fullPath} (known aliases: ${Object.keys(this.aliases).join(", ")})`);
+		}
+
+		// aliases, are relative from project root
+		let unprefixedPath = fullPath.slice(alias.length + 1);
+		return TemplatePath.addLeadingDotSlash(path.join(this.aliases[alias], unprefixedPath));
+	}
+
+	// npm:@11ty/eleventy root folder is supported (assuming a webc.json folder in root)
+	// npm:@11ty/eleventy/folderName deep folder name is not supported
+	// npm:@11ty/eleventy/module.webc direct reference is not supported
+	resolve(fullPath) {
+		// resolve aliases first
+		let resolvedPath = this.resolveAliases(fullPath);
+
+		// make sure file is local to the project
+		this.checkLocalPath(resolvedPath);
+
+		// direct link to a webc file
+		if(resolvedPath.endsWith(".webc")) {
+			return resolvedPath;
+		}
+
+		// Add the webc suffix
+		return `${resolvedPath}.webc`;
+	}
+}
+
+export { ModuleResolution };

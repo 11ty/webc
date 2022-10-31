@@ -1,0 +1,3 @@
+Before
+<p webc:import="npm:@11ty/test/syntax-highlighter.webc" @language="html">This is a paragraph—we still cool?</p>
+After
