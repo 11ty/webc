@@ -564,7 +564,11 @@ p { color: rebeccapurple; }
 </template>
 ```
 
-## Limitations and Exceptions
+## Subtleties and Limitations
+
+#### Void elements
+
+Custom elements (per specification) are not supported as void elements: they require both a starting and ending tag. You can workaround this limitation using `webc:is`.
 
 ### `<head>` Components
 
@@ -583,3 +587,10 @@ There are a few wrinkles when using an HTML parser with custom elements. Notably
 	<title webc:is="my-custom-title">Default Title</title>
 </head>
 ```
+
+### Rendering Modes
+
+There are two different rendering modes in Eleventy: `page` and `component`. We attempt to guess the rendering mode that you’d like based on the markup you supply. The `page` rendering mode is for rendering full HTML pages. The `component` rendering mode is for fragments of HTML. Most of the time you won’t need to worry about this distinction but it is included in the documentation for completeness.
+
+* `page` is used when the markup starts with `<!doctype` (or `<!DOCTYPE`) or `<html` (WebC forces no-quirks parsing).
+* `component` is used otherwise.
