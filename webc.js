@@ -35,6 +35,7 @@ class WebC {
 		this.astOptions = {};
 		this.bundlerMode = false;
 		this.reprocessingMode = true;
+		this.ignores = options.ignores || [];
 
 		if(input || input === "") {
 			this.rawInput = input;
@@ -161,18 +162,18 @@ class WebC {
 		}
 	}
 
-	static getComponentsMap(globOrObject) {
+	static getComponentsMap(globOrObject, ignores = []) {
 		if(typeof globOrObject === "string" || Array.isArray(globOrObject)) {
 			let files = globOrObject;
 
 			if(typeof globOrObject === "string") {
 				files = fastglob.sync(globOrObject, {
-					ignore: ["**/node_modules/**"],
+					ignore: ignores,
 					caseSensitiveMatch: false,
 					dot: false,
 				});
 			}
-	
+
 			let obj = {};
 			for(let file of files) {
 				let {name} = path.parse(file);
@@ -189,7 +190,7 @@ class WebC {
 	}
 
 	defineComponents(globOrObject) {
-		this._defineComponentsObject(WebC.getComponentsMap(globOrObject));
+		this._defineComponentsObject(WebC.getComponentsMap(globOrObject, this.ignores));
 	}
 
 	setUidFunction(fn) {
