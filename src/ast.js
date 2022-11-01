@@ -813,7 +813,7 @@ class AstSerializer {
 
 		let resolvedPath = resolver.resolve(filePath);
 		let relativeFromRoot = path.join(relativeFrom, resolvedPath);
-		let finalFilePath = Path.normalizePath(`.${path.sep}${relativeFromRoot}`);
+		let finalFilePath = Path.normalizePath(relativeFromRoot);
 		await this.preparseComponent(finalFilePath);
 
 		return this.components[finalFilePath];
