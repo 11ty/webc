@@ -503,10 +503,28 @@ We provide a special `@html` property to override any tag content with custom Ja
 
 ```html
 <template @html="'Template HTML'"></template>
-<template @html="this.dataProperty"></template>
+<template @html="dataProperty"></template>
+```
 
-<!-- webc:nokeep will replace the outer html -->
+```html
+<!-- webc:nokeep will replace the outer element -->
 <template @html="'Template HTML'" webc:nokeep></template>
+```
+
+#### Setting Text
+
+We provide a special `@text` property to override any tag content with custom JavaScript. The entire value returned here will be escaped!
+
+```html
+<p @text="dataProperty"></p>
+
+<!-- When dataProperty contains `<p>This is text</p>`, this renders: -->
+<p>&lt;p&gt;This is text&lt;/p&gt;</p>
+```
+
+```html
+<!-- webc:nokeep will replace the outer element -->
+<p @text="dataProperty" webc:nokeep></p>
 ```
 
 #### Helper Functions
