@@ -2,8 +2,8 @@ import fs from "fs";
 import fastglob from "fast-glob";
 import path from "path";
 import { parse } from "parse5";
-import { TemplatePath } from "@11ty/eleventy-utils";
 
+import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
 
 class AstCache {
@@ -45,7 +45,7 @@ class WebC {
 	}
 
 	setInputPath(file) {
-		file = TemplatePath.addLeadingDotSlash(file);
+		file = Path.normalizePath(file);
 		this.filePath = file;
 		this.astOptions.filePath = file;
 	}

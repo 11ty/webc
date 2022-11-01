@@ -46,14 +46,14 @@ class ModuleResolution {
 
 		// unaliased, relative from component path
 		if(!alias) {
-			return TemplatePath.addLeadingDotSlash(fullPath);
+			return Path.normalizePath(fullPath);
 		} else if(!this.aliases[alias]) {
 			throw new Error(`Invalid WebC aliased import path, requested: ${fullPath} (known aliases: ${Object.keys(this.aliases).join(", ")})`);
 		}
 
 		// aliases, are relative from project root
 		let unprefixedPath = fullPath.slice(alias.length + 1);
-		return TemplatePath.addLeadingDotSlash(path.join(this.aliases[alias], unprefixedPath));
+		return Path.normalizePath(path.join(this.aliases[alias], unprefixedPath));
 	}
 
 	// npm:@11ty/eleventy root folder is supported (assuming a webc.json folder in root)
@@ -61,7 +61,7 @@ class ModuleResolution {
 	// npm:@11ty/eleventy/module.webc direct reference is not supported
 	resolve(fullPath) {
 		// resolve aliases first
-		let resolvedPath = Path.normalizePath(this.resolveAliases(fullPath));
+		let resolvedPath = this.resolveAliases(fullPath);
 
 		// make sure file is local to the project
 		this.checkLocalPath(resolvedPath);
