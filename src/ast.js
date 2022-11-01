@@ -172,6 +172,7 @@ class AstSerializer {
 		SCOPED: "webc:scoped", // css scoping
 		ASSET_BUCKET: "webc:bucket", // css scoping
 		HTML: "@html",
+		TEXT: "@text",
 	};
 
 	static transformTypes = {
@@ -460,6 +461,11 @@ class AstSerializer {
 		return filePath && this.components[filePath] ? this.components[filePath].mode : this.mode;
 	}
 
+	// e.g. @html or @text
+	isUsingPropBasedContent(node) {
+		return this.hasAttribute(node, AstSerializer.attrs.HTML) || this.hasAttribute(node, AstSerializer.attrs.TEXT);
+	}
+
 	isTagIgnored(node, component, renderingMode) {
 		let tagName = this.getTagName(node);
 
@@ -478,7 +484,7 @@ class AstSerializer {
 		}
 
 		let isBundledTag = this.bundlerMode && (tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node));
-		if(!isBundledTag && this.hasAttribute(node, AstSerializer.attrs.HTML)) {
+		if(!isBundledTag && this.isUsingPropBasedContent(node)) {
 			return false;
 		}
 
@@ -1088,13 +1094,22 @@ class AstSerializer {
 		return false;
 	}
 
-	async getHtmlPropAst(node, htmlAttribute, slots, options) {
-		if(!htmlAttribute) {
+	// @html or @text
+	async getPropContentAst(node, slots, options) {
+		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
+		let textProp = this.getAttributeValue(node, AstSerializer.attrs.TEXT);
+
+		if(htmlProp && textProp) {
+			throw new Error(`Node ${tagName} cannot have both @html="${htmlProp}" and @text="${textProp}" properties. Pick one!`);
+		}
+
+		let propContent = htmlProp || textProp;
+		if(!propContent) {
 			return false;
 		}
 
 		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-		let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, htmlAttribute, data, {
+		let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, propContent, data, {
 			filePath: options.closestParentComponent || this.filePath
 		});
 
@@ -1102,8 +1117,12 @@ class AstSerializer {
 			htmlContent = `${htmlContent || ""}`;
 		}
 
-		// Reprocess content
-		htmlContent = await this.compileString(htmlContent, node, slots, options);
+		if(htmlProp) {
+			// Reprocess content
+			htmlContent = await this.compileString(htmlContent, node, slots, options);
+		} else {
+			htmlContent = escapeText(htmlContent);
+		}
 
 		return {
 			nodeName: "#text",
@@ -1235,24 +1254,24 @@ class AstSerializer {
 			options.componentProps.uid = options.closestParentUid;
 		}
 
-		// @html is an alias for default slot content when used on a host component
+		// @html and @text are aliases for default slot content when used on a host component
 		let componentHasContent = null;
 		let defaultSlotNodes = [];
-		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
-		let htmlContentNode = await this.getHtmlPropAst(node, htmlProp, slots, options);
+
+		let propContentNode = await this.getPropContentAst(node, slots, options);
 		let assetKey = this.getAggregateAssetKey(tagName, node, options);
-		if(htmlContentNode !== false) {
+		if(propContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
-				defaultSlotNodes.push(htmlContentNode);
+				defaultSlotNodes.push(propContentNode);
 			} else if(assetKey) { // assets for aggregation
 				if(!node.childNodes) {
 					node.childNodes = [];
 				}
-				node.childNodes.push(htmlContentNode);
+				node.childNodes.push(propContentNode);
 			} else {
-				componentHasContent = htmlContentNode.value.trim().length > 0;
-				content += htmlContentNode.value;
+				componentHasContent = propContentNode.value.trim().length > 0;
+				content += propContentNode.value;
 			}
 		}
 

@@ -1818,6 +1818,30 @@ Template HTML Nokeep
 `);
 });
 
+test("Using @text", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body @text="myText"></body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			myText: "<p>This is text</p>"
+		}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>&lt;p&gt;This is text&lt;/p&gt;</body>
+</html>`);
+});
+
 test("Using a helper in dynamic attribute and @html", async(t) => {
 	let component = new WebC();
 	component.setHelper("helper", (a) => { return a+"Blue"; });
