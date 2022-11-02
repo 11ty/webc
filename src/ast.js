@@ -1143,7 +1143,7 @@ class AstSerializer {
 		// Skip out early if the component has no content (not even whitespace)
 		// TODO possible improvement to use `hasTextContent` to ignore whitespace only children
 		//      Would we ever want to use webc:raw to output just whitespace?
-		if(start.endLine === end.startLine && start.endCol === end.startCol) {
+		if(!end || (start.endLine === end.startLine && start.endCol === end.startCol)) {
 			return "";
 		}
 
