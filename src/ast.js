@@ -799,12 +799,13 @@ class AstSerializer {
 		return content;
 	}
 
-	async importComponent(filePath) {
+	async importComponent(filePath, tagName = "") {
 		if(!this.filePath) {
 			throw new Error("Dynamic component import requires a filePath to be set.")
 		}
 
 		let resolver = new ModuleResolution();
+		resolver.setTagName(tagName);
 		resolver.setAliases(this.aliases)
 
 		let relativeFrom;
@@ -1221,7 +1222,7 @@ class AstSerializer {
 		let component;
 		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
 		if(importSource) {
-			component = await this.importComponent(importSource);
+			component = await this.importComponent(importSource, tagName);
 		} else {
 			component = this.getComponent(tagName);
 		}

@@ -18,6 +18,10 @@ class ModuleResolution {
 		}, aliases);
 	}
 
+	setTagName(tagName) {
+		this.tagName = tagName;
+	}
+
 	checkLocalPath(resolvedPath) {
 		let projectDir = TemplatePath.getWorkingDir();
 		let modulePath = TemplatePath.absolutePath(projectDir, resolvedPath);
@@ -56,7 +60,7 @@ class ModuleResolution {
 		return Path.normalizePath(path.join(this.aliases[alias], unprefixedPath));
 	}
 
-	// npm:@11ty/eleventy root folder is supported (assuming a webc.json folder in root)
+	// npm:@11ty/eleventy is supported when tag name is supplied by WebC (returns `node_modules/@11ty/eleventy/tagName.webc`)
 	// npm:@11ty/eleventy/folderName deep folder name is not supported
 	// npm:@11ty/eleventy/module.webc direct reference is not supported
 	resolve(fullPath) {
@@ -71,8 +75,12 @@ class ModuleResolution {
 			return resolvedPath;
 		}
 
-		// Add the webc suffix
-		return `${resolvedPath}.webc`;
+		if(this.tagName) {
+			// Add the tagName and webc suffix
+			return `${resolvedPath}/${this.tagName}.webc`
+		}
+
+		return resolvedPath;
 	}
 }
 
