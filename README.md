@@ -452,12 +452,19 @@ Make any attribute into a dynamic attribute by prefixing it with a `:`. You have
 
 #### Properties (or Props)
 
-Properties are pretend-attributes that will not be rendered in the resulting markup. Prefix the attribute name with `@` to make it a property.
+Make any attribute into a prop by prefixing it with `@`. Props are “private” attributes that don’t end up in the output HTML (they are private to WebC). They are identical to attributes except that they are filtered from the output HTML.
 
 `page.webc`:
 
 ```html
 <avatar-image src="my-image.jpeg" alt="Zach is documenting this project" @secret="This is just between us"></avatar-image>
+```
+
+`components/avatar-image.webc`:
+
+```html
+<img :has-a-secret="secret ? true : false" :alt="alt" :src="src">
+<!-- outputs <img has-a-secret="true" …> -->
 ```
 
 ### JavaScript Render Functions
