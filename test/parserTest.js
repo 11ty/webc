@@ -811,7 +811,7 @@ test("Circular dependencies check (fail)", async t => {
 	}));
 });
 
-test("Importing with an alias", async t => {
+test("Importing with an alias (uses tag name)", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/import-alias.webc");
 	// aliases are from project root
