@@ -179,6 +179,18 @@ _Important note:_ `webc:` attributes are always removed from the resulting compi
 
 _Another important note:_ We check for circular component dependencies and throw an error as expected if one is encountered.
 
+New in WebC v0.6.2, you can import directly from an installed npm package. Here’s an example using a WebC component supplied by the [Eleventy Syntax Highlighter plugin](https://www.11ty.dev/docs/plugins/syntaxhighlight/) (`4.2.0` or newer):
+
+```html
+<syntax-highlight language="js" webc:import="npm:@11ty/eleventy-plugin-syntaxhighlight">
+function myFunction() {
+  return true;
+}
+</syntax-highlight>
+```
+
+This uses the component tag name (`syntax-highlight`) to look for a WebC component at `node_modules/@11ty/eleventy-plugin-syntaxhighlight/syntax-highlight.webc` and imports it for use on this node. This works with a tag name override via `webc:is` too.
+
 ### Remapping components
 
 Use `webc:is` to remap a component to something else!
