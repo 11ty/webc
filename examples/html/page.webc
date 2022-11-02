@@ -1,0 +1,5 @@
+<template @html="'Template HTML'"></template>
+<template @html="this.dataProperty"></template>
+
+<!-- webc:nokeep will replace the outer html -->
+<template @html="'Template HTML'" webc:nokeep></template>

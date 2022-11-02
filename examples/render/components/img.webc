@@ -1,0 +1,9 @@
+<script webc:type="render" webc:is="template">
+function() {
+	if(!this.alt) {
+		throw new Error("oh no you didn’t");
+	}
+	// Free idea: use the Eleventy Image plugin to return optimized markup
+	return `<img src="${this.src}" alt="${this.alt}">`;
+}
+</script>

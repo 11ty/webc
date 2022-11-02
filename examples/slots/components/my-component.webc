@@ -1,0 +1,17 @@
+<p>Hello World!</p>
+
+<dialog><slot></slot></dialog>
+
+<div><slot name="my-slot"></slot></div>
+
+<main><slot webc:keep name="my-other-slot"></slot></main>
+
+<style>
+	p {
+		color: red;
+	}
+</style>
+
+<script>
+	alert("Hello World!");
+</script>

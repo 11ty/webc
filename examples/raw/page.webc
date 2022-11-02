@@ -1,0 +1,6 @@
+<template webc:raw>
+Leave me out of this.
+<style>
+p { color: rebeccapurple; }
+</style>
+</template>

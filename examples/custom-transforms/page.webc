@@ -1,0 +1,31 @@
+<template webc:type="md">
+# Header
+## Header 2
+### Header 3
+
+* List item 1
+* List item 2
+* List item 3
+
+1. List item 1
+2. List item 2
+3. List item 3
+
+**Bold text**
+
+*Italic text*
+
+~~Strikethrough text~~
+
+[Link](https://11ty.dev)
+
+![Image](https://pbs.twimg.com/profile_images/1196791261233111040/iWVjazhO_400x400.jpg)
+
+
+| Column 1 | Column 2 | Column 3 |
+| -------- | -------- | -------- |
+| Row 1    | Row 1    | Row 1    |
+| Row 2    | Row 2    | Row 2    |
+
+</template>
+

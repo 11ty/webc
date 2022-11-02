@@ -1,0 +1,2 @@
+<my-component>Default slot</my-component>
+<my-component-prefixed>Prefixed slot</my-component-prefixed>

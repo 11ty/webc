@@ -1,0 +1,5 @@
+<avatar-image src="my-image.jpeg" alt="Zach is an awesome person" @secret="This is just between us"></avatar-image>
+
+<add-banner-to-css license="MIT licensed">
+/* Some other CSS content */
+</add-banner-to-css>

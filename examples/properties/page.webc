@@ -1,0 +1,1 @@
+<avatar-image src="my-image.jpeg" alt="Zach is an awesome person" @secret="This is just between us"></avatar-image>></avatar-image>

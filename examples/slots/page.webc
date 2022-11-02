@@ -1,0 +1,17 @@
+<title>WebC Example</title>
+
+<!-- Keep that host component HTML -->
+<my-component webc:keep></my-component>
+
+<!-- Slots -->
+<my-component>This is the default slot</my-component>
+
+<!-- Named slots -->
+<my-component>
+	<div slot="my-slot">This is a named slot</div>
+</my-component>
+
+<!-- Named slots -->
+<my-component>
+	<div slot="my-other-slot">This is another named slot with slot tag</div>
+</my-component>
