@@ -2334,3 +2334,24 @@ test("Template should input unparsed raw content and reprocess output, issue #48
 	let { html } = await component.compile();
 	t.is(html.trim(), `SSR content`);
 });
+
+test("Access slot content as text on void elements #67 (regression from #61)", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/issue-67/page.webc");
+	component.defineComponents("./test/stubs/issue-67/meta-social.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html, `<!doctype html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<h1>My First Heading</h1>
+	<p>My first paragraph.</p>
+
+</body>
+</html>`);
+});

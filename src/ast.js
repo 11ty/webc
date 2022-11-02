@@ -1137,8 +1137,9 @@ class AstSerializer {
 			throw new Error("`getPreparsedRawTextContent` requires `parse5->parse->sourceLocationInfo: true`. This is a WebC error that needs to be filed on the issue tracker: https://github.com/11ty/webc/issues/");
 		}
 
-		let start = node.sourceCodeLocation.startTag;
-		let end = node.sourceCodeLocation.endTag;
+		// if void element, fallback to the node’s sourceCodeLocation (issue #67)
+		let start = node.sourceCodeLocation.startTag || node.sourceCodeLocation;
+		let end = node.sourceCodeLocation.endTag || node.sourceCodeLocation;
 
 		// Skip out early if the component has no content (not even whitespace)
 		// TODO possible improvement to use `hasTextContent` to ignore whitespace only children
