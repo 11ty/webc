@@ -1121,7 +1121,7 @@ class AstSerializer {
 		if(htmlProp) {
 			// Reprocess content
 			htmlContent = await this.compileString(htmlContent, node, slots, options);
-		} else {
+		} else { // @text
 			htmlContent = escapeText(htmlContent);
 		}
 
@@ -1270,6 +1270,13 @@ class AstSerializer {
 				if(!node.childNodes) {
 					node.childNodes = [];
 				}
+
+				// remove any already added nodes
+				node.childNodes = node.childNodes.filter(entry => {
+					return !entry._webCProcessed;
+				});
+				
+				// WARNING: side effects (filtered above)
 				node.childNodes.push(propContentNode);
 			} else {
 				componentHasContent = propContentNode.value.trim().length > 0;
