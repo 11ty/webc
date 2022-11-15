@@ -5,6 +5,7 @@ import { parse } from "parse5";
 
 import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
+import { ModuleScript } from "./src/moduleScript.cjs";
 
 class AstCache {
 	constructor() {
@@ -269,4 +270,4 @@ class WebC {
 	}
 }
 
-export { WebC };
+export { WebC, ModuleScript };
