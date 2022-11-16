@@ -244,6 +244,8 @@ class WebC {
 		this.bundlerMode = !!mode;
 	}
 
+	// @deprecated, remove in 0.8.0
+	// https://github.com/11ty/webc/issues/72
 	setReprocessingMode(mode) {
 		this.reprocessingMode = !!mode;
 	}
