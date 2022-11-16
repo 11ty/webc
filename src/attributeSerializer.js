@@ -3,8 +3,11 @@ import { ModuleScript } from "./moduleScript.cjs";
 import { escapeAttribute } from 'entities/lib/escape.js';
 
 class AttributeSerializer {
+	// Merge multiple style/class attributes into a single one
+	// Removes webc: attributes
+	// Usage by: `getString` function when writing attributes to the HTML tag output
+	// Usage by: when generating data object for render functions
 	static dedupeAttributes(attrs = []) {
-		// Merge multiple class attributes into a single one
 		let merged = {
 			style: {
 				value: [],
@@ -62,6 +65,20 @@ class AttributeSerializer {
 		return attrObject;
 	}
 
+	// Inputs are guaranteed to be lower case (per the HTML specification)
+	static camelCaseAttributeName(name) {
+		const DASH = "-";
+		if(name.includes(DASH)) {
+			return name.split(DASH).map((entry, j) => {
+				if(j === 0) {
+					return entry;
+				}
+				return entry.slice(0, 1).toUpperCase() + entry.slice(1);
+			}).join("");
+		}
+		return name;
+	}
+
 	static async normalizeAttribute(name, value, data, options) {
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
 			let attrValue = await ModuleScript.evaluateAttribute(name, value, data, options);
@@ -77,16 +94,26 @@ class AttributeSerializer {
 		};
 	}
 
-	// Remove props prefixes
-	static removePropsPrefixesFromAttributes(attrs) {
+	// Remove props prefixes, swaps dash to camelcase
+	static normalizeAttributesForData(attrs) {
 		let data = Object.assign({}, attrs);
 		for(let name in data) {
+			let newName = name;
+			// prop does nothing
+			// prop-name becomes propName
+			// @prop-name becomes propName
 			if(name.startsWith(AstSerializer.prefixes.props)) {
-				let newName = name.slice(AstSerializer.prefixes.props.length);
+				newName = name.slice(AstSerializer.prefixes.props.length);
+			}
+			// TODO #71 default enabled in WebC v0.8.0
+			// newName = AttributeSerializer.camelCaseAttributeName(newName);
+
+			if(newName !== name) {
 				data[newName] = data[name];
 				delete data[name];
 			}
 		}
+
 		return data;
 	}
 

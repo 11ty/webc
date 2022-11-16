@@ -1257,7 +1257,7 @@ class AstSerializer {
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
-			options.componentProps = AttributeSerializer.removePropsPrefixesFromAttributes(attrs) || {};
+			options.componentProps = AttributeSerializer.normalizeAttributesForData(attrs) || {};
 			options.componentProps.uid = options.closestParentUid;
 		}
 

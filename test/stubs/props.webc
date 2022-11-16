@@ -1,1 +1,1 @@
-<responsive-image webc:import="./components/img-props.webc" @localsrc="my-src.png"></responsive-image>
+<responsive-image webc:import="./components/img-props.webc" @localsrc="my-src.png" @another-local-src="my-other-src.png"></responsive-image>

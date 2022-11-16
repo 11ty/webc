@@ -447,8 +447,10 @@ Make any attribute into a dynamic attribute by prefixing it with a `:`. You have
 `components/avatar-image.webc`:
 
 ```html
-<img :src="this.src" :alt="this.alt" class="avatar-image">
+<img :src="src" :alt="alt" class="avatar-image">
 ```
+
+* In the HTML specification, attribute names are lower-case. When referencing these inside of a dynamic attribute, use the lower-case name (e.g. `<avatar-image mySrc="test">` would be `:src="mysrc"`). See [issue #71 for more discussion](https://github.com/11ty/webc/issues/71).
 
 #### Properties (or Props)
 
@@ -466,6 +468,8 @@ Make any attribute into a prop by prefixing it with `@`. Props are “private”
 <img :has-a-secret="secret ? true : false" :alt="alt" :src="src">
 <!-- outputs <img has-a-secret="true" …> -->
 ```
+
+* In the HTML specification, attribute names are lower-case. When referencing these inside of a dynamic attribute, use the lower-case name (e.g. `<avatar-image @mySrc="test">` would be `:src="mysrc"`). See [issue #71 for more discussion](https://github.com/11ty/webc/issues/71).
 
 ### JavaScript Render Functions
 

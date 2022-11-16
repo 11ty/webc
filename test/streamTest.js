@@ -1065,6 +1065,8 @@ test("Using props", async t => {
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 
+	// Toggle this in issue #71 (WebC 0.8.0)
+	// t.is(html, `<img src="my-src.png" data-src="my-other-src.png">`);
 	t.is(html, `<img src="my-src.png">`);
 });
 

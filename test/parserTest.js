@@ -1764,7 +1764,10 @@ test("Using img as root mapped to img", async t => {
 });
 
 test("Using props", async t => {
-	let { html, css, js, components } = await testGetResultFor("./test/stubs/props.webc");
+	let component = new WebC();
+	component.setInputPath("./test/stubs/props.webc");
+
+	let { html, css, js, components } = await component.compile({});
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
@@ -1773,6 +1776,8 @@ test("Using props", async t => {
 		"./test/stubs/components/img-props.webc",
 	]);
 
+	// Toggle this in issue #71 (WebC 0.8.0)
+	// t.is(html, `<img src="my-src.png" data-src="my-other-src.png">`);
 	t.is(html, `<img src="my-src.png">`);
 });
 
