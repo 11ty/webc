@@ -2380,3 +2380,39 @@ test("Access slot content as text on void elements #67 (regression from #61)", a
 </body>
 </html>`);
 });
+
+test("@html and @text", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template @html="'Test'" @text="'Test'"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `Node template cannot have more than one @html="'Test'", @text="'Test'", or @raw properties. Pick one!`
+	});
+});
+
+test("@raw and @text", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template @raw="'Test'" @text="'Test'"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `Node template cannot have more than one @html, @text="'Test'", or @raw="'Test'" properties. Pick one!`
+	});
+});
+
+test("@html and @raw", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template @html="'Test'" @raw="'Test'"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `Node template cannot have more than one @html="'Test'", @text, or @raw="'Test'" properties. Pick one!`
+	});
+});
+
+test("@html and @text and @raw", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template @html="'Test'" @text="'Test'" @raw="'Test'"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `Node template cannot have more than one @html="'Test'", @text="'Test'", or @raw="'Test'" properties. Pick one!`
+	});
+});

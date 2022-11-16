@@ -1103,7 +1103,8 @@ class AstSerializer {
 		let rawProp = this.getAttributeValue(node, AstSerializer.attrs.RAWHTML);
 
 		if([htmlProp, textProp, rawProp].filter(entry => !!entry).length > 1) {
-			throw new Error(`Node ${tagName} cannot have more than one @html${htmlProp ? `="${htmlProp}"` : ""}, @text${textProp ? `="${htmlProp}"` : ""}, or @raw${rawProp ? `="${rawProp}"` : ""} properties. Pick one!`);
+			let tagName = this.getTagName(node);
+			throw new Error(`Node ${tagName} cannot have more than one @html${htmlProp ? `="${htmlProp}"` : ""}, @text${textProp ? `="${textProp}"` : ""}, or @raw${rawProp ? `="${rawProp}"` : ""} properties. Pick one!`);
 		}
 
 		let propContent = htmlProp || textProp || rawProp;
