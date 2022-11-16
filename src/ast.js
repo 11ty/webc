@@ -1097,6 +1097,14 @@ class AstSerializer {
 		return false;
 	}
 
+	async evaluateAttribute(name, attrContent, options) {
+		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+		let content = await ModuleScript.evaluateAttribute(name, attrContent, data, {
+			filePath: options.closestParentComponent || this.filePath
+		});
+		return content;
+	}
+
 	// @html or @text or @raw
 	async getPropContentAst(node, slots, options) {
 		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
@@ -1113,10 +1121,7 @@ class AstSerializer {
 			return false;
 		}
 
-		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-		let content = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, propContent, data, {
-			filePath: options.closestParentComponent || this.filePath
-		});
+		let content = await this.evaluateAttribute(AstSerializer.attrs.HTML, propContent, options);
 
 		if(typeof content !== "string") {
 			content = `${content || ""}`;
@@ -1243,11 +1248,7 @@ class AstSerializer {
 
 		let ifExprContent = this.getAttributeValue(node, AstSerializer.attrs.IF);
 		if(ifExprContent) {
-			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-			let ifExprValue = await ModuleScript.evaluateAttribute(AstSerializer.attrs.IF, ifExprContent, data, {
-				filePath: options.closestParentComponent || this.filePath
-			});
-
+			let ifExprValue = await this.evaluateAttribute(AstSerializer.attrs.HTML, ifExprContent, options);
 			if(ifExprValue === false) {
 				return false;
 			}
