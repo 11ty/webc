@@ -171,9 +171,10 @@ class AstSerializer {
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
 		ASSET_BUCKET: "webc:bucket", // css scoping
+		IF: "webc:if",
 		HTML: "@html",
-		TEXT: "@text",
 		RAWHTML: "@raw",
+		TEXT: "@text",
 	};
 
 	static transformTypes = {
@@ -1238,6 +1239,18 @@ class AstSerializer {
 			options.componentProps = {
 				uid: options.closestParentUid
 			};
+		}
+
+		let ifExprContent = this.getAttributeValue(node, AstSerializer.attrs.IF);
+		if(ifExprContent) {
+			let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+			let ifExprValue = await ModuleScript.evaluateAttribute(AstSerializer.attrs.IF, ifExprContent, data, {
+				filePath: options.closestParentComponent || this.filePath
+			});
+
+			if(ifExprValue === false) {
+				return false;
+			}
 		}
 
 		let slotSource = this.getAttributeValue(node, "slot");
