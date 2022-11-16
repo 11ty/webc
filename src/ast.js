@@ -173,6 +173,7 @@ class AstSerializer {
 		ASSET_BUCKET: "webc:bucket", // css scoping
 		HTML: "@html",
 		TEXT: "@text",
+		RAWHTML: "@raw",
 	};
 
 	static transformTypes = {
@@ -1095,39 +1096,42 @@ class AstSerializer {
 		return false;
 	}
 
-	// @html or @text
+	// @html or @text or @raw
 	async getPropContentAst(node, slots, options) {
 		let htmlProp = this.getAttributeValue(node, AstSerializer.attrs.HTML);
 		let textProp = this.getAttributeValue(node, AstSerializer.attrs.TEXT);
+		let rawProp = this.getAttributeValue(node, AstSerializer.attrs.RAWHTML);
 
-		if(htmlProp && textProp) {
-			throw new Error(`Node ${tagName} cannot have both @html="${htmlProp}" and @text="${textProp}" properties. Pick one!`);
+		if([htmlProp, textProp, rawProp].filter(entry => !!entry).length > 1) {
+			throw new Error(`Node ${tagName} cannot have more than one @html${htmlProp ? `="${htmlProp}"` : ""}, @text${textProp ? `="${htmlProp}"` : ""}, or @raw${rawProp ? `="${rawProp}"` : ""} properties. Pick one!`);
 		}
 
-		let propContent = htmlProp || textProp;
+		let propContent = htmlProp || textProp || rawProp;
 		if(!propContent) {
 			return false;
 		}
 
 		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-		let htmlContent = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, propContent, data, {
+		let content = await ModuleScript.evaluateAttribute(AstSerializer.attrs.HTML, propContent, data, {
 			filePath: options.closestParentComponent || this.filePath
 		});
 
-		if(typeof htmlContent !== "string") {
-			htmlContent = `${htmlContent || ""}`;
+		if(typeof content !== "string") {
+			content = `${content || ""}`;
 		}
 
-		if(htmlProp) {
+		if(rawProp) {
+			// do nothing
+		} else if(htmlProp) {
 			// Reprocess content
-			htmlContent = await this.compileString(htmlContent, node, slots, options);
-		} else { // @text
-			htmlContent = escapeText(htmlContent);
+			content = await this.compileString(content, node, slots, options);
+		} else if(textProp) {
+			content = escapeText(content);
 		}
 
 		return {
 			nodeName: "#text",
-			value: htmlContent,
+			value: content,
 			_webCProcessed: true,
 		};
 	}
@@ -1275,7 +1279,7 @@ class AstSerializer {
 				node.childNodes = node.childNodes.filter(entry => {
 					return !entry._webCProcessed;
 				});
-				
+
 				// WARNING: side effects (filtered above)
 				node.childNodes.push(propContentNode);
 			} else {

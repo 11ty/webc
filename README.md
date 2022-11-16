@@ -530,6 +530,9 @@ We provide a special `@html` property to override any tag content with custom Ja
 <template @html="'Template HTML'" webc:nokeep></template>
 ```
 
+* Using `webc:raw` will prevent reprocessing the result as WebC. (v0.6.0+)
+* Use `@raw` as an alias for `webc:raw @html` . (v0.7.1+)
+
 #### Setting Text
 
 We provide a special `@text` property to override any tag content with custom JavaScript. The entire value returned here will be escaped!

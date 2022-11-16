@@ -1599,6 +1599,31 @@ test("raw template with nokeep and @html", async t => {
 </html>`);
 });
 
+test("No reprocessing when using @raw, #70 (related to issue #33)", async (t) => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/webc-raw-prop.webc");
+	component.defineComponents("./test/stubs/components/nested-child.webc");
+
+	let { html, css, js, components } = await component.compile({
+		data: {
+			content: `<nested-child @prop="test"></nested-child>`
+		}
+	});
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body><nested-child @prop="test"></nested-child></body>
+</html>`);
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/webc-raw-prop.webc",
+	]);
+});
+
+
 
 test("Scripted render function whitespace variation", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render2.webc");
@@ -2189,7 +2214,7 @@ test("Using template component with webc:root and slot *does* process slots (Iss
 	expectedHtml: "Overridden content",
 });
 
-test("Render function result is resolves components (reprocessing, issue #33)", async (t) => {
+test("Render function result resolves components (reprocessing, issue #33)", async (t) => {
 	let component = new WebC();
 	component.setBundlerMode(true);
 	component.setInputPath("./test/stubs/render-child-component.webc");
