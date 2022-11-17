@@ -79,9 +79,9 @@ class AttributeSerializer {
 		return name;
 	}
 
-	static async normalizeAttribute(name, value, data, options) {
+	static async normalizeAttribute(name, value, data) {
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
-			let attrValue = await ModuleScript.evaluateAttribute(name, value, data, options);
+			let attrValue = await ModuleScript.evaluateScript(name, value, data);
 
 			return {
 				name: name.slice(1),

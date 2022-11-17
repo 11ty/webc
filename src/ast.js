@@ -123,11 +123,12 @@ class AstSerializer {
 			let fn = ModuleScript.getModule(content, this.filePath);
 			return fn.call(this);
 		});
-		
-		// Same as "render" above but this name is better 😭
-		this.setTransform(AstSerializer.transformTypes.MODULE, async function(content) {
-			let fn = ModuleScript.getModule(content, this.filePath);
-			return fn.call(this);
+
+		this.setTransform(AstSerializer.transformTypes.JS, function(content) {
+			// returns promise
+			return ModuleScript.evaluateScript(`${AstSerializer.attrs.RENDER}="${AstSerializer.transformTypes.JS}"`, content, this, {
+				allowRequire: true
+			});
 		});
 
 		// Component cache
@@ -178,6 +179,7 @@ class AstSerializer {
 	};
 
 	static transformTypes = {
+		JS: "js",
 		RENDER: "render",
 		MODULE: "module", // alias for render
 		SCOPED: "css:scoped",
@@ -1099,7 +1101,7 @@ class AstSerializer {
 
 	async evaluateAttribute(name, attrContent, options) {
 		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-		let content = await ModuleScript.evaluateAttribute(name, attrContent, data, {
+		let content = await ModuleScript.evaluateScript(name, attrContent, data, {
 			filePath: options.closestParentComponent || this.filePath
 		});
 		return content;

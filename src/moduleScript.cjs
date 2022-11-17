@@ -21,14 +21,32 @@ class ModuleScript {
 		return proxiedContext;
 	}
 
-	static async evaluateAttribute(name, content, data) {
+	static async evaluateScript(name, content, data, options = {}) {
+		options = Object.assign({
+			allowRequire: false
+		}, options);
+
 		try {
 			let context = ModuleScript.getProxiedContext(data);
+			if(options.allowRequire) {
+				context.require = function(target) {
+					const path = require("path");
+
+					// change relative paths to be relative to the root project dir
+					if(target.startsWith("." + path.sep) || target.startsWith(".." + path.sep)) {
+						target = path.join(process.cwd(), target);
+					}
+
+					return require(target)
+				};
+			}
+
 			let returnValue = vm.runInNewContext(content, context, {
 				contextCodeGeneration: {
 					strings: false
 				}
 			});
+
 			return returnValue;
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
