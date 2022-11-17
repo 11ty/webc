@@ -127,7 +127,7 @@ class AstSerializer {
 		this.setTransform(AstSerializer.transformTypes.JS, function(content) {
 			// returns promise
 			return ModuleScript.evaluateScript(`${AstSerializer.attrs.RENDER}="${AstSerializer.transformTypes.JS}"`, content, this, {
-				allowRequire: true
+				injectGlobals: true
 			});
 		});
 
@@ -181,7 +181,6 @@ class AstSerializer {
 	static transformTypes = {
 		JS: "js",
 		RENDER: "render",
-		MODULE: "module", // alias for render
 		SCOPED: "css:scoped",
 	};
 
@@ -1250,9 +1249,9 @@ class AstSerializer {
 
 		let ifExprContent = this.getAttributeValue(node, AstSerializer.attrs.IF);
 		if(ifExprContent) {
-			let ifExprValue = await this.evaluateAttribute(AstSerializer.attrs.HTML, ifExprContent, options);
-			if(ifExprValue === false) {
-				return false;
+			let ifExprValue = await this.evaluateAttribute(AstSerializer.attrs.IF, ifExprContent, options);
+			if(!ifExprValue) {
+				return { html: "" };
 			}
 		}
 

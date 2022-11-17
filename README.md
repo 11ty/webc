@@ -412,6 +412,20 @@ Note that the `<template webc:type>` node is compiled away. If you’d like to k
 
 We do provide two built-in transforms in WebC: JavaScript Render Functions (`webc:type="render"`) and CSS scoping (`webc:scoped`). Those are covered in separate sections. You _can_ override these with the `setTransform` API but it is generally recommended to add your own named transform!
 
+### Conditionals
+
+_(WebC v0.7.1+)_
+
+Use `webc:if` to conditionally render elements. Accepts arbitrary JavaScript (and is async-friendly). Similar to dynamic attributes, this also has access to component attributes and properties.
+
+```html
+<div webc:if="true">This will render</div>
+<div webc:if="false">This will not render</div>
+<div webc:if="myAsyncHelper()">If the helper promise resolves to a truthy value, this will render</div>
+```
+
+For more complex conditionals, `webc:type="js"` _(WebC v0.7.1+)_ is recommended (read more below).
+
 ### Attributes
 
 Consider this example:
@@ -473,7 +487,16 @@ Make any attribute into a prop by prefixing it with `@`. Props are “private”
 
 ### JavaScript Render Functions
 
-You can also transform individual element content using `webc:type`. We provide one built-in type, `render` for JavaScript render functions. These are async friendly (e.g. `async function()`):
+You can also transform individual element content using `webc:type`. There are three built-in types:
+
+* `webc:type="js"` which supercedes `webc:type="render"`
+* `webc:type="css:scoped"` (internal for `webc:scoped`—overridable!)
+
+JavaScript Render Functions are async friendly (e.g. `async function()`):
+
+#### `webc:type="js"` _(WebC v0.7.1+)_
+
+Run any arbitrary server JavaScript in WebC. Outputs the result of the very last statement executed in the script. Async-friendly (return a promise and we’ll resolve it).
 
 `page.webc`:
 
@@ -484,16 +507,30 @@ You can also transform individual element content using `webc:type`. We provide 
 `components/img.webc`:
 
 ```html
+<script webc:type="js" webc:is="template">
+if(!alt) {
+	throw new Error("oh no you didn’t");
+}
+`<img src="${src}" alt="${alt}">`;
+</script>
+```
+
+<details>
+<summary>Expand to see this example with <code>webc:type="render"</code></summary>
+
+```html
 <script webc:type="render" webc:is="template">
-function() {
-	if(!this.alt) {
-		throw new Error("oh no you didn’t");
+	function() {
+		if(!this.alt) {
+			throw new Error("oh no you didn’t");
 	}
 	// Free idea: use the Eleventy Image plugin to return optimized markup
 	return `<img src="${this.src}" alt="${this.alt}">`;
 }
 </script>
 ```
+
+</details>
 
 Or use a JavaScript render function to generate some CSS:
 
@@ -508,6 +545,14 @@ Or use a JavaScript render function to generate some CSS:
 `components/add-banner-to-css.webc`:
 
 ```html
+<script webc:type="js" webc:is="style">`/* ${license} */`</script>
+<slot></slot>
+```
+
+<details>
+<summary>Expand to see this example with <code>webc:type="render"</code></summary>
+
+```html
 <script webc:type="render" webc:is="style">
 function() {
 	return `/* ${this.license} */`;
@@ -516,11 +561,32 @@ function() {
 <slot></slot>
 ```
 
-(Yes you can use `<script webc:type="render" webc:scoped>` here too).
+</details>
+
+(Yes you can use `<script webc:type="js" webc:scoped>` too).
+
+A few more examples of conditionals:
+
+```html
+<script webc:type="js">
+alt ? `<img src="${src}" alt="${alt}">` :  `<a href="${src}">Your image didn’t have an alt so you get this link instead.</a>`
+</script>
+```
 
 Note that you have access to the component attributes and properties in the render function (which is covered in another section!).
 
-#### Setting HTML
+```html
+<script webc:type="js">
+if(alt) {
+	`<img src="${src}" alt="${alt}">`
+} else {
+	`<a href="${src}">Your image didn’t have an alt so you get this link instead.</a>`
+}
+</script>
+```
+
+
+### Setting HTML
 
 We provide a special `@html` property to override any tag content with custom JavaScript.
 
@@ -537,7 +603,7 @@ We provide a special `@html` property to override any tag content with custom Ja
 * Using `webc:raw` will prevent reprocessing the result as WebC. (v0.6.0+)
 * Use `@raw` as an alias for `webc:raw @html` . (v0.7.1+)
 
-#### Setting Text
+### Setting Text
 
 We provide a special `@text` property to override any tag content with custom JavaScript. The entire value returned here will be escaped!
 
@@ -553,7 +619,7 @@ We provide a special `@text` property to override any tag content with custom Ja
 <p @text="dataProperty" webc:nokeep></p>
 ```
 
-#### Helper Functions
+### Helper Functions
 
 If you want to add custom JavaScript functions for use in render functions, `@html`, or dynamic attributes you can use the `setHelper` method.
 
@@ -579,7 +645,7 @@ function() {
 
 ### Raw Content (no WebC processing)
 
-Opt out of WebC template processing using `webc:raw`. This works well with `<template>` content.
+Opt out of WebC template processing using `webc:raw`. This works well with `<template>` content. See also the special `@raw` content property _(WebC v0.7.1+)_
 
 ```html
 <template webc:raw>

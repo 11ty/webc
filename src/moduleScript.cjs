@@ -23,12 +23,19 @@ class ModuleScript {
 
 	static async evaluateScript(name, content, data, options = {}) {
 		options = Object.assign({
-			allowRequire: false
+			injectGlobals: false
 		}, options);
 
 		try {
 			let context = ModuleScript.getProxiedContext(data);
-			if(options.allowRequire) {
+
+			if(options.injectGlobals) {
+				// Add globals https://nodejs.org/api/globals.html#global
+				context = {
+					...global,
+					...context,
+				};
+
 				context.require = function(target) {
 					const path = require("path");
 
@@ -40,6 +47,8 @@ class ModuleScript {
 
 					return require(target)
 				};
+
+				// TODO wrap in function if the `js` content includes a `return` statement
 			}
 
 			let returnValue = vm.runInNewContext(content, context, {
