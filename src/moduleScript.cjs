@@ -33,7 +33,8 @@ class ModuleScript {
 					const path = require("path");
 
 					// change relative paths to be relative to the root project dir
-					if(target.startsWith("." + path.sep) || target.startsWith(".." + path.sep)) {
+					// module paths are always / and not \\ on Windows, see https://github.com/nodejs/node/issues/6049#issuecomment-205778576
+					if(target.startsWith("./") || target.startsWith("../")) {
 						target = path.join(process.cwd(), target);
 					}
 
