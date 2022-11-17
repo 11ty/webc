@@ -507,7 +507,7 @@ Run any arbitrary server JavaScript in WebC. Outputs the result of the very last
 `components/img.webc`:
 
 ```html
-<script webc:type="js" webc:is="template">
+<script webc:type="js">
 if(!alt) {
 	throw new Error("oh no you didn’t");
 }
@@ -519,7 +519,7 @@ if(!alt) {
 <summary>Expand to see this example with <code>webc:type="render"</code></summary>
 
 ```html
-<script webc:type="render" webc:is="template">
+<script webc:type="render">
 	function() {
 		if(!this.alt) {
 			throw new Error("oh no you didn’t");
@@ -565,15 +565,7 @@ function() {
 
 (Yes you can use `<script webc:type="js" webc:scoped>` too).
 
-A few more examples of conditionals:
-
-```html
-<script webc:type="js">
-alt ? `<img src="${src}" alt="${alt}">` :  `<a href="${src}">Your image didn’t have an alt so you get this link instead.</a>`
-</script>
-```
-
-Note that you have access to the component attributes and properties in the render function (which is covered in another section!).
+Here’s another example of a more complex conditional (you can also use `webc:if`!):
 
 ```html
 <script webc:type="js">
@@ -585,6 +577,7 @@ if(alt) {
 </script>
 ```
 
+Note that you have access to the component attributes and properties in the render function (which is covered in another section!).
 
 ### Setting HTML
 
