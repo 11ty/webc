@@ -8,6 +8,14 @@ class CssPrefixer {
 		this.prefix = prefix;
 	}
 
+	static processWithoutTransformation(str) {
+		let ast = parse(str, {
+			positions: true
+		});
+
+		return generate(ast);
+	}
+
 	setFilePath(filePath) {
 		this.filePath = filePath;
 	}
