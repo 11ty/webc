@@ -41,7 +41,7 @@
 		"entities": "^4.4.0",
 		"fast-glob": "^3.2.12",
 		"nanoid": "^4.0.0",
-		"parse5": "^7.1.1"
+		"parse5": "^7.1.2"
 	},
 	"devDependencies": {
 		"@11ty/eleventy-img": "^2.0.1",
