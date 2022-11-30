@@ -1,0 +1,2 @@
+<any-tag-name webc:import="./other-component.webc"></any-tag-name>
+<slot></slot>

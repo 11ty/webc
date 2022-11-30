@@ -802,7 +802,7 @@ class AstSerializer {
 		return content;
 	}
 
-	async importComponent(filePath, tagName = "") {
+	async importComponent(filePath, relativeFromOverride, tagName = "") {
 		if(!this.filePath) {
 			throw new Error("Dynamic component import requires a filePath to be set.")
 		}
@@ -817,7 +817,7 @@ class AstSerializer {
 			relativeFrom = ".";
 		} else {
 			// webc:import is relative to the component file!
-			let parsed = path.parse(this.filePath);
+			let parsed = path.parse(relativeFromOverride || this.filePath);
 			relativeFrom = parsed.dir;
 		}
 
@@ -1239,7 +1239,7 @@ class AstSerializer {
 		let component;
 		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
 		if(importSource) {
-			component = await this.importComponent(importSource, tagName);
+			component = await this.importComponent(importSource, options.closestParentComponent, tagName);
 		} else {
 			component = this.getComponent(tagName);
 		}
