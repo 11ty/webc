@@ -3,6 +3,12 @@ import test from "ava";
 import { AttributeSerializer } from "../src/attributeSerializer.js";
 
 // Inputs are guaranteed to be lower case (per the HTML specification)
+test("Normalize attribute", async t => {
+	t.deepEqual(await AttributeSerializer.normalizeAttribute("test", "value"), { name: "test", value: "value" });
+	t.deepEqual(await AttributeSerializer.normalizeAttribute("@test", "value"), { name: "test", value: "value" });
+	t.deepEqual(await AttributeSerializer.normalizeAttribute(":test", "value", { value: 1 }), { name: "test", value: 1 });
+});
+
 test("Normalize attribute name", async t => {
 	t.is(AttributeSerializer.camelCaseAttributeName("test"), "test");
 	t.is(AttributeSerializer.camelCaseAttributeName("my-test"), "myTest");
@@ -15,7 +21,7 @@ test("Normalize attribute name", async t => {
 });
 
 test("Normalize attributes for data", async t => {
-	t.deepEqual(AttributeSerializer.normalizeAttributesForData({"test": 1 }), {"test": 1 });
-	t.deepEqual(AttributeSerializer.normalizeAttributesForData({"my-test": 1 }), {"my-test": 1 });
-	t.deepEqual(AttributeSerializer.normalizeAttributesForData({"my-other-test": 1 }), {"my-other-test": 1 });
+	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"test": 1 }), {"test": 1 });
+	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-test": 1 }), {"my-test": 1 });
+	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-other-test": 1 }), {"my-other-test": 1 });
 });

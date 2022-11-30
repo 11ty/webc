@@ -79,45 +79,83 @@ class AttributeSerializer {
 		return name;
 	}
 
-	static async normalizeAttribute(name, value, data) {
+	static peekAttribute(name) {
+		if(name.startsWith(AstSerializer.prefixes.props)) {
+			return {
+				name: name.slice(AstSerializer.prefixes.props.length),
+				type: "private", // property
+			};
+		}
+
 		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
-			let attrValue = await ModuleScript.evaluateScript(name, value, data);
+			return {
+				name: name.slice(AstSerializer.prefixes.dynamic.length),
+				type: "script",
+			};
+		}
+
+		return {
+			name,
+		};
+	}
+
+	static async normalizeAttribute(rawName, value, data) {
+		let {name, type} = AttributeSerializer.peekAttribute(rawName);
+
+		if(type === "script") {
+			let attrValue = await ModuleScript.evaluateScript(rawName, value, data);
 
 			return {
-				name: name.slice(1),
+				name,
 				value: attrValue,
 			};
 		}
+
 		return {
 			name,
-			value
+			value,
 		};
 	}
 
 	// Remove props prefixes, swaps dash to camelcase
-	static normalizeAttributesForData(attrs) {
-		let data = Object.assign({}, attrs);
-		for(let name in data) {
-			let newName = name;
-			// prop does nothing
-			// prop-name becomes propName
-			// @prop-name becomes propName
-			if(name.startsWith(AstSerializer.prefixes.props)) {
-				newName = name.slice(AstSerializer.prefixes.props.length);
-			}
-			// TODO #71 default enabled in WebC v0.8.0
-			// newName = AttributeSerializer.camelCaseAttributeName(newName);
+	static async normalizeAttributesForData(attrs, data) {
+		let newData = {};
 
-			if(newName !== name) {
-				data[newName] = data[name];
-				delete data[name];
+		// dynamic props from host components need to be normalized
+		for(let key in data) {
+			let {type} = AttributeSerializer.peekAttribute(key);
+			if(type === "script") {
+				let { name, value } = await AttributeSerializer.normalizeAttribute(key, data[key], data || {});
+				data[name] = value;
+				delete data[key];
 			}
 		}
 
+		for(let originalName in attrs) {
+			let { name, value } = await AttributeSerializer.normalizeAttribute(originalName, attrs[originalName], data || {});
+
+			// TODO #71 default enabled in WebC v0.8.0
+			// prop does nothing
+			// prop-name becomes propName
+			// @prop-name becomes propName
+			// name = AttributeSerializer.camelCaseAttributeName(newName);
+
+			newData[name] = value;
+		}
+
+		return newData;
+	}
+
+	// Change :dynamic to `dynamic` for data resolution
+	static convertAttributesToDataObject(attrs) {
+		let data = {};
+		for(let {name, value} of attrs || []) {
+			data[name] = value;
+		}
 		return data;
 	}
 
-	static async getString(attrs, data, options) {
+	static async getString(attrs, data) {
 		let str = [];
 		let attrObject = attrs;
 		if(Array.isArray(attrObject)) {
@@ -125,9 +163,15 @@ class AttributeSerializer {
 		}
 
 		for(let key in attrObject) {
-			let {name, value} = await AttributeSerializer.normalizeAttribute(key, attrObject[key], data, options);
+			let {type} = AttributeSerializer.peekAttribute(key);
+			if(type === "private") { // properties
+				continue;
+			}
+
+			let {name, value} = await AttributeSerializer.normalizeAttribute(key, attrObject[key], data);
+
 			// Note we filter any falsy attributes (except "")
-			if(name.startsWith(AstSerializer.prefixes.props) || !value && value !== "") {
+			if(!value && value !== "") {
 				continue;
 			}
 

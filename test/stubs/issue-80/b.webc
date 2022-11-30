@@ -1,0 +1,3 @@
+<div :foo="foo">
+  <c :foo="foo"></c>
+</div>

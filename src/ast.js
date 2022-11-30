@@ -707,46 +707,46 @@ class AstSerializer {
 
 	async renderStartTag(node, tagName, component, renderingMode, options) {
 		let content = "";
+
+		if(!tagName) {
+			return { content };
+		}
+
 		let attrObject;
+		// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
+		if(renderingMode === "page" && tagName === "head") {
+			content += AstSerializer.EOL;
+		}
 
-		if(tagName) {
-			// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
-			if(renderingMode === "page" && tagName === "head") {
-				content += AstSerializer.EOL;
+		let attrs = this.getAttributes(node, component, options);
+		let parentComponent = this.components[options.closestParentComponent];
+
+		// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
+		if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+			if(parentComponent.scopedStyleHash) {
+				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
 			}
-
-			let attrs = this.getAttributes(node, component, options);
-			let parentComponent = this.components[options.closestParentComponent];
-
-			// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
-			if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-				if(parentComponent.scopedStyleHash) {
-					attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
-				}
-
-				for(let hostAttr of options.hostComponentNode.attrs) {
-					attrs.push(hostAttr);
-				}
+			for(let hostAttr of options.hostComponentNode?.attrs || []) {
+				attrs.push(hostAttr);
 			}
+		}
 
-			attrObject = AttributeSerializer.dedupeAttributes(attrs);
+		attrObject = AttributeSerializer.dedupeAttributes(attrs);
 
-			if(options.isMatchingSlotSource) {
-				delete attrObject.slot;
-			}
+		if(options.isMatchingSlotSource) {
+			delete attrObject.slot;
+		}
 
-			let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
-			if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
-				let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
-				content += `<${tagName}${await AttributeSerializer.getString(attrObject, data, {
-					filePath: options.closestParentComponent || this.filePath
-				})}>`;
-			}
+		let nodeData = Object.assign({}, this.helpers, options.componentProps, options.hostComponentData, this.globalData);
+		let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
+		if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			content += `<${tagName}${await AttributeSerializer.getString(attrObject, nodeData)}>`;
 		}
 
 		return {
 			content,
-			attrs: attrObject
+			attrs: attrObject,
+			nodeData,
 		};
 	}
 
@@ -1098,6 +1098,7 @@ class AstSerializer {
 		return false;
 	}
 
+	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
 		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
 		let content = await ModuleScript.evaluateScript(name, attrContent, data, {
@@ -1268,11 +1269,11 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element (text only?)
 
 		// Start tag
-		let { content: startTagContent, attrs } = await this.renderStartTag(node, tagName, component, renderingMode, options);
+		let { content: startTagContent, attrs, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
-			options.componentProps = AttributeSerializer.normalizeAttributesForData(attrs) || {};
+			options.componentProps = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
 			options.componentProps.uid = options.closestParentUid;
 		}
 
@@ -1307,7 +1308,9 @@ class AstSerializer {
 		// Component content (foreshadow dom)
 		if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
+
 			options.hostComponentNode = node;
+			options.hostComponentData = AttributeSerializer.convertAttributesToDataObject(node.attrs);
 
 			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
