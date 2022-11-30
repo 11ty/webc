@@ -930,6 +930,10 @@ class AstSerializer {
 			return rawContent;
 		}
 
+		if(typeof rawContent !== "string") {
+			rawContent = `${rawContent}`;
+		}
+
 		// Short circuit if rawContent has no < for tags
 		if(!rawContent.includes("<") || this.hasAttribute(node, AstSerializer.attrs.RAW)) {
 			return rawContent;
