@@ -32,6 +32,7 @@ class ModuleScript {
 			if(options.injectGlobals) {
 				// Add globals https://nodejs.org/api/globals.html#global
 				context = {
+					console,
 					...global,
 					...context,
 				};
