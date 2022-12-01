@@ -114,6 +114,10 @@ class AstSerializer {
 
 		// transform scoped CSS with a hash prefix
 		this.setTransform(AstSerializer.transformTypes.SCOPED, (content, component) => {
+			if(!component.scopedStyleHash) {
+				throw new Error("Could not find any top level <style webc:scoped> in component: " + component.filePath);
+			}
+
 			let prefixer = new CssPrefixer(component.scopedStyleHash);
 			prefixer.setFilePath(component.filePath);
 			return prefixer.process(content);
@@ -469,10 +473,22 @@ class AstSerializer {
 		return this.hasAttribute(node, AstSerializer.attrs.HTML) || this.hasAttribute(node, AstSerializer.attrs.TEXT);
 	}
 
-	isTagIgnored(node, component, renderingMode) {
+	showInRawMode(node, options) {
+		return options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
+	}
+
+	shouldKeepNode(node) {
+		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+			return true;
+		}
+
+		return false;
+	}
+
+	isTagIgnored(node, component, renderingMode, options) {
 		let tagName = this.getTagName(node);
 
-		if(this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		if(this.shouldKeepNode(node)) {
 			// do not ignore
 			return false;
 		}
@@ -481,7 +497,7 @@ class AstSerializer {
 			return true;
 		}
 
-		// must come after webc:keep (takes precedence)
+		// must come after webc:keep (webc:keep takes precedence)
 		if(this.hasAttribute(node, AstSerializer.attrs.NOKEEP)) {
 			return true;
 		}
@@ -491,7 +507,7 @@ class AstSerializer {
 			return false;
 		}
 
-		// Must come after webc:keep (takes precedence)
+		// Must come after webc:keep (webc:keep takes precedence)
 		if(this.hasAttribute(node, AstSerializer.attrs.TYPE)) {
 			return true;
 		}
@@ -738,8 +754,7 @@ class AstSerializer {
 		}
 
 		let nodeData = Object.assign({}, this.helpers, options.componentProps, options.hostComponentData, this.globalData);
-		let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
-		if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
+		if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
 			content += `<${tagName}${await AttributeSerializer.getString(attrObject, nodeData)}>`;
 		}
 
@@ -753,10 +768,9 @@ class AstSerializer {
 	renderEndTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 		if(tagName) {
-			let showInRawMode = options.rawMode && !this.hasAttribute(node, AstSerializer.attrs.NOKEEP);
 			if(this.isVoidElement(tagName)) {
 				// do nothing: void elements don’t have closing tags
-			} else if(showInRawMode || !this.isTagIgnored(node, component, renderingMode)) {
+			} else if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
 				content += `</${tagName}>`;
 			}
 
@@ -1005,7 +1019,7 @@ class AstSerializer {
 	}
 
 	getAggregateAssetKey(tagName, node) {
-		if(!this.bundlerMode || this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		if(!this.bundlerMode) {
 			return false;
 		}
 
@@ -1286,7 +1300,7 @@ class AstSerializer {
 		let defaultSlotNodes = [];
 
 		let propContentNode = await this.getPropContentAst(node, slots, options);
-		let assetKey = this.getAggregateAssetKey(tagName, node, options);
+		let assetKey = this.getAggregateAssetKey(tagName, node);
 		if(propContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
@@ -1351,8 +1365,8 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					// Aggregate to CSS/JS bundles
-					if(assetKey) {
+					// Aggregate to CSS/JS bundles, ignore if webc:keep
+					if(assetKey && !this.shouldKeepNode(node)) {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content is ignored here
 							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.

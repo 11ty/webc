@@ -1,0 +1,12 @@
+<p>normal component</p>
+<a-component></a-component>
+
+<p>js</p>
+<script webc:type="js">
+`<p>hi</p>`;
+</script>
+
+<p>js with component</p>
+<script webc:type="js" webc:is="template">
+`<a-component></a-component>`;
+</script>
