@@ -489,8 +489,7 @@ class AstSerializer {
 		let tagName = this.getTagName(node);
 
 		if(this.shouldKeepNode(node)) {
-			// do not ignore
-			return false;
+			return false; // do not ignore
 		}
 
 		if(this.hasAttribute(node, AstSerializer.attrs.ROOT)) {

@@ -1,0 +1,4 @@
+<script webc:root webc:type="js" webc:is="style" webc:keep>
+`/* ${license} */
+${slots.text.default}`
+</script>

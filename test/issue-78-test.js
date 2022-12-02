@@ -19,7 +19,6 @@ woah i am component. i do things.
 woah i am component. i do things.`);
 });
 
-
 test("stock webc:type=js #79", async t => {
 	let component = new WebC();
 
@@ -66,4 +65,67 @@ test("stock webc:type=js with webc:is #79", async t => {
 	let { html } = await component.compile();
 
 	t.is(html.trim(), `<ul><li>test</li></ul>`);
+});
+
+test("Docs image example #79", async t => {
+	let component = new WebC();
+
+	component.setContent(`<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation">`);
+	component.defineComponents("./test/stubs/issue-78/img.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" extra-attribute>`);
+});
+
+test("Docs css example #79", async t => {
+	let component = new WebC();
+
+	component.setContent(`<add-banner-to-css @license="MIT licensed">
+p { color: rebeccapurple; }
+</add-banner-to-css>`);
+	component.defineComponents("./test/stubs/issue-78/add-banner-to-css.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<style>/* MIT licensed */
+
+p { color: rebeccapurple; }
+</style>`);
+});
+
+test("Docs css example using wrapper element #79", async t => {
+	let component = new WebC();
+
+	component.setContent(`<style webc:is="add-banner-to-css-root" @license="MIT licensed">
+p { color: rebeccapurple; }
+</style>`);
+	component.defineComponents("./test/stubs/issue-78/add-banner-to-css-root.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<style>
+/* MIT licensed */
+
+p { color: rebeccapurple; }
+
+</style>`);
+});
+
+test("Docs css example using render #79", async t => {
+	let component = new WebC();
+
+	component.setContent(`<style webc:is="add-banner-to-css-render" @license="MIT licensed">
+p { color: rebeccapurple; }
+</style>`);
+	component.defineComponents("./test/stubs/issue-78/add-banner-to-css-render.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<style>
+	/* MIT licensed */
+	
+p { color: rebeccapurple; }
+
+</style>`);
 });

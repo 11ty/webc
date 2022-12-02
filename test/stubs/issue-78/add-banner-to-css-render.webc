@@ -1,0 +1,8 @@
+<template webc:is="style" webc:root webc:keep>
+	<script webc:type="render">
+	function() {
+		return `/* ${this.license} */`;
+	}
+	</script>
+	<slot></slot>
+</template>
