@@ -22,6 +22,6 @@ test("Normalize attribute name", async t => {
 
 test("Normalize attributes for data", async t => {
 	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"test": 1 }), {"test": 1 });
-	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-test": 1 }), {"my-test": 1 });
-	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-other-test": 1 }), {"my-other-test": 1 });
+	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-test": 1 }), {"myTest": 1 });
+	t.deepEqual(await AttributeSerializer.normalizeAttributesForData({"my-other-test": 1 }), {"myOtherTest": 1 });
 });

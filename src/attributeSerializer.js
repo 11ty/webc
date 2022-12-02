@@ -134,11 +134,10 @@ class AttributeSerializer {
 		for(let originalName in attrs) {
 			let { name, value } = await AttributeSerializer.normalizeAttribute(originalName, attrs[originalName], data || {});
 
-			// TODO #71 default enabled in WebC v0.8.0
 			// prop does nothing
 			// prop-name becomes propName
 			// @prop-name becomes propName
-			// name = AttributeSerializer.camelCaseAttributeName(newName);
+			name = AttributeSerializer.camelCaseAttributeName(name);
 
 			newData[name] = value;
 		}
