@@ -225,8 +225,8 @@ class WebC {
 			ast.setHelper(name, this.customHelpers[name]);
 		}
 
-		await ast.setComponents(this.globalComponents);
-		await ast.setComponents(options.components);
+		await ast.setComponentsByFilePath(this.globalComponents);
+		await ast.setComponentsByFilePath(options.components);
 
 		return {
 			ast: rawAst,

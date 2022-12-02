@@ -136,7 +136,7 @@ class AstSerializer {
 		});
 
 		// Component cache
-		this.componentMap = {};
+		this.componentMapNameToFilePath = {};
 		this.components = {};
 
 		this.hashOverrides = {};
@@ -582,7 +582,7 @@ class AstSerializer {
 		return attrs;
 	}
 
-	async preparseComponent(filePath, ast, content) {
+	async preparseComponentByFilePath(filePath, ast, content) {
 		if(this.components[filePath]) {
 			// already parsed
 			return;
@@ -622,12 +622,12 @@ class AstSerializer {
 
 	// synchronous (components should already be cached)
 	getComponent(name) {
-		if(!name || !this.componentMap[name]) {
+		if(!name || !this.componentMapNameToFilePath[name]) {
 			// render as a plain-ol-tag
 			return false;
 		}
 
-		let filePath = this.componentMap[name];
+		let filePath = this.componentMapNameToFilePath[name];
 		if(!this.components[filePath]) {
 			throw new Error(`Component at "${filePath}" not found in the component registry.`);
 		}
@@ -635,13 +635,13 @@ class AstSerializer {
 	}
 
 	// `components` object maps from component name => filename
-	async setComponents(components = {}) {
+	async setComponentsByFilePath(components = {}) {
 		let promises = [];
 		for(let name in components) {
 			let filePath = components[name];
-			this.componentMap[name] = Path.normalizePath(filePath);
+			this.componentMapNameToFilePath[name] = Path.normalizePath(filePath);
 
-			promises.push(this.preparseComponent(this.componentMap[name]));
+			promises.push(this.preparseComponentByFilePath(this.componentMapNameToFilePath[name]));
 		}
 
 		return Promise.all(promises);
@@ -838,7 +838,7 @@ class AstSerializer {
 		let resolvedPath = resolver.resolve(filePath);
 		let relativeFromRoot = path.join(relativeFrom, resolvedPath);
 		let finalFilePath = Path.normalizePath(relativeFromRoot);
-		await this.preparseComponent(finalFilePath);
+		await this.preparseComponentByFilePath(finalFilePath);
 
 		return this.components[finalFilePath];
 	}
@@ -1089,7 +1089,7 @@ class AstSerializer {
 				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode, importSource));
 			}
 		} else {
-			let filePath = Path.normalizePath(this.componentMap[tagName]);
+			let filePath = Path.normalizePath(this.componentMapNameToFilePath[tagName]);
 			if(filePath) {
 				// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
 				components[filePath] = true;
@@ -1433,7 +1433,7 @@ class AstSerializer {
 
 		// parse the top level component
 		if(!this.components[this.filePath]) {
-			await this.preparseComponent(this.filePath, node, this.content);
+			await this.preparseComponentByFilePath(this.filePath, node, this.content);
 		}
 
 		options.components.addNode(this.filePath);
