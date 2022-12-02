@@ -7,11 +7,17 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context) {
+	static getProxiedContext(context, globals) {
 		let proxiedContext = new Proxy(context, {
 			get(target, propertyName) {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
+				}
+
+				if(globals) {
+					if(propertyName in globals) {
+						return globals[propertyName];
+					}
 				}
 
 				return undefined;
@@ -27,17 +33,17 @@ class ModuleScript {
 		}, options);
 
 		try {
-			let context = ModuleScript.getProxiedContext(data);
+			let globals;
 
 			if(options.injectGlobals) {
 				// Add globals https://nodejs.org/api/globals.html#global
-				context = {
+				globals = {
 					console,
+					Promise,
 					...global,
-					...context,
-				};
+				}
 
-				context.require = function(target) {
+				globals.require = function(target) {
 					const path = require("path");
 
 					// change relative paths to be relative to the root project dir
@@ -52,6 +58,7 @@ class ModuleScript {
 				// TODO wrap in function if the `js` content includes a `return` statement
 			}
 
+			let context = ModuleScript.getProxiedContext(data, globals);
 			let returnValue = vm.runInNewContext(content, context, {
 				contextCodeGeneration: {
 					strings: false

@@ -1,0 +1,7 @@
+<script webc:type="js">
+if (alt) {
+  `<img src="${src}" alt="${alt}">`;
+} else {
+  `<a href="${src}">Your image didn’t have an alt so you get this link instead.</a>`;
+}
+</script>
