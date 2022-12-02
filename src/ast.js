@@ -96,9 +96,6 @@ class AstSerializer {
 		// controls whether the assets are aggregated
 		this.bundlerMode = false;
 
-		// controls whether @html, <template webc:type>, <* webc:is="template" webc:type> nodes are reprocessed
-		this.reprocessingMode = true;
-
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);
 
@@ -213,10 +210,6 @@ class AstSerializer {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
-	}
-	
-	setReprocessingMode(mode) {
-		this.reprocessingMode = !!mode;
 	}
 
 	setAliases(aliases = {}) {
@@ -939,16 +932,12 @@ class AstSerializer {
 	 * @private
 	 */
 	async compileString(rawContent, node, slots, options) {
-		if(!this.reprocessingMode) {
-			return rawContent;
-		}
-
 		if(typeof rawContent !== "string") {
 			rawContent = `${rawContent}`;
 		}
 
 		// Short circuit if rawContent has no < for tags
-		if(!rawContent.includes("<") || this.hasAttribute(node, AstSerializer.attrs.RAW)) {
+		if(this.hasAttribute(node, AstSerializer.attrs.RAW) || !rawContent.includes("<")) {
 			return rawContent;
 		}
 

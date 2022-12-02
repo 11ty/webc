@@ -35,7 +35,6 @@ class WebC {
 		this.globalComponents = {};
 		this.astOptions = {};
 		this.bundlerMode = false;
-		this.reprocessingMode = true;
 		this.ignores = options.ignores || [];
 
 		if(input || input === "") {
@@ -204,7 +203,6 @@ class WebC {
 
 		let ast = new AstSerializer(this.astOptions);
 		ast.setBundlerMode(this.bundlerMode);
-		ast.setReprocessingMode(this.reprocessingMode);
 		ast.setMode(mode);
 		ast.setContent(content);
 		ast.setData(options.data);
@@ -242,12 +240,6 @@ class WebC {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
-	}
-
-	// @deprecated, remove in 0.8.0
-	// https://github.com/11ty/webc/issues/72
-	setReprocessingMode(mode) {
-		this.reprocessingMode = !!mode;
 	}
 
 	async stream(options = {}) {
