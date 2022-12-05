@@ -1020,7 +1020,7 @@ class AstSerializer {
 		}
 	}
 
-	getBucketName(node, tagName) {
+	getBucketName(node) {
 		let bucket = this.getAttributeValue(node, AstSerializer.attrs.ASSET_BUCKET);
 		if(bucket) {
 			return bucket;
@@ -1366,7 +1366,7 @@ class AstSerializer {
 							childContent = html;
 						}
 
-						let bucket = this.getBucketName(node, tagName);
+						let bucket = this.getBucketName(node);
 						if(bucket !== "default") {
 							if(!options.assets.buckets[assetKey]) {
 								options.assets.buckets[assetKey] = new Set();
