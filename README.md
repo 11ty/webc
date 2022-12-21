@@ -507,7 +507,7 @@ Run any arbitrary server JavaScript in WebC. Outputs the result of the very last
 `components/img.webc`:
 
 ```html
-<script webc:type="js">
+<script webc:type="js" webc:is="template">
 if(!alt) {
 	throw new Error("oh no you didn’t");
 }
@@ -519,7 +519,7 @@ if(!alt) {
 <summary>Expand to see this example with <code>webc:type="render"</code></summary>
 
 ```html
-<script webc:type="render">
+<script webc:type="render" webc:is="template">
 	function() {
 		if(!this.alt) {
 			throw new Error("oh no you didn’t");
@@ -568,7 +568,7 @@ function() {
 Here’s another example of a more complex conditional (you can also use `webc:if`!):
 
 ```html
-<script webc:type="js">
+<script webc:type="js" webc:is="template">
 if(alt) {
 	`<img src="${src}" alt="${alt}">`
 } else {
