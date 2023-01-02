@@ -27,12 +27,6 @@ class CssPrefixer {
 		})
 	}
 
-	shouldSkipPseudoClass(name) {
-		return {
-			"host-context": true,
-		}[name];
-	}
-
 	process(cssString) {
 		let ast = this.parse(cssString);
 
@@ -42,27 +36,82 @@ class CssPrefixer {
 			visit: "Selector",
 			enter: (node, item, list) => {
 				let first = node.children.first;
-				if(first.type === "PseudoClassSelector" && this.shouldSkipPseudoClass(first.name)) {
-					// Skip processing some pseudo classes
-				} else {
-					if(skipLevel > 0 || first.type === "TypeSelector" && (first.name === "from" || first.name === "to")) {
-						// do nothing
-					} else {
-						if(first.type === "PseudoClassSelector" && first.name === "host") {
-							// replace :host with prefix class
-							node.children.shift();
-						} else {
-							node.children.prepend(list.createItem({
-								type: "Combinator",
-								name: " "
-							}));
-						}
 
-						node.children.prepend(list.createItem({
-							type: "ClassSelector",
-							name: this.prefix
-						}));
+				const shouldSkip =
+					skipLevel > 0 ||
+					(first.type === "TypeSelector" && first.name === "from") ||
+					first.name === "to";
+
+				if (shouldSkip) {
+					// do nothing
+				} else if (
+					first.type === "PseudoClassSelector" &&
+					(first.name === "host" || first.name === "host-context")
+				) {
+					// Transform :host and :host-context pseudo classes to
+					// use the prefix class
+					node.children.shift();
+
+					const pseudoClassParamChildren = first.children ? first.children : null;
+
+					if (first.name === "host") {
+						// Replace :host with the prefix class
+						if (pseudoClassParamChildren) {
+							// Any param children of a :host() functional pseudo class should be moved up to
+							// be directly after the prefix class
+							// ie, :host(.foo) -> .prefix.foo
+							node.children.prependList(
+								// :host can only accept one param, so we can safely use the first child
+								pseudoClassParamChildren.first.children
+							);
+						}
+						node.children.prepend(
+							list.createItem({
+								type: "ClassSelector",
+								name: this.prefix,
+							})
+						);
+					} else if (first.name === "host-context") {
+						// Replace :host-context with the prefix class and
+						// place any param children appropriately before the prefix class
+						node.children.prepend(
+							list.createItem({
+								type: "ClassSelector",
+								name: this.prefix,
+							})
+						);
+
+						if (pseudoClassParamChildren) {
+							// Any param children of a :host-context() functional pseudo class should be moved up to
+							// be parents before the prefix class
+							// ie, :host-context(.foo) div -> .foo .prefix div
+							node.children.prepend(
+								list.createItem({
+									type: "Combinator",
+									name: " ",
+								})
+							);
+							node.children.prependList(
+								// :host-context can only accept one param, so we can safely use the first child
+								pseudoClassParamChildren.first.children
+							);
+						}
 					}
+				} else {
+					// Prepand the prefix class in front of all selectors
+					// which don't include :host or :host-context
+					node.children.prepend(
+						list.createItem({
+							type: "Combinator",
+							name: " ",
+						})
+					);
+					node.children.prepend(
+						list.createItem({
+							type: "ClassSelector",
+							name: this.prefix,
+						})
+					);
 				}
 
 				node.children.forEach((node, item, list) => {

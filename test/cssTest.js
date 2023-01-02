@@ -69,11 +69,25 @@ test("Pseudo classes", t => {
 	t.is(c.process(`:host:not(p) div {}`), `.my-prefix:not(p) div{}`);
 	t.is(c.process(`:host.footer div {}`), `.my-prefix.footer div{}`); // same as :host(.footer)
 
-	// TODO :host(.footer) should be `.my-prefix.footer` but we can use `:host.footer` for now
-	t.is(c.process(`:host(.footer) div {}`), `.my-prefix div{}`);
+	t.is(c.process(`:host(.footer) div {}`), `.my-prefix.footer div{}`);
+	t.is(
+		c.process(`:host(.footer:not([lang])) .link {}`),
+		`.my-prefix.footer:not([lang]) .link{}`
+	);
+	t.is(
+		c.process(`:host(:is(div, span)) {}`),
+		`.my-prefix:is(div,span){}`
+	);
 
-	// TODO host-context(html body) should be `html body .my-prefix`
-	t.is(c.process(`:host-context(html) div {}`), `:host-context(html) div{}`);
+	t.is(c.process(`:host-context(html) div {}`), `html .my-prefix div{}`);
+	t.is(
+		c.process(`:host-context(html body.dark-theme) div {}`),
+		`html body.dark-theme .my-prefix div{}`
+	);
+	t.is(
+		c.process(`:host-context(html body:is(.dark-theme, .light-theme)) div {}`),
+		`html body:is(.dark-theme,.light-theme) .my-prefix div{}`
+	);
 });
 
 test("Pseudo elements", t => {
