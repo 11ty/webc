@@ -1,5 +1,4 @@
 import path from "path";
-import fs from "fs";
 import os from "os";
 import { createHash } from "crypto";
 import { DepGraph } from "dependency-graph";
@@ -14,6 +13,7 @@ import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
+import { FileSystemCache } from "./fsCache.js"
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -32,54 +32,6 @@ import { ModuleResolution } from "./moduleResolution.js";
  * @property {Array<"render" | "css:scoped">} [currentTransformTypes]
  */
 
-class FileSystemCache {
-	constructor() {
-		this.contents = {};
-	}
-
-	isFullUrl(filePath) {
-		try {
-			new URL(filePath);
-			return true;
-		} catch(e) {
-			return false;
-		}
-	}
-
-	static getRelativeFilePath(filePath, relativeTo) {
-		if(relativeTo) {
-			let parsed = path.parse(relativeTo);
-			return path.join(parsed.dir, filePath);
-		}
-		return filePath;
-	}
-
-	isFileInProjectDirectory(filePath) {
-		let workingDir = path.resolve();
-		let absoluteFile = path.resolve(filePath);
-		return absoluteFile.startsWith(workingDir);
-	}
-
-	read(filePath, relativeTo) {
-		if(this.isFullUrl(filePath)) {
-			throw new Error(`Full URLs in <script> and <link rel="stylesheet"> are not yet supported without webc:keep.`);
-		}
-
-		filePath = FileSystemCache.getRelativeFilePath(filePath, relativeTo);
-
-		if(!this.isFileInProjectDirectory(filePath)) {
-			throw new Error(`Invalid path ${filePath} is not in the working directory.`);
-		}
-
-		if(!this.contents[filePath]) {
-			this.contents[filePath] = fs.readFileSync(filePath, {
-				encoding: "utf8"
-			});
-		}
-
-		return this.contents[filePath];
-	}
-}
 
 class AstSerializer {
 	constructor(options = {}) {
