@@ -691,7 +691,7 @@ class AstSerializer {
 	}
 
 	getAttributes(node, component, options) {
-		let attrs = node.attrs.slice(0);
+		let attrs = node.attrs.slice(0); // Create a new array
 
 		// If this is a top level page-component, make sure we get the top level attributes here
 		if(!component && this.filePath === options.closestParentComponent && this.components[this.filePath]) {
@@ -720,7 +720,6 @@ class AstSerializer {
 			return { content };
 		}
 
-		let attrObject;
 		// parse5 doesn’t preserve whitespace around <html>, <head>, and after </body>
 		if(renderingMode === "page" && tagName === "head") {
 			content += AstSerializer.EOL;
@@ -739,20 +738,21 @@ class AstSerializer {
 			}
 		}
 
-		attrObject = AttributeSerializer.dedupeAttributes(attrs);
+		let nodeData = Object.assign({}, this.helpers, options.hostComponentData, options.componentProps, this.globalData);
+		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
+		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
 		if(options.isMatchingSlotSource) {
-			delete attrObject.slot;
+			delete finalAttributesObject.slot;
 		}
 
-		let nodeData = Object.assign({}, this.helpers, options.componentProps, options.hostComponentData, this.globalData);
 		if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
-			content += `<${tagName}${await AttributeSerializer.getString(attrObject, nodeData)}>`;
+			content += `<${tagName}${await AttributeSerializer.getString(finalAttributesObject)}>`;
 		}
 
 		return {
 			content,
-			attrs: attrObject,
+			attrs: finalAttributesObject,
 			nodeData,
 		};
 	}
@@ -789,13 +789,12 @@ class AstSerializer {
 
 		let context = {
 			filePath: this.filePath,
-			helpers: this.helpers,
 			slots: {
 				text: slotsText,
 			},
+			helpers: this.helpers,
 			...this.globalData,
-			...AttributeSerializer.dedupeAttributes(node.attrs),
-			...options.componentProps,
+			...options.componentProps, // includes attributes
 		};
 
 		for(let type of transformTypes) {
@@ -1316,7 +1315,9 @@ class AstSerializer {
 			this.addComponentDependency(component, tagName, options);
 
 			options.hostComponentNode = node;
-			options.hostComponentData = AttributeSerializer.convertAttributesToDataObject(node.attrs);
+
+			let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(node.attrs, nodeData);
+			options.hostComponentData = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
 			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);

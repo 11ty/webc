@@ -1,0 +1,1 @@
+<lol :attribute="'hello'" @prop="goodbye" class="parent1" :class="'parent2'"></lol>

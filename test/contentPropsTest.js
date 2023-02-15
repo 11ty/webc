@@ -53,8 +53,10 @@ test("Using @text", async t => {
 
 test("Using a helper in dynamic attribute and @html", async(t) => {
 	let component = new WebC();
-	component.setHelper("helper", (a) => { return a+"Blue"; });
-	component.setContent(`<template :key="this.helper('other')" @html="this.helper('test')"></template>`);
+	component.setHelper("helper", function(a) {
+		return a+"Blue"; 
+	});
+	component.setContent(`<template :key="helper('other')" @html="helper('test')"></template>`);
 
 	let { html } = await component.compile();
 

@@ -4,9 +4,9 @@ import { AttributeSerializer } from "../src/attributeSerializer.js";
 
 // Inputs are guaranteed to be lower case (per the HTML specification)
 test("Normalize attribute", async t => {
-	t.deepEqual(await AttributeSerializer.normalizeAttribute("test", "value"), { name: "test", value: "value" });
-	t.deepEqual(await AttributeSerializer.normalizeAttribute("@test", "value"), { name: "test", value: "value" });
-	t.deepEqual(await AttributeSerializer.normalizeAttribute(":test", "value", { value: 1 }), { name: "test", value: 1 });
+	t.deepEqual(await AttributeSerializer.evaluateAttribute("test", "value"), { name: "test", value: "value", evaluation: false, privacy: "public", rawName: "test", rawValue: "value" });
+	t.deepEqual(await AttributeSerializer.evaluateAttribute("@test", "value"), { name: "test", value: "value", evaluation: false, privacy: "private", rawName: "@test", rawValue: "value" });
+	t.deepEqual(await AttributeSerializer.evaluateAttribute(":test", "value", { value: 1 }), { name: "test", value: 1, evaluation: "script", privacy: "public", rawName: ":test", rawValue: "value" });
 });
 
 test("Normalize attribute name", async t => {

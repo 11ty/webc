@@ -2181,3 +2181,21 @@ test("Access slot content as text on void elements #67 (regression from #61)", a
 </body>
 </html>`);
 });
+
+test.skip("Dynamic attributes in host component data", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/dynamic-attributes-host-component-data/page.webc");
+	component.defineComponents("./test/stubs/dynamic-attributes-host-component-data/lol.webc");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/dynamic-attributes-host-component-data/page.webc",
+		"./test/stubs/dynamic-attributes-host-component-data/lol.webc",
+	]);
+
+	t.is(html, `<lol attribute="hello" class="parent1 parent2 class1 class2"><div>Test</div><script>/* hi */</script></lol>`);
+});

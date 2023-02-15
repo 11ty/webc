@@ -1,0 +1,1 @@
+<template webc:is="noscript"><a :href="pdf"><span @text="pdf"></span></a></template>

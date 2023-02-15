@@ -1,0 +1,1 @@
+<div webc:root :class="'class1 class2'">Test</div><script>/* hi */</script>
