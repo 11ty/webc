@@ -1,0 +1,1 @@
+<component :@my-dynamic-prop="'hahaha'"></component>

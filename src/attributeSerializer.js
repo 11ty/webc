@@ -3,8 +3,9 @@ import { escapeAttribute } from 'entities/lib/escape.js';
 
 class AttributeSerializer {
 	static prefixes = {
-		props: "@",
+		prop: "@",
 		dynamic: ":",
+		dynamicProp: ":@",
 	}
 
 	// Merge multiple style/class attributes into a single one, operates on :dynamic and @prop but with transformed values
@@ -78,9 +79,17 @@ class AttributeSerializer {
 	}
 
 	static peekAttribute(name) {
-		if(name.startsWith(AttributeSerializer.prefixes.props)) {
+		if(name.startsWith(AttributeSerializer.prefixes.dynamicProp)) {
 			return {
-				name: name.slice(AttributeSerializer.prefixes.props.length),
+				name: name.slice(AttributeSerializer.prefixes.dynamicProp.length),
+				privacy: "private", // property
+				evaluation: "script",
+			};
+		}
+
+		if(name.startsWith(AttributeSerializer.prefixes.prop)) {
+			return {
+				name: name.slice(AttributeSerializer.prefixes.prop.length),
 				privacy: "private", // property
 				evaluation: false,
 			};
