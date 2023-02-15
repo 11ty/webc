@@ -1,8 +1,12 @@
-import { AstSerializer } from "./ast.js";
 import { ModuleScript } from "./moduleScript.cjs";
 import { escapeAttribute } from 'entities/lib/escape.js';
 
 class AttributeSerializer {
+	static prefixes = {
+		props: "@",
+		dynamic: ":",
+	}
+
 	// Merge multiple style/class attributes into a single one, operates on :dynamic and @prop but with transformed values
 	// Usage by: `getString` function when writing attributes to the HTML tag output
 	// Usage by: when generating data object for render functions
@@ -74,17 +78,17 @@ class AttributeSerializer {
 	}
 
 	static peekAttribute(name) {
-		if(name.startsWith(AstSerializer.prefixes.props)) {
+		if(name.startsWith(AttributeSerializer.prefixes.props)) {
 			return {
-				name: name.slice(AstSerializer.prefixes.props.length),
+				name: name.slice(AttributeSerializer.prefixes.props.length),
 				privacy: "private", // property
 				evaluation: false,
 			};
 		}
 
-		if(name.startsWith(AstSerializer.prefixes.dynamic)) {
+		if(name.startsWith(AttributeSerializer.prefixes.dynamic)) {
 			return {
-				name: name.slice(AstSerializer.prefixes.dynamic.length),
+				name: name.slice(AttributeSerializer.prefixes.dynamic.length),
 				privacy: "public",
 				evaluation: "script",
 			};

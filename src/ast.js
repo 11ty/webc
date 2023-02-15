@@ -32,7 +32,6 @@ import { FileSystemCache } from "./fsCache.js"
  * @property {Array<"render" | "css:scoped">} [currentTransformTypes]
  */
 
-
 class AstSerializer {
 	constructor(options = {}) {
 		let { filePath } = Object.assign({
@@ -108,11 +107,6 @@ class AstSerializer {
 	static FAKE_FS_PATH = "_webc_raw_input_string";
 
 	static EOL = "\n";
-
-	static prefixes = {
-		props: "@",
-		dynamic: ":",
-	}
 
 	/* Custom HTML attributes */
 	static attrs = {
