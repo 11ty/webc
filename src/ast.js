@@ -738,7 +738,7 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = Object.assign({}, this.helpers, options.hostComponentData, options.componentProps, this.globalData);
+		let nodeData = Object.assign({}, this.globalData, this.helpers, options.hostComponentData, options.componentProps);
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -794,6 +794,7 @@ class AstSerializer {
 			},
 			helpers: this.helpers,
 			...this.globalData,
+			...this.helpers, // for consistency with dynamic attributes and @html/@if
 			...options.componentProps, // includes attributes
 		};
 
@@ -1105,7 +1106,7 @@ class AstSerializer {
 
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
-		let data = Object.assign({}, this.helpers, options.componentProps, this.globalData);
+		let data = Object.assign({}, this.globalData, this.helpers, options.componentProps);
 		let content = await ModuleScript.evaluateScript(name, attrContent, data, {
 			filePath: options.closestParentComponent || this.filePath
 		});
