@@ -15,6 +15,7 @@ import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js"
+import { DataCascade } from "./dataCascade.js"
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -54,10 +55,6 @@ class AstSerializer {
 		// content transforms
 		this.transforms = {};
 
-		// helper functions are used in @html and render functions
-		// TODO lookup attributes too?
-		this.helpers = {};
-
 		// Module resolution aliases
 		this.aliases = {};
 
@@ -90,11 +87,17 @@ class AstSerializer {
 
 		this.hashOverrides = {};
 
-		this.globalData = {};
-
 		this.streams = new Streams(["html", "css", "js"]);
 
 		this.fileCache = new FileSystemCache();
+
+		this.dataCascade = new DataCascade();
+		// Helpers/global variables for WebC things
+		this.dataCascade.setWebCGlobals({
+			renderAttributes: (attributesObject) => {
+				return AttributeSerializer.getString(attributesObject);
+			}
+		})
 	}
 
 	set filePath(value) {
@@ -160,16 +163,18 @@ class AstSerializer {
 		this.mode = mode; // "page" or "component"
 	}
 
-	setHelper(name, callback) {
-		this.helpers[name] = callback;
-	}
-
 	setTransform(name, callback) {
 		this.transforms[name] = callback;
 	}
 
+	// helper functions are used in @html and render functions
+	// TODO lookup attributes too?
+	setHelper(name, callback) {
+		this.dataCascade.setHelper(name, callback);
+	}
+
 	setData(data = {}) {
-		this.globalData = data;
+		this.dataCascade.setGlobalData(data);
 	}
 
 	restorePreparsedComponents(components) {
@@ -553,7 +558,7 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = Object.assign({}, this.globalData, this.helpers, options.hostComponentData, options.componentProps);
+		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -562,7 +567,7 @@ class AstSerializer {
 		}
 
 		if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
-			content += `<${tagName}${await AttributeSerializer.getString(finalAttributesObject)}>`;
+			content += `<${tagName}${AttributeSerializer.getString(finalAttributesObject)}>`;
 		}
 
 		return {
@@ -603,14 +608,14 @@ class AstSerializer {
 		}
 
 		let context = {
+			// Ideally these would be under `webc.*`
 			filePath: this.filePath,
 			slots: {
 				text: slotsText,
 			},
-			helpers: this.helpers,
-			...this.globalData,
-			...this.helpers, // for consistency with dynamic attributes and @html/@if
-			...options.componentProps, // includes attributes
+			helpers: this.dataCascade.getHelpers(),
+
+			...this.dataCascade.getData(options.componentProps),
 		};
 
 		for(let type of transformTypes) {
@@ -921,7 +926,7 @@ class AstSerializer {
 
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
-		let data = Object.assign({}, this.globalData, this.helpers, options.componentProps);
+		let data = this.dataCascade.getData(options.componentProps);
 		let content = await ModuleScript.evaluateScript(name, attrContent, data, {
 			filePath: options.closestParentComponent || this.filePath
 		});

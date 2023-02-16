@@ -144,6 +144,14 @@ class AttributeSerializer {
 			// prop-name becomes propName
 			// @prop-name and :prop-name prefixes should already be removed
 			newData[AttributeSerializer.camelCaseAttributeName(name)] = value;
+
+			// Maintain privacy in new object
+			let privacy = attrs[`${name}___webc_privacy`];
+			if(privacy) {
+				Object.defineProperty(newData, `${name}___webc_privacy`, {
+					value: privacy
+				});
+			}
 		}
 
 		return newData;
@@ -170,13 +178,14 @@ class AttributeSerializer {
 		return evaluated;
 	}
 
-	static async getString(finalAttributesObject) {
+	static getString(finalAttributesObject) {
 		let str = [];
 
 		for(let name in finalAttributesObject) {
 			let value = finalAttributesObject[name];
-			let privacy = finalAttributesObject[`${name}___webc_privacy`];
-			if(privacy === "private") {
+
+			// Filter out private props (including webc:)
+			if(finalAttributesObject[`${name}___webc_privacy`] === "private") {
 				continue;
 			}
 
