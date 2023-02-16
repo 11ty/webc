@@ -76,9 +76,7 @@ class AstSerializer {
 
 		this.setTransform(AstSerializer.transformTypes.JS, function(content) {
 			// returns promise
-			return ModuleScript.evaluateScript(`${AstSerializer.attrs.RENDER}="${AstSerializer.transformTypes.JS}"`, content, this, {
-				injectGlobals: true
-			});
+			return ModuleScript.evaluateScript(`${AstSerializer.attrs.RENDER}="${AstSerializer.transformTypes.JS}"`, content, this);
 		});
 
 		// Component cache
@@ -934,9 +932,7 @@ class AstSerializer {
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
 		let data = this.dataCascade.getData(options.componentProps);
-		let content = await ModuleScript.evaluateScript(name, attrContent, data, {
-			filePath: options.closestParentComponent || this.filePath
-		});
+		let content = await ModuleScript.evaluateScript(name, attrContent, data);
 		return content;
 	}
 

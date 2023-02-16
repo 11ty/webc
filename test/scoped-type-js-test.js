@@ -76,3 +76,13 @@ test("throwing an Error works as expected, issue #99", async t => {
 		message: "Custom error message"
 	});
 });
+
+test("JavaScript built-ins, issue #99", async t => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setContent(`<script webc:type="js">parseInt("10")</script>`);
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `10`);
+});

@@ -7,64 +7,45 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context, globals) {
+	static getProxiedContext(context) {
+		if(context && !("require" in context)) {
+			context.require = function(target) {
+				const path = require("path");
+				// change relative paths to be relative to the root project dir
+				// module paths are always / and not \\ on Windows, see https://github.com/nodejs/node/issues/6049#issuecomment-205778576
+				if(target.startsWith("./") || target.startsWith("../")) {
+					target = path.join(process.cwd(), target);
+				}
+				return require(target)
+			};
+		}
+
 		let proxiedContext = new Proxy(context, {
 			get(target, propertyName) {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
 				}
 
-				if(globals) {
-					if(propertyName in globals) {
-						return globals[propertyName];
-					}
-				}
-
-				return undefined;
+				return global[propertyName] || undefined;
 			}
 		});
 
 		return proxiedContext;
 	}
 
-	static async evaluateScript(name, content, data, options = {}) {
-		options = Object.assign({
-			injectGlobals: false
-		}, options);
-
+	// The downstream code being evaluated here may return a promise!
+	static async evaluateScript(name, content, data) {
 		try {
-			let globals;
+			let context = ModuleScript.getProxiedContext(data);
 
-			if(options.injectGlobals) {
-				// Add globals https://nodejs.org/api/globals.html#global
-				globals = {
-					console,
-					Promise,
-					Error,
-					...global,
-				}
-
-				globals.require = function(target) {
-					const path = require("path");
-
-					// change relative paths to be relative to the root project dir
-					// module paths are always / and not \\ on Windows, see https://github.com/nodejs/node/issues/6049#issuecomment-205778576
-					if(target.startsWith("./") || target.startsWith("../")) {
-						target = path.join(process.cwd(), target);
-					}
-
-					return require(target)
-				};
-
-				// TODO wrap in function if the `js` content includes a `return` statement
-			}
-
-			let context = ModuleScript.getProxiedContext(data, globals);
-			let returnValue = vm.runInNewContext(content, context, {
-				contextCodeGeneration: {
+			// Performance improvement: we may be able to cache these at some point
+			vm.createContext(context, {
+				codeGeneration: {
 					strings: false
 				}
 			});
+
+			let returnValue = vm.runInContext(content, context);
 
 			return returnValue;
 		} catch(e) {
