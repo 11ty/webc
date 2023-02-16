@@ -1,4 +1,4 @@
-<template webc:root webc:keep webc:is="style">
+<template webc:root="override" webc:is="style">
 <script webc:type="js">`/* ${license} */`</script>
 <slot></slot>
 </template>

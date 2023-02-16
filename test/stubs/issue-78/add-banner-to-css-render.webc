@@ -1,4 +1,4 @@
-<template webc:is="style" webc:root webc:keep>
+<template webc:is="style" webc:root="override">
 	<script webc:type="render">
 	function() {
 		return `/* ${this.license} */`;

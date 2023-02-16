@@ -44,20 +44,25 @@ class AttributeSerializer {
 		for(let {name, value, privacy} of attrs) {
 			// Used merged values
 			if(merged[name]) {
-				let set = merged[name].value;
-				if(merged[name].deduplicate) {
-					set = Array.from(new Set(set));
-				}
-				let mergedValue = set.join(merged[name].joinDelimiter);
-				if(mergedValue) {
-					attrObject[name] = mergedValue;
-				}
+				continue;
 			} else {
 				attrObject[name] = value;
 
 				Object.defineProperty(attrObject, `${name}___webc_privacy`, {
 					value: privacy
 				});
+			}
+		}
+
+		for(let name in merged) {
+			let set = merged[name].value;
+			if(merged[name].deduplicate) {
+				set = Array.from(new Set(set));
+			}
+
+			let mergedValue = set.join(merged[name].joinDelimiter);
+			if(mergedValue) {
+				attrObject[name] = mergedValue;
 			}
 		}
 

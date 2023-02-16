@@ -1,4 +1,4 @@
-<script webc:type="js" webc:root>
+<script webc:type="js" webc:root="override" webc:raw>
 if(!alt) {
 	throw new Error("oh no you didn’t");
 }

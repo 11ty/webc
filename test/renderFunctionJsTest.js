@@ -77,7 +77,7 @@ test("Using webc:type=js and @html", async t => {
 
 	t.is(html, `<!doctype html>
 <html>
-<head></head><body><script>1/2/3/4</script>
+<head></head><body>1/2/3/4
 </body>
 </html>`);
 });

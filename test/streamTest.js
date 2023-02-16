@@ -1020,7 +1020,7 @@ test("Using scripted render function to generate CSS (webc:root)", async t => {
 	t.deepEqual(js, []);
 	t.deepEqual(css, [`.wzlbemqff .selector{}`]);
 
-	t.is(html, ``);
+	t.is(html, `<some-css class="wzlbemqff"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS", async t => {
@@ -1056,7 +1056,7 @@ test("Using img as root mapped to img", async t => {
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
 
-	t.is(html, `<img src="my-src.png" class="class1" child-attr>`);
+	t.is(html, `<img src="my-src.png" child-attr class="class1">`);
 });
 
 test("Using props", async t => {

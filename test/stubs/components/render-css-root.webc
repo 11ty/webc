@@ -1,4 +1,4 @@
-<script webc:type="render" webc:is="style" webc:root webc:scoped>
+<script webc:type="render" webc:is="style" webc:scoped>
 function(attrs) {
 return `/* CSS */
 .selector {}`;

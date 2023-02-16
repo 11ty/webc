@@ -929,7 +929,7 @@ test("Using a web component to override the parent component tag with scoped CSS
 		"./test/stubs/components/override-parent-scoped.webc",
 	]);
 	t.is(html, `Before
-<button type="submit" data-attr="1" class="wb_lq-fmb" attr="1" other="2">SSR content</button>
+<button type="submit" data-attr="1" attr="1" other="2" class="wb_lq-fmb">SSR content</button>
 
 After`);
 });
@@ -1660,6 +1660,19 @@ test("Using scripted render function to generate CSS (webc:root)", async t => {
 		"./test/stubs/components/render-css-root.webc",
 	]);
 
+	t.is(html, `<some-css class="wzlbemqff"></some-css>`);
+});
+
+test("Using scripted render function to generate CSS (webc:root=override)", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root-override.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, [`.waltwzk-v .selector{}`]);
+	t.deepEqual(components, [
+		"./test/stubs/using-css-root-override.webc",
+		"./test/stubs/components/render-css-root-override.webc",
+	]);
+
 	t.is(html, ``);
 });
 
@@ -1712,7 +1725,7 @@ test("Using img as root mapped to img", async t => {
 		"./test/stubs/components/img-as-root.webc",
 	]);
 
-	t.is(html, `<img src="my-src.png" class="class1" child-attr>`);
+	t.is(html, `<img src="my-src.png" child-attr class="class1">`);
 });
 
 test("Using props", async t => {

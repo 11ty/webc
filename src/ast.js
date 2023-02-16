@@ -359,46 +359,42 @@ class AstSerializer {
 		// Has <* webc:root> (has to be a root child, not script/style)
 		let tops = this.getTopLevelNodes(component);
 		for(let child of tops) {
-			let tagName = this.getTagName(child);
-			if(tagName === "script" || tagName === "style") {
-				continue;
-			}
-
-			if(this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
-				// ignore if webc:root and webc:keep
-				if(this.hasAttribute(child, AstSerializer.attrs.KEEP)) {
+			let rootNodeMode = this.getRootNodeMode(child);
+			if(rootNodeMode) {
+				// do not use parent tag if webc:root="override"
+				if(rootNodeMode === "override") {
 					return true;
 				}
 
-				// do not ignore if webc:root (but not webc:keep)
+				// use parent tag if webc:root (and not webc:root="override")
 				return false;
 			}
 		}
 
-		// do not ignore if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
+		// use parent tag if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
 		for(let child of tops) {
 			let tagName = this.getTagName(child);
-			if(tagName !== "script" && tagName !== "style" || this.hasAttribute(child, AstSerializer.attrs.ROOT)) {
+			if(tagName !== "script" && tagName !== "style") {
 				continue;
 			}
 
 			if(this.hasTextContent(child)) {
-				return false;
+				return false; // use parent tag if script/style has non-empty values
 			}
 
 			// <script src=""> or <link rel="stylesheet" href="">
 			if(this.getExternalSource(tagName, child)) {
-				return false;
+				return false; // use parent tag if script/link have external file refs
 			}
 		}
 
-
-		// Has <template shadowroot> (can be anywhere in the component body)
+		// Use parent tag if has <template shadowroot> (can be anywhere in the component body)
 		let shadowroot = this.findElement(component, "template", ["shadowroot"]);
 		if(shadowroot) {
 			return false;
 		}
 
+		// Do not use parent tag
 		return true;
 	}
 
@@ -427,16 +423,16 @@ class AstSerializer {
 	isTagIgnored(node, component, renderingMode, options) {
 		let tagName = this.getTagName(node);
 
-		if(this.shouldKeepNode(node)) {
+		if(this.shouldKeepNode(node)) { // webc:keep
 			return false; // do not ignore
-		}
-
-		if(this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
-			return true;
 		}
 
 		// must come after webc:keep (webc:keep takes precedence)
 		if(this.hasAttribute(node, AstSerializer.attrs.NOKEEP)) {
+			return true;
+		}
+
+		if(this.getRootNodeMode(node) === "merge") { // has webc:root but is not webc:root="override"
 			return true;
 		}
 
@@ -659,6 +655,19 @@ class AstSerializer {
 		return str;
 	}
 
+	getRootNodeMode(node) {
+		// override is when child component definitions override the host component tag
+		let rootAttributeValue = this.getAttributeValue(node, AstSerializer.attrs.ROOT);
+		if(rootAttributeValue) {
+			return rootAttributeValue;
+		}
+		// merge is when webc:root attributes flow up to the host component (and the child component tag is ignored)
+		if(rootAttributeValue === "") {
+			return "merge";
+		}
+		return false;
+	}
+
 	async renderStartTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 
@@ -674,8 +683,8 @@ class AstSerializer {
 		let attrs = this.getAttributes(node, component, options);
 		let parentComponent = this.components[options.closestParentComponent];
 
-		// webc:keep webc:root should use the style hash class name and host attributes since they won’t be added to the host component
-		if(parentComponent && parentComponent.ignoreRootTag && this.hasAttribute(node, AstSerializer.attrs.ROOT) && this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+		// webc:root="override" should use the style hash class name and host attributes since they won’t be added to the host component
+		if(parentComponent && parentComponent.ignoreRootTag && this.getRootNodeMode(node) === "override") {
 			if(parentComponent.scopedStyleHash) {
 				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
 			}
@@ -850,7 +859,7 @@ class AstSerializer {
 
 			// Processes `<template webc:root>` as WebC (including slot resolution)
 			// Processes `<template>` in raw mode (for plain template, shadowroots, webc:keep, etc).
-			if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) {
+			if(!this.hasAttribute(node, AstSerializer.attrs.ROOT)) { // TODO is this too much magic?
 				templateOptions.rawMode = true;
 			}
 
@@ -923,7 +932,7 @@ class AstSerializer {
 		return Array.from(types);
 	}
 
-	addComponentDependency(component, tagName, options) {
+	addComponentDependency(component, node, tagName, options) {
 		let componentFilePath = Path.normalizePath(component.filePath);
 		if(!options.components.hasNode(componentFilePath)) {
 			options.components.addNode(componentFilePath);
@@ -1135,11 +1144,28 @@ class AstSerializer {
 		return rawContent;
 	}
 
+	addImpliedWebCAttributes(node) {
+		if(this.getAttributeValue(node, AstSerializer.attrs.TYPE) === AstSerializer.transformTypes.JS) {
+			// this check is perhaps unnecessary since KEEP has a higher precedence than NOKEEP
+			if(!this.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+				node.attrs.push({ name: AstSerializer.attrs.NOKEEP, value: "" });
+			}
+
+			if(!this.hasAttribute(node, AstSerializer.attrs.IS)) {
+				node.attrs.push({ name: AstSerializer.attrs.IS, value: "template" });
+			}
+		}
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 
+		this.addImpliedWebCAttributes(node);
+
 		let tagName = this.getTagName(node);
 		let content = "";
+
+		// webc:type="js" has an implied webc:is="template" webc:nokeep
 
 		let transformTypes = this.getTransformTypes(node);
 		if(transformTypes.length) {
@@ -1185,11 +1211,16 @@ class AstSerializer {
 		}
 
 		let component;
-		let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
-		if(importSource) {
-			component = await this.importComponent(importSource, options.closestParentComponent, tagName);
-		} else {
-			component = this.getComponent(tagName);
+
+		// This allows use of <img webc:root> inside of an <img> component definition without circular reference errors
+		let rootNodeMode = this.getRootNodeMode(node);
+		if(!rootNodeMode) {
+			let importSource = this.getAttributeValue(node, AstSerializer.attrs.IMPORT);
+			if(importSource) {
+				component = await this.importComponent(importSource, options.closestParentComponent, tagName);
+			} else {
+				component = this.getComponent(tagName);
+			}
 		}
 
 		if(component) {
@@ -1259,9 +1290,11 @@ class AstSerializer {
 
 		// Component content (foreshadow dom)
 		if(!options.rawMode && component) {
-			this.addComponentDependency(component, tagName, options);
+			this.addComponentDependency(component, node, tagName, options);
 
+			// for attribute sharing
 			options.hostComponentNode = node;
+
 
 			let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(node.attrs, nodeData);
 			options.hostComponentData = AttributeSerializer.mergeAttributes(evaluatedAttributes);

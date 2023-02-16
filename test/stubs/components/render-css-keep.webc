@@ -1,4 +1,4 @@
-<script webc:type="render" webc:is="style" webc:root webc:keep>
+<script webc:type="render" webc:is="style" webc:root="override" webc:keep>
 function(attrs) {
 	return `/* CSS */`;
 }

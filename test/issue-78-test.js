@@ -1,7 +1,7 @@
 import test from "ava";
 import { WebC } from "../webc.js";
 
-test("webc:import in Components should be relative to component file #79", async t => {
+test("webc:import in Components should be relative to component file #78", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/issue-78/page.webc");
@@ -19,7 +19,7 @@ woah i am component. i do things.
 woah i am component. i do things.`);
 });
 
-test("stock webc:type=js #79", async t => {
+test("stock webc:type=js #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js">
@@ -31,7 +31,7 @@ test("stock webc:type=js #79", async t => {
 	t.is(html.trim(), `hello`);
 });
 
-test("stock webc:type=js with template #79", async t => {
+test("stock webc:type=js with template #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js" webc:is="template">
@@ -43,7 +43,7 @@ test("stock webc:type=js with template #79", async t => {
 	t.is(html.trim(), `hello`);
 });
 
-test("stock webc:type=js with template/keep #79", async t => {
+test("stock webc:type=js with template/keep #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js" webc:is="template" webc:keep>
@@ -55,7 +55,7 @@ test("stock webc:type=js with template/keep #79", async t => {
 	t.is(html.trim(), `<template>hello</template>`);
 });
 
-test("stock webc:type=js with webc:is #79", async t => {
+test("stock webc:type=js with webc:is #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js" webc:is="ul" webc:keep>
@@ -67,7 +67,7 @@ test("stock webc:type=js with webc:is #79", async t => {
 	t.is(html.trim(), `<ul><li>test</li></ul>`);
 });
 
-test("Docs image example #79", async t => {
+test("Docs image example #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation">`);
@@ -78,7 +78,7 @@ test("Docs image example #79", async t => {
 	t.is(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" extra-attribute>`);
 });
 
-test("Docs css example #79", async t => {
+test("Docs css example #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<add-banner-to-css @license="MIT licensed">
@@ -94,7 +94,7 @@ p { color: rebeccapurple; }
 </style>`);
 });
 
-test("Docs css example using wrapper element #79", async t => {
+test("Docs css example using wrapper element #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<style webc:is="add-banner-to-css-root" @license="MIT licensed">
@@ -112,7 +112,7 @@ p { color: rebeccapurple; }
 </style>`);
 });
 
-test("Docs css example using render #79", async t => {
+test("Docs css example using render #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<style webc:is="add-banner-to-css-render" @license="MIT licensed">
