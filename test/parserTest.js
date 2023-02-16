@@ -1858,6 +1858,21 @@ test("External script src and stylesheet", async t => {
 `);
 });
 
+test.skip("External script src and stylesheet via dynamic attribute, issue #65", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-dynamic.webc");
+
+	t.deepEqual(js, [`/* This is the external script */`]);
+	t.deepEqual(css, [`/* This is some CSS */`]);
+	t.deepEqual(components, [
+		"./test/stubs/externals/externals-dynamic.webc",
+	]);
+
+	t.is(html, `<p>This is another global component.</p>
+
+`);
+});
+
+
 test("External scoped stylesheet", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-scoped.webc");
 
