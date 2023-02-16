@@ -289,9 +289,8 @@ class AstSerializer {
 			}
 		}
 
-		// Use parent tag if has <template shadowroot> (can be anywhere in the component body)
-		let shadowroot = AstQuery.findElement(component, "template", ["shadowroot"]);
-		if(shadowroot) {
+		// Use parent tag if has declarative shadow dom node (can be anywhere in the component body)
+		if(AstQuery.hasDeclarativeShadowDomChild(component)) {
 			return false;
 		}
 
@@ -727,16 +726,14 @@ class AstSerializer {
 		} else {
 			let templateOptions = Object.assign({}, options);
 
-			// Processes `<template webc:root>` as WebC (including slot resolution)
-			// Processes `<template>` in raw mode (for plain template, shadowroots, webc:keep, etc).
-			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.ROOT)) { // TODO is this too much magic?
-				templateOptions.rawMode = true;
-			}
-
 			// No transformation on this content during first compilation
 			delete templateOptions.currentTransformTypes;
-	
-			let { html } = await this.compileNode(node.content, slots, templateOptions, false);
+
+			let fakeNode = node.content;
+			// parse5 doesn’t have include a parentNode on <template> content, so we’re adding one so that content is output without escaping
+			fakeNode._webcFakeParentNode = "template";
+
+			let { html } = await this.compileNode(fakeNode, slots, templateOptions, false);
 			rawContent= html;
 		}
 
@@ -915,14 +912,24 @@ class AstSerializer {
 		}
 
 		for(let child of (node.childNodes || [])) {
-			Object.assign(components, this.getComponentList(child, rawMode || tagName === "template", closestComponentFilePath));
+			Object.assign(components, this.getComponentList(child, rawMode, closestComponentFilePath));
 		}
 
 		return components;
 	}
 
-	isUnescapedTagContent(parentNode) {
-		let tagName = parentNode?.tagName;
+	isUnescapedTagContent(node) {
+		let parentNode = node?.parentNode;
+		if(!parentNode) {
+			return false;
+		}
+
+		// parse5: <template> has no parentNode even when it should (fake it)
+		if(parentNode?.nodeName === "#document-fragment" && parentNode?._webcFakeParentNode === "template") {
+			return true;
+		}
+
+		let tagName = AstQuery.getTagName(parentNode);
 		if(tagName === "style" || tagName === "script" || tagName === "noscript" || tagName === "template") {
 			return true;
 		}
@@ -1013,6 +1020,12 @@ class AstSerializer {
 	}
 
 	addImpliedWebCAttributes(node) {
+		// if(AstQuery.getTagName(node) === "template") {
+		if(AstQuery.isDeclarativeShadowDomNode(node)) {
+			node.attrs.push({ name: AstSerializer.attrs.RAW, value: "" });
+		}
+
+		// webc:type="js" (WebC v0.9.0+) has implied webc:is="template" webc:nokeep
 		if(AstQuery.getAttributeValue(node, AstSerializer.attrs.TYPE) === AstSerializer.transformTypes.JS) {
 			// this check is perhaps unnecessary since KEEP has a higher precedence than NOKEEP
 			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.KEEP)) {
@@ -1032,8 +1045,6 @@ class AstSerializer {
 
 		let tagName = AstQuery.getTagName(node);
 		let content = "";
-
-		// webc:type="js" has an implied webc:is="template" webc:nokeep
 
 		let transformTypes = this.getTransformTypes(node);
 		if(transformTypes.length) {
@@ -1062,7 +1073,7 @@ class AstSerializer {
 			}
 
 			let unescaped = this.outputHtml(c, streamEnabled);
-			if(options.rawMode || this.isUnescapedTagContent(node.parentNode)) {
+			if(options.rawMode || this.isUnescapedTagContent(node)) {
 				return { html: unescaped };
 			} else {
 				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts

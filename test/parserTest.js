@@ -665,6 +665,27 @@ test("Using a web component with a declarative shadow root", async t => {
 After`);
 });
 
+test("Using a web component with a declarative shadow root using shadowrootmode", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/components/shadowrootmode.webc"
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/shadowrootmode.webc"
+	]);
+	t.is(html, `Before
+<web-component><template shadowrootmode="open">
+	<style>
+		b { color: red; }
+	</style>
+	Hello <b>World</b>!
+</template></web-component>
+After`);
+});
+
 test("Using a web component (use webc:keep to force keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-webc-keep.webc", {
 		"web-component": "./test/stubs/components/nested-child.webc"
@@ -2080,22 +2101,40 @@ const componentWithSlotsMacro = test.macro(async (t, { content, slots, expectedH
 	t.is(html, expectedHtml);
 });
 
-test("Using template component with default slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template> with default slot does process slots (Issue #31)", componentWithSlotsMacro, {
 	content: `<template><slot>Default content</slot></template>`,
+	slots: { default: "Overridden content" },
+	expectedHtml: `<template>Overridden content</template>`,
+});
+
+test("Using <template webc:raw> with default slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+	content: `<template webc:raw><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: `<template><slot>Default content</slot></template>`,
 });
 
-test("Using template component with named slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template> with named slot does process slots (Issue #31)", componentWithSlotsMacro, {
 	content: `<template><slot name="test">Default content</slot></template>`,
+	slots: { test: "Overridden content" },
+	expectedHtml: `<template>Overridden content</template>`,
+});
+
+test("Using <template webc:raw> with named slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+	content: `<template webc:raw><slot name="test">Default content</slot></template>`,
 	slots: { test: "Overridden content" },
 	expectedHtml: `<template><slot name="test">Default content</slot></template>`,
 });
 
-test("Using template component with webc:root and slot *does* process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template webc:root> and slot does process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro, {
 	content: `<template webc:root><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: "Overridden content",
+});
+
+test("Using <template webc:root webc:raw> and slot does *not* process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro, {
+	content: `<template webc:root webc:raw><slot>Default content</slot></template>`,
+	slots: { default: "Overridden content" },
+	expectedHtml: "<template><slot>Default content</slot></template>",
 });
 
 test("Render function result resolves components (reprocessing, issue #33)", async (t) => {

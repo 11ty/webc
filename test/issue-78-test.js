@@ -58,8 +58,8 @@ test("stock webc:type=js with template/keep #78", async t => {
 test("stock webc:type=js with webc:is #78", async t => {
 	let component = new WebC();
 
-	component.setContent(`<script webc:type="js" webc:is="ul" webc:keep>
-\`<li>test</li>\`;
+	component.setContent(`<script webc:type="js">
+\`<ul><li>test</li></ul>\`;
 </script>`);
 
 	let { html } = await component.compile();

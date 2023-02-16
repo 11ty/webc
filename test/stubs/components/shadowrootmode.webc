@@ -1,0 +1,6 @@
+<template shadowrootmode="open">
+	<style>
+		b { color: red; }
+	</style>
+	Hello <b>World</b>!
+</template>

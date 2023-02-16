@@ -55,6 +55,16 @@ class AstQuery {
 		return nameAttr?.value;
 	}
 
+	/* Declarative Shadow DOM */
+	static isDeclarativeShadowDomNode(node) {
+		let tagName = AstQuery.getTagName(node);
+		return tagName === "template" && (AstQuery.hasAttribute(node, "shadowroot") || AstQuery.hasAttribute(node, "shadowrootmode"))
+	}
+
+	static hasDeclarativeShadowDomChild(node) {
+		return AstQuery.findElement(node, "template", ["shadowroot", "shadowrootmode"]);
+	}
+
 	/* Content */
 	static getTextContent(node) { // used for style hashes
 		let content = [];
