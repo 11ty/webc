@@ -66,3 +66,13 @@ test("nested content, style webc:scoped from a webc:type=js", async t => {
 		message: "Could not find any top level <style webc:scoped> in component: _webc_raw_input_string"
 	});
 });
+
+test("throwing an Error works as expected, issue #99", async t => {
+	let component = new WebC();
+	component.setBundlerMode(true);
+	component.setContent(`<script webc:type="js">throw new Error('Custom error message');</script>`);
+
+	await t.throwsAsync(async () => component.compile(), {
+		message: "Custom error message"
+	});
+});

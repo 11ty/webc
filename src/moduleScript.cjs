@@ -40,6 +40,7 @@ class ModuleScript {
 				globals = {
 					console,
 					Promise,
+					Error,
 					...global,
 				}
 
