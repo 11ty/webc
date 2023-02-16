@@ -48,9 +48,7 @@ class AttributeSerializer {
 			} else {
 				attrObject[name] = value;
 
-				Object.defineProperty(attrObject, `${name}___webc_privacy`, {
-					value: privacy
-				});
+				AttributeSerializer.setKeyPrivacy(attrObject, name, privacy);
 			}
 		}
 
@@ -148,9 +146,7 @@ class AttributeSerializer {
 			// Maintain privacy in new object
 			let privacy = attrs[`${name}___webc_privacy`];
 			if(privacy) {
-				Object.defineProperty(newData, `${name}___webc_privacy`, {
-					value: privacy
-				});
+				AttributeSerializer.setKeyPrivacy(newData, name, privacy);
 			}
 		}
 
@@ -176,6 +172,12 @@ class AttributeSerializer {
 			evaluated.push(entry);
 		}
 		return evaluated;
+	}
+
+	static setKeyPrivacy(obj, name, privacy) {
+		Object.defineProperty(obj, `${name}___webc_privacy`, {
+			value: privacy || "private"
+		});
 	}
 
 	static getString(finalAttributesObject) {

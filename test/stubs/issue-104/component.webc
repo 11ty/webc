@@ -1,0 +1,3 @@
+<script webc:type="js" webc:root="override">
+`<img ${webc.renderAttributes(webc.attributes)}>`
+</script>

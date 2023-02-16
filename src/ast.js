@@ -193,6 +193,13 @@ class AstSerializer {
 		return 'webc-' + nanoid(5);
 	}
 
+	static setUid(obj, uid) {
+		if(uid) {
+			obj.uid = uid;
+			AttributeSerializer.setKeyPrivacy(obj, "uid", "private");
+		}
+	}
+
 	// Support for `base64url` needs gating e.g. is not available on Stackblitz on Node 16
 	// https://github.com/nodejs/node/issues/26512
 	getDigest(hash) {
@@ -1091,9 +1098,7 @@ class AstSerializer {
 		if(component) {
 			options.closestParentUid = this.getUid();
 			// we need to set this so that the props of the host component are evaluated with the webc:root attributes inside the component definition
-			options.componentProps = {
-				uid: options.closestParentUid
-			};
+			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
 		let ifExprContent = AstQuery.getAttributeValue(node, AstSerializer.attrs.IF);
@@ -1122,7 +1127,7 @@ class AstSerializer {
 
 		if(component) {
 			options.componentProps = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
-			options.componentProps.uid = options.closestParentUid;
+			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
 		// @html and @text are aliases for default slot content when used on a host component
@@ -1271,9 +1276,8 @@ class AstSerializer {
 		}
 
 		options.components.addNode(this.filePath);
-		options.componentProps = {
-			uid: options.closestParentUid
-		};
+		options.componentProps = {};
+		AstSerializer.setUid(options.componentProps, options.closestParentUid);
 
 		try {
 			if(node.mode === "quirks") {
