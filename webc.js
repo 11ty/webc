@@ -1,28 +1,11 @@
 import fs from "fs";
 import fastglob from "fast-glob";
 import path from "path";
-import { parse } from "parse5";
 
 import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
 import { ModuleScript } from "./src/moduleScript.cjs";
-
-class AstCache {
-	constructor() {
-		this.ast = {};
-	}
-
-	get(contents) {
-		if(!this.ast[contents]) {
-			this.ast[contents] = parse(contents, {
-				scriptingEnabled: true,
-				sourceCodeLocationInfo: true,
-			});
-		}
-
-		return this.ast[contents];
-	}
-}
+import { AstCache } from "./src/astCache.js";
 
 const localAstCache = new AstCache();
 
