@@ -1,10 +1,10 @@
 import test from "ava";
-import { WebC } from "../../webc.js";
+import { WebC } from "../../../webc.js";
 
 test("Template content issue #105", async t => {
 	let component = new WebC();
 
-	component.defineComponents("./test/issue-105/test-p.webc");
+	component.defineComponents("./test/stubs/issue-105/test-p.webc");
 
 	component.setContent(`<template><test-p></test-p></template>`);
 
