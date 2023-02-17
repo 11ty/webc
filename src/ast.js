@@ -638,7 +638,7 @@ class AstSerializer {
 			},
 			helpers: this.dataCascade.getHelpers(),
 
-			...this.dataCascade.getData(options.componentProps, undefined, parentComponent?.setupScript),
+			...this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript),
 		};
 
 		for(let type of transformTypes) {
@@ -1108,6 +1108,9 @@ class AstSerializer {
 		if(component) {
 			options.componentProps = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
+			options.currentTagAttributes = {};
+		} else {
+			options.currentTagAttributes = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
 		}
 
 		// @html and @text are aliases for default slot content when used on a host component

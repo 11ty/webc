@@ -10,7 +10,7 @@ class ModuleScript {
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
 	static getProxiedContext(context = {}) {
-		if(context && !("require" in context)) {
+		if(context && !context.require) {
 			context.require = function(target) {
 				const path = require("path");
 				// change relative paths to be relative to the root project dir
