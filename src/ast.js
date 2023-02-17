@@ -753,7 +753,7 @@ class AstSerializer {
 			fakeNode._webcFakeParentNode = "template";
 
 			let { html } = await this.compileNode(fakeNode, slots, templateOptions, false);
-			rawContent= html;
+			rawContent = html;
 		}
 
 		if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
@@ -883,63 +883,6 @@ class AstSerializer {
 		if(this.isScriptNode(tagName, node)) {
 			return AstQuery.getAttributeValue(node, "src");
 		}
-	}
-
-	/* Depth-first list, not dependency-graph ordered.
-	 * This is in contrast to `components` returned from compile methods *are* dependency-graph ordered.
-	 * Also note this is overly permissive (includes components in unused slots).
-	 * Also includes external <script src> and <link rel="stylesheet" href> sources here too.
-	 * This method is used for incremental static builds.
-	 */
-	getComponentList(node, rawMode = false, closestComponentFilePath) {
-		let components = {};
-
-		if(rawMode) {
-			return components;
-		}
-
-		if(this.filePath) {
-			components[this.filePath] = true;
-		}
-
-		if(AstQuery.hasAttribute(node, AstSerializer.attrs.RAW)) {
-			rawMode = true;
-		}
-
-		let tagName = AstQuery.getTagName(node);
-		let externalSource = this.getExternalSource(tagName, node);
-		if(externalSource) {
-			let p = FileSystemCache.getRelativeFilePath(externalSource, closestComponentFilePath);
-			components[Path.normalizePath(p)] = true;
-		}
-
-		let importSource = Path.normalizePath(AstQuery.getAttributeValue(node, AstSerializer.attrs.IMPORT));
-		if(importSource) {
-			// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
-			components[importSource] = true;
-			closestComponentFilePath = importSource;
-
-			if(this.components[importSource]) {
-				Object.assign(components, this.getComponentList(this.components[importSource].ast, rawMode, importSource));
-			}
-		} else {
-			let filePath = Path.normalizePath(this.componentMapNameToFilePath[tagName]);
-			if(filePath) {
-				// TODO also relative-to-closest-component paths here? via FileSystemCache.getRelativeFilePath (and below in compileNode)
-				components[filePath] = true;
-				closestComponentFilePath = filePath;
-
-				if(this.components[filePath]) {
-					Object.assign(components, this.getComponentList(this.components[filePath].ast, rawMode, filePath));
-				}
-			}
-		}
-
-		for(let child of (node.childNodes || [])) {
-			Object.assign(components, this.getComponentList(child, rawMode, closestComponentFilePath));
-		}
-
-		return components;
 	}
 
 	isUnescapedTagContent(node) {
@@ -1201,7 +1144,6 @@ class AstSerializer {
 
 			// for attribute sharing
 			options.hostComponentNode = node;
-
 
 			let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(node.attrs, nodeData);
 			options.hostComponentData = AttributeSerializer.mergeAttributes(evaluatedAttributes);

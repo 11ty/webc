@@ -4,8 +4,6 @@ import { WebC } from "../../../webc.js";
 test("webc:setup #87", async t => {
 	let component = new WebC();
 
-	// component.defineComponents("./test/stubs/setup-script/test-p.webc");
-
 	component.setContent(`<div @html="key"></div>
 <script webc:setup>
 const key = 1;
