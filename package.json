@@ -31,7 +31,8 @@
 	"ava": {
 		"failFast": true,
 		"files": [
-			"./test/*.js"
+			"./test/*Test.js",
+			"./test/**/*test.js"
 		]
 	},
 	"dependencies": {
