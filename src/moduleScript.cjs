@@ -34,7 +34,7 @@ class ModuleScript {
 	}
 
 	// The downstream code being evaluated here may return a promise!
-	static async evaluateScript(name, content, data) {
+	static async evaluateScript(content, data, errorString) {
 		try {
 			let context = ModuleScript.getProxiedContext(data);
 
@@ -51,7 +51,7 @@ class ModuleScript {
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {
-				throw new Error(`\`class\` is a reserved word in JavaScript. You may have tried to use it in a dynamic attribute: \`${name}="${content}"\`. Change \`class\` to \`this.class\` instead!
+				throw new Error(`\`class\` is a reserved word in JavaScript.${errorString ? ` ${errorString}` : ""} Change \`class\` to \`this.class\` instead!
 Original error message: ${e.message}`);
 			}
 

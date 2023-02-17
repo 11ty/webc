@@ -97,7 +97,22 @@ class AstQuery {
 
 		let children = [];
 		for(let root of roots) {
-			for(let child of AstQuery.findAllChildren(root, tagNames, webcAttrs)) {
+			for(let child of AstQuery.getChildren(root, tagNames, webcAttrs)) {
+				children.push(child);
+			}
+		}
+		return children;
+	}
+
+	static getTopLevelNodes(node, tagNames = [], webcAttrs = []) {
+		let roots = AstQuery.getImplicitRootNodes(node);
+		if(roots.length === 0) {
+			throw new Error("Unable to find component root, expected an implicit <head> or <body>");
+		}
+
+		let children = [];
+		for(let root of roots) {
+			for(let child of AstQuery.getChildren(root, tagNames, webcAttrs)) {
 				children.push(child);
 			}
 		}
@@ -135,7 +150,18 @@ class AstQuery {
 		}
 	}
 
-	static findAllChildren(parentNode, tagNames = [], attrCheck = []) {
+	/* Shallow element finds */
+	static findFirstChild(parentNode, tagName, attrName) {
+		for(let child of parentNode?.childNodes || []) {
+			if(!tagName || tagName === AstQuery.getTagName(child)) {
+				if(!attrName || AstQuery.hasAttribute(child, attrName)) {
+					return child;
+				}
+			}
+		}
+	}
+
+	static getChildren(parentNode, tagNames = [], attrCheck = []) {
 		if(!parentNode) {
 			return [];
 		}
@@ -155,6 +181,7 @@ class AstQuery {
 				}
 			}
 		}
+
 		return results;
 	}
 }

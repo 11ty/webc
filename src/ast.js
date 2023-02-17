@@ -76,7 +76,7 @@ class AstSerializer {
 
 		this.setTransform(AstSerializer.transformTypes.JS, function(content) {
 			// returns promise
-			return ModuleScript.evaluateScript(`${AstSerializer.attrs.RENDER}="${AstSerializer.transformTypes.JS}"`, content, this);
+			return ModuleScript.evaluateScript(content, this, `Check the webc:type="js" element in ${this.filePath}.`);
 		});
 
 		// Component cache
@@ -125,6 +125,7 @@ class AstSerializer {
 		HTML: "@html",
 		RAWHTML: "@raw",
 		TEXT: "@text",
+		SETUP: "webc:setup",
 	};
 
 	static transformTypes = {
@@ -221,7 +222,7 @@ class AstSerializer {
 
 		for(let node of styleNodes) {
 			let tagName = AstQuery.getTagName(node);
-			if(tagName !== "style" && !this.isStylesheetNode(tagName, node)) {
+			if(tagName !== "style" && !this.isLinkStylesheetNode(tagName, node)) {
 				continue;
 			}
 
@@ -241,7 +242,7 @@ class AstSerializer {
 
 			if(tagName === "style") {
 				// hash based on the text content
-				// TODO this does *not* process script e.g. <script webc:type="render" webc:is="style" webc:scoped> (see render-css.webc)
+				// NOTE this does *not* process script e.g. <script webc:type="render" webc:is="style" webc:scoped> (see render-css.webc)
 				let hashContent = AstQuery.getTextContent(node).toString();
 				hash.update(hashContent);
 			} else { // link stylesheet
@@ -275,7 +276,7 @@ class AstSerializer {
 		// use parent tag if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
 		for(let child of tops) {
 			let tagName = AstQuery.getTagName(child);
-			if(tagName !== "script" && tagName !== "style") {
+			if(tagName !== "script" && tagName !== "style" || AstQuery.hasAttribute(child, AstSerializer.attrs.SETUP)) {
 				continue;
 			}
 
@@ -336,7 +337,7 @@ class AstSerializer {
 			return true;
 		}
 
-		let isBundledTag = this.bundlerMode && (tagName === "style" || tagName === "script" || this.isStylesheetNode(tagName, node));
+		let isBundledTag = this.bundlerMode && (tagName === "style" || this.isScriptNode(tagName, node) || this.isLinkStylesheetNode(tagName, node));
 		if(!isBundledTag && this.isUsingPropBasedContent(node)) {
 			return false;
 		}
@@ -824,8 +825,13 @@ class AstSerializer {
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
-	isStylesheetNode(tagName, node) {
+	isLinkStylesheetNode(tagName, node) {
 		return tagName === "link" && AstQuery.getAttributeValue(node, "rel") === "stylesheet";
+	}
+
+	// filter out webc:setup
+	isScriptNode(tagName, node) {
+		return tagName === "script" && !AstQuery.hasAttribute(node, AstSerializer.attrs.SETUP);
 	}
 
 	getAggregateAssetKey(tagName, node) {
@@ -833,11 +839,11 @@ class AstSerializer {
 			return false;
 		}
 
-		if(tagName === "style" || this.isStylesheetNode(tagName, node)) {
+		if(tagName === "style" || this.isLinkStylesheetNode(tagName, node)) {
 			return "css";
 		}
 
-		if(tagName === "script") {
+		if(this.isScriptNode(tagName, node)) {
 			return "js"
 		}
 	}
@@ -852,11 +858,11 @@ class AstSerializer {
 	}
 
 	getExternalSource(tagName, node) {
-		if(this.isStylesheetNode(tagName, node)) {
+		if(this.isLinkStylesheetNode(tagName, node)) {
 			return AstQuery.getAttributeValue(node, "href");
 		}
 
-		if(tagName === "script") {
+		if(this.isScriptNode(tagName, node)) {
 			return AstQuery.getAttributeValue(node, "src");
 		}
 	}
@@ -930,7 +936,7 @@ class AstSerializer {
 		}
 
 		let tagName = AstQuery.getTagName(parentNode);
-		if(tagName === "style" || tagName === "script" || tagName === "noscript" || tagName === "template") {
+		if(tagName === "style" || tagName === "noscript" || tagName === "template" || this.isScriptNode(tagName, node)) {
 			return true;
 		}
 		return false;
@@ -939,7 +945,7 @@ class AstSerializer {
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
 		let data = this.dataCascade.getData(options.componentProps);
-		let content = await ModuleScript.evaluateScript(name, attrContent, data);
+		let content = await ModuleScript.evaluateScript(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
 		return content;
 	}
 

@@ -2177,7 +2177,7 @@ test("Throw a better error message when attempting to use `class` in dynamic att
 			class: "test-class"
 		}
 	}), {
-		message: `\`class\` is a reserved word in JavaScript. You may have tried to use it in a dynamic attribute: \`:class="class"\`. Change \`class\` to \`this.class\` instead!
+		message: `\`class\` is a reserved word in JavaScript. Check the dynamic attribute: \`:class="class"\`. Change \`class\` to \`this.class\` instead!
 Original error message: Unexpected end of input`
 	});
 });
