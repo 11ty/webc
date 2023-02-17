@@ -117,7 +117,8 @@ class AttributeSerializer {
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
 		if(evaluation === "script") {
-			evaluatedValue = await ModuleScript.evaluateScript(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
+			let { returns } = await ModuleScript.evaluateScript(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
+			evaluatedValue = returns;
 		}
 
 		return {

@@ -1,0 +1,9 @@
+<div @html="key"></div>
+<script webc:setup>
+const key = 2;
+
+function alwaysBlue() {
+	return "red"; // gotcha
+}
+</script>
+<div @html="alwaysBlue()"></div>

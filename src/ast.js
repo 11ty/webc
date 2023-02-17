@@ -74,9 +74,10 @@ class AstSerializer {
 			return fn.call(this);
 		});
 
-		this.setTransform(AstSerializer.transformTypes.JS, function(content) {
+		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
 			// returns promise
-			return ModuleScript.evaluateScript(content, this, `Check the webc:type="js" element in ${this.filePath}.`);
+			let { returns } = await ModuleScript.evaluateScript(content, this, `Check the webc:type="js" element in ${this.filePath}.`);
+			return returns;
 		});
 
 		// Component cache
@@ -126,6 +127,7 @@ class AstSerializer {
 		RAWHTML: "@raw",
 		TEXT: "@text",
 		SETUP: "webc:setup",
+		IGNORE: "webc:ignore", // ignore this node
 	};
 
 	static transformTypes = {
@@ -212,6 +214,18 @@ class AstSerializer {
 			digest = hash.digest('base64').replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
 		}
 		return prefix + digest.toLowerCase().slice(0, hashLength);
+	}
+
+	async getSetupScriptValue(component, filePath) {
+		// <style webc:scoped> must be nested at the root
+		let setupScriptNode = AstQuery.getFirstTopLevelNode(component, false, AstSerializer.attrs.SETUP);
+
+		if(setupScriptNode) {
+			let content = AstQuery.getTextContent(setupScriptNode).toString();
+			// async-friendly
+			let data = this.dataCascade.getData();
+			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
+		}
 	}
 
 	getScopedStyleHash(component, filePath) {
@@ -414,6 +428,9 @@ class AstSerializer {
 		}
 
 		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
+		// only executes once per component
+		let setupScript = await this.getSetupScriptValue(ast, filePath);
+
 		this.components[filePath] = {
 			filePath,
 			ast,
@@ -430,6 +447,7 @@ class AstSerializer {
 			scopedStyleHash,
 			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
 			slotTargets: this.getSlotTargets(ast),
+			setupScript,
 		};
 	}
 
@@ -563,7 +581,7 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData );
+		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData, parentComponent?.setupScript );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -620,7 +638,7 @@ class AstSerializer {
 			},
 			helpers: this.dataCascade.getHelpers(),
 
-			...this.dataCascade.getData(options.componentProps),
+			...this.dataCascade.getData(options.componentProps, undefined, parentComponent?.setupScript),
 		};
 
 		for(let type of transformTypes) {
@@ -944,9 +962,11 @@ class AstSerializer {
 
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
-		let data = this.dataCascade.getData(options.componentProps);
-		let content = await ModuleScript.evaluateScript(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
-		return content;
+		let parentComponent = this.components[options.closestParentComponent];
+		let data = this.dataCascade.getData(options.componentProps, undefined, parentComponent?.setupScript);
+
+		let { returns } = await ModuleScript.evaluateScript(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
+		return returns;
 	}
 
 	// @html or @text or @raw
@@ -1046,6 +1066,10 @@ class AstSerializer {
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
+
+		if(AstQuery.hasAnyAttribute(node, [ AstSerializer.attrs.IGNORE, AstSerializer.attrs.SETUP ])) {
+			return { html: "" };
+		}
 
 		this.addImpliedWebCAttributes(node);
 

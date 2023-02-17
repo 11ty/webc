@@ -1,5 +1,7 @@
 const { Module } = require("module");
 const vm = require("vm");
+const acorn = require("acorn");
+const walk = require("acorn-walk");
 
 class ModuleScript {
 
@@ -7,7 +9,7 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context) {
+	static getProxiedContext(context = {}) {
 		if(context && !("require" in context)) {
 			context.require = function(target) {
 				const path = require("path");
@@ -33,6 +35,57 @@ class ModuleScript {
 		return proxiedContext;
 	}
 
+
+	// We prune function and variable declarations that aren’t globally declared
+	// (our acorn walker could be improved to skip non-global declarations, but this method is easier for now)
+	static _getGlobalVariablesReturnString(names) {
+		let s = [`let globals = {};`];
+		for(let name of names) {
+			s.push(`if( typeof ${name} !== "undefined") { globals["${name}"] = ${name}; }`);
+		}
+		return `${s.join("\n")}; return globals;`
+	}
+
+	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
+		let context = vm.createContext(data || {});
+
+		try {
+			let parsed = acorn.parse(code, {ecmaVersion: "latest"});
+	
+			let globalNames = new Set();
+	
+			walk.simple(parsed, {
+				FunctionDeclaration(node) {
+					globalNames.add(node.id.name);
+				},
+				VariableDeclarator(node) {
+					globalNames.add(node.id.name);
+				}
+			});
+	
+			return vm.runInContext(code + `\n;(function() {
+				${ModuleScript._getGlobalVariablesReturnString(globalNames)};
+			})();`, context);
+
+		} catch(e) {
+
+			// Acorn parsing error on script
+			let metadata = [];
+			if(filePath) {
+				metadata.push(`file: ${filePath}`);
+			}
+			if(e?.loc?.line) {
+				metadata.push(`line: ${e.loc.line}`);
+			}
+			if(e?.loc?.column) {
+				metadata.push(`column: ${e.loc.column}`);
+			}
+			throw new Error(`Had trouble parsing${metadata.length ? ` (${metadata.join(", ")})` : ""} <script webc:setup>:
+${code}`);
+		}
+
+	}
+
 	// The downstream code being evaluated here may return a promise!
 	static async evaluateScript(content, data, errorString) {
 		try {
@@ -47,7 +100,7 @@ class ModuleScript {
 
 			let returnValue = vm.runInContext(content, context);
 
-			return returnValue;
+			return { returns: await returnValue, context };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {

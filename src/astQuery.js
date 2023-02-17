@@ -43,6 +43,14 @@ class AstQuery {
 		return (node.attrs || []).find(({name}) => name === attributeName) !== undefined;
 	}
 
+	static hasAnyAttribute(node, attributes) {
+		let lookup = {};
+		for(let name of attributes) {
+			lookup[name] = true;
+		}
+		return (node.attrs || []).find(({name}) => lookup[name]) !== undefined;
+	}
+
 	static getAttributeValue(node, attributeName) {
 		let nameAttr = (node.attrs || []).find(({name}) => name === attributeName);
 
@@ -81,7 +89,7 @@ class AstQuery {
 	}
 
 
-	/* Surface element finds */
+	/* Shallow element finds */
 	static getImplicitRootNodes(node) {
 		return [
 			AstQuery.findElement(node, "body"),
@@ -104,19 +112,52 @@ class AstQuery {
 		return children;
 	}
 
-	static getTopLevelNodes(node, tagNames = [], webcAttrs = []) {
+	static getChildren(parentNode, tagNames = [], attrCheck = []) {
+		if(!parentNode) {
+			return [];
+		}
+		if(typeof tagNames === "string") {
+			tagNames = [tagNames];
+		}
+		if(!tagNames || Array.isArray(tagNames)) {
+			tagNames = new Set(tagNames);
+		}
+
+		let results = [];
+		for(let child of parentNode.childNodes || []) {
+			let tagName = AstQuery.getTagName(child);
+			if(tagNames.size === 0 || tagNames.has(tagName)) {
+				if(attrCheck.length === 0 || attrCheck.find(attr => AstQuery.hasAttribute(child, attr))) {
+					results.push(child);
+				}
+			}
+		}
+
+		return results;
+	}
+
+	static getFirstTopLevelNode(node, tagName, attrName) {
 		let roots = AstQuery.getImplicitRootNodes(node);
 		if(roots.length === 0) {
 			throw new Error("Unable to find component root, expected an implicit <head> or <body>");
 		}
 
-		let children = [];
 		for(let root of roots) {
-			for(let child of AstQuery.getChildren(root, tagNames, webcAttrs)) {
-				children.push(child);
+			let match = AstQuery.findFirstChild(root, tagName, attrName);
+			if(match) {
+				return match;
 			}
 		}
-		return children;
+	}
+
+	static findFirstChild(parentNode, tagName, attrName) {
+		for(let child of parentNode?.childNodes || []) {
+			if(!tagName || tagName === AstQuery.getTagName(child)) {
+				if(!attrName || AstQuery.hasAttribute(child, attrName)) {
+					return child;
+				}
+			}
+		}
 	}
 
 	/* Deep element finds */
@@ -148,41 +189,6 @@ class AstQuery {
 				return node;
 			}
 		}
-	}
-
-	/* Shallow element finds */
-	static findFirstChild(parentNode, tagName, attrName) {
-		for(let child of parentNode?.childNodes || []) {
-			if(!tagName || tagName === AstQuery.getTagName(child)) {
-				if(!attrName || AstQuery.hasAttribute(child, attrName)) {
-					return child;
-				}
-			}
-		}
-	}
-
-	static getChildren(parentNode, tagNames = [], attrCheck = []) {
-		if(!parentNode) {
-			return [];
-		}
-		if(typeof tagNames === "string") {
-			tagNames = [tagNames];
-		}
-		if(!tagNames || Array.isArray(tagNames)) {
-			tagNames = new Set(tagNames);
-		}
-
-		let results = [];
-		for(let child of parentNode.childNodes || []) {
-			let tagName = AstQuery.getTagName(child);
-			if(tagNames.size === 0 || tagNames.has(tagName)) {
-				if(attrCheck.length === 0 || attrCheck.find(attr => AstQuery.hasAttribute(child, attr))) {
-					results.push(child);
-				}
-			}
-		}
-
-		return results;
 	}
 }
 
