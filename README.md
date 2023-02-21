@@ -448,24 +448,6 @@ Inside of your component definition, you can add attributes to the host componen
 
 * `class` and `style` attributes are merged as expected.
 
-#### Dynamic attributes
-
-Make any attribute into a dynamic attribute by prefixing it with a `:`. You have access to host component attribute and property names (as well as page data) here!
-
-`page.webc`:
-
-```html
-<avatar-image src="my-image.jpeg" alt="Zach is documenting this project"></avatar-image>
-```
-
-`components/avatar-image.webc`:
-
-```html
-<img :src="src" :alt="alt" class="avatar-image">
-```
-
-* In the HTML specification, attribute names are lower-case. When referencing these inside of a dynamic attribute, use the lower-case name (e.g. `<avatar-image mySrc="test">` would be `:src="mysrc"`). See [issue #71 for more discussion](https://github.com/11ty/webc/issues/71).
-
 #### Properties (or Props)
 
 Make any attribute into a prop by prefixing it with `@`. Props are “private” attributes that don’t end up in the output HTML (they are private to WebC). They are identical to attributes except that they are filtered from the output HTML.
@@ -483,7 +465,25 @@ Make any attribute into a prop by prefixing it with `@`. Props are “private”
 <!-- outputs <img has-a-secret="true" …> -->
 ```
 
-* In the HTML specification, attribute names are lower-case. When referencing these inside of a dynamic attribute, use the lower-case name (e.g. `<avatar-image @mySrc="test">` would be `:src="mysrc"`). See [issue #71 for more discussion](https://github.com/11ty/webc/issues/71).
+* In the HTML specification, attribute names are lower-case. In WebC 0.8.0+ attribute or property names with dashes are converted to camelcase for JS (e.g. `<my-component @prop-name="test">` can be used like `@text="propName"`). See [issue #71 for more](https://github.com/11ty/webc/issues/71).
+
+#### Dynamic attributes and properties
+
+Make any attribute or property dynamic (uses JavaScript for the value instead of a string) by prefixing it with a `:`. You have access to host component attribute and property names (as well as page data) here!
+
+`page.webc`:
+
+```html
+<avatar-image src="my-image.jpeg" alt="Zach is documenting this project"></avatar-image>
+```
+
+`components/avatar-image.webc`:
+
+```html
+<img :src="src" :alt="alt" :@dynamic-prop="'hello'" class="avatar-image">
+```
+
+* In the HTML specification, attribute names are lower-case. In WebC 0.8.0+ attribute or property names with dashes are converted to camelcase for JS (e.g. `<my-component @prop-name="test">` can be used like `@text="propName"`). See [issue #71 for more](https://github.com/11ty/webc/issues/71).
 
 ### JavaScript Render Functions
 
