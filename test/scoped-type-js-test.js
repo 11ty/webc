@@ -67,7 +67,7 @@ test("nested content, style webc:scoped from a webc:type=js", async t => {
 	});
 });
 
-test("throwing an Error works as expected, issue #99", async t => {
+test("throwing an Error works as expected, issue #99 #100", async t => {
 	let component = new WebC();
 	component.setBundlerMode(true);
 	component.setContent(`<script webc:type="js">throw new Error('Custom error message');</script>`);
@@ -77,7 +77,7 @@ test("throwing an Error works as expected, issue #99", async t => {
 	});
 });
 
-test("JavaScript built-ins, issue #99", async t => {
+test("JavaScript built-ins, issue #99 #100", async t => {
 	let component = new WebC();
 	component.setBundlerMode(true);
 	component.setContent(`<script webc:type="js">parseInt("10")</script>`);
