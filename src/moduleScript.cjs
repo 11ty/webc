@@ -1,7 +1,6 @@
 const { Module } = require("module");
 const vm = require("vm");
-const acorn = require("acorn");
-const walk = require("acorn-walk");
+const { RetrieveGlobals } = require("node-retrieve-globals");
 
 class ModuleScript {
 
@@ -35,55 +34,14 @@ class ModuleScript {
 		return proxiedContext;
 	}
 
-
-	// We prune function and variable declarations that aren’t globally declared
-	// (our acorn walker could be improved to skip non-global declarations, but this method is easier for now)
-	static _getGlobalVariablesReturnString(names) {
-		let s = [`let globals = {};`];
-		for(let name of names) {
-			s.push(`if( typeof ${name} !== "undefined") { globals["${name}"] = ${name}; }`);
-		}
-		return `${s.join("\n")}; return globals;`
-	}
-
 	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
-		let context = vm.createContext(data || {});
+		let vm = new RetrieveGlobals(code, filePath);
 
-		try {
-			let parsed = acorn.parse(code, {ecmaVersion: "latest"});
-	
-			let globalNames = new Set();
-	
-			walk.simple(parsed, {
-				FunctionDeclaration(node) {
-					globalNames.add(node.id.name);
-				},
-				VariableDeclarator(node) {
-					globalNames.add(node.id.name);
-				}
-			});
-	
-			return vm.runInContext(code + `\n;(function() {
-				${ModuleScript._getGlobalVariablesReturnString(globalNames)};
-			})();`, context);
-
-		} catch(e) {
-
-			// Acorn parsing error on script
-			let metadata = [];
-			if(filePath) {
-				metadata.push(`file: ${filePath}`);
-			}
-			if(e?.loc?.line) {
-				metadata.push(`line: ${e.loc.line}`);
-			}
-			if(e?.loc?.column) {
-				metadata.push(`column: ${e.loc.column}`);
-			}
-			throw new Error(`Had trouble parsing${metadata.length ? ` (${metadata.join(", ")})` : ""} <script webc:setup>:
-${code}`);
-		}
-
+		// returns promise
+		return vm.getGlobalContext(data, {
+			reuseGlobal: true, // re-use Node.js `global`, important if you want `console.log` to log to your console as expected.
+			dynamicImport: true, // allows `import()`
+		});
 	}
 
 	// The downstream code being evaluated here may return a promise!
