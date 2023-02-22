@@ -2234,3 +2234,15 @@ test.skip("Dynamic attributes in host component data", async t => {
 
 	t.is(html, `<lol attribute="hello" class="parent1 parent2 class1 class2"><div>Test</div><script>/* hi */</script></lol>`);
 });
+
+test("Deeply nested webc:root (per docs)", async t => {
+	let component = new WebC();
+
+	// TODO test webc:keep on this or with <script> in the component definition
+	component.setContent(`<component class="two"></component>`);
+	component.defineComponents("./test/stubs/deep-root/component.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<div><strong class="another-class two">Some component content</strong></div>`);
+});

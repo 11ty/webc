@@ -1,0 +1,6 @@
+<script webc:setup>
+const attrs = webc.renderAttributes(webc.attributes);
+</script>
+<script webc:type="js" webc:root="override">
+`<img ${attrs}>`
+</script>
