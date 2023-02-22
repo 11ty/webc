@@ -1,0 +1,1 @@
+<img @attributes="({myKey: 1})">
