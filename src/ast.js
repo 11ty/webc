@@ -126,6 +126,7 @@ class AstSerializer {
 		HTML: "@html",
 		RAWHTML: "@raw",
 		TEXT: "@text",
+		ATTRIBUTES: "@attributes",
 		SETUP: "webc:setup",
 		IGNORE: "webc:ignore", // ignore this node
 	};
@@ -585,6 +586,14 @@ class AstSerializer {
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
+		// @attributes
+		if(AstQuery.hasAttribute(node, AstSerializer.attrs.ATTRIBUTES)) {
+			// note: `@attributes` implies `@attributes="webc.attributes"`
+			let extraAttributesContent = AstQuery.getAttributeValue(node, AstSerializer.attrs.ATTRIBUTES) || "webc.attributes";
+			let extraAttrs = await this.evaluateAttribute(AstSerializer.attrs.ATTRIBUTES, extraAttributesContent, options);
+			Object.assign(finalAttributesObject, AttributeSerializer.getPublicAttributesAsObject(extraAttrs));
+		}
+
 		if(options.isMatchingSlotSource) {
 			delete finalAttributesObject.slot;
 		}
@@ -946,7 +955,7 @@ class AstSerializer {
 		return {
 			nodeName: "#text",
 			value: content,
-			_webCProcessed: true,
+			_webCProcessed: true, // should this be htmlProp or textProp only?
 		};
 	}
 

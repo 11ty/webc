@@ -154,6 +154,21 @@ class AttributeSerializer {
 		return newData;
 	}
 
+	static getPublicAttributesAsObject(attrs) {
+		let newData = {};
+
+		for(let name in attrs) {
+			// Maintain privacy in new object
+			let privacy = attrs[`${name}___webc_privacy`];
+			if(privacy !== "private") {
+				newData[name] = attrs[name];
+			}
+		}
+
+		return newData;
+	}
+
+
 	// attributesArray: parse5 format, Array of [{name, value}]
 	// returns: same array with additional properties added
 	static async evaluateAttributesArray(attributesArray, data) {
