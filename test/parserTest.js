@@ -2246,3 +2246,32 @@ test("Deeply nested webc:root (per docs)", async t => {
 
 	t.is(html.trim(), `<div><strong class="another-class two">Some component content</strong></div>`);
 });
+
+test("Using dynamic asset buckets", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/dynamic-bucket/index.webc");
+	component.defineComponents("./test/stubs/dynamic-bucket/component.webc");
+
+	let { html, css, js, buckets, components } = await component.compile();
+
+	t.is(html, `<component><p>Hi</p>
+
+</component>`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+
+	t.deepEqual(buckets, {
+		css: {
+			defer: [`/* defer bucket style */`],
+		},
+		js: {
+			defer: [`/* defer bucket script */`],
+		},
+	});
+	t.deepEqual(components, [
+		"./test/stubs/dynamic-bucket/index.webc",
+		"./test/stubs/dynamic-bucket/component.webc",
+	]);
+});

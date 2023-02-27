@@ -1,0 +1,3 @@
+<p>Hi</p>
+<style :webc:bucket="bucket">/* defer bucket style */</style>
+<script :webc:bucket="bucket">/* defer bucket script */</script>

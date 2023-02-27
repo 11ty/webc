@@ -875,10 +875,9 @@ class AstSerializer {
 		}
 	}
 
-	getBucketName(node) {
-		let bucket = AstQuery.getAttributeValue(node, AstSerializer.attrs.ASSET_BUCKET);
-		if(bucket) {
-			return bucket;
+	getBucketName(attrs) {
+		if(attrs['webc:bucket']) {
+			return attrs['webc:bucket'];
 		}
 
 		return "default";
@@ -1208,7 +1207,8 @@ class AstSerializer {
 							childContent = html;
 						}
 
-						let bucket = this.getBucketName(node);
+						// generated via renderStartTag
+						let bucket = this.getBucketName(attrs);
 						if(bucket !== "default") {
 							if(!options.assets.buckets[assetKey]) {
 								options.assets.buckets[assetKey] = new Set();
