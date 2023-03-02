@@ -2275,3 +2275,105 @@ test("Using dynamic asset buckets", async t => {
 		"./test/stubs/dynamic-bucket/component.webc",
 	]);
 });
+
+test("Inherited bucket", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/bucket-inherit/index.webc");
+	component.defineComponents("./test/stubs/bucket-inherit/child.webc");
+	component.defineComponents("./test/stubs/bucket-inherit/component.webc");
+
+	let { html, css, js, buckets, components } = await component.compile();
+
+	t.is(html, `<component><p>Hi</p>
+
+
+<child>
+</child>
+<child>
+</child></component>`);
+	t.deepEqual(js, [`/* inline override bucket script */`]);
+	t.deepEqual(css, [`/* inline override bucket style */`]);
+
+	t.deepEqual(buckets, {
+		css: {
+			// note that `<child webc:bucket="override">` was de-duped into the inherited bucket
+			inherited: [`/* child bucket style */`],
+		},
+		js: {
+			// note that `<child webc:bucket="override">` was de-duped into the inherited bucket
+			inherited: [`/* child bucket script */`],
+		},
+	});
+
+	t.deepEqual(components, [
+		"./test/stubs/bucket-inherit/index.webc",
+		"./test/stubs/bucket-inherit/component.webc",
+		"./test/stubs/bucket-inherit/child.webc",
+	]);
+});
+
+test("Inherited bucket (using attrs)", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/bucket-inherit-attrs/index.webc");
+	component.defineComponents("./test/stubs/bucket-inherit-attrs/component.webc");
+
+	let { html, css, js, buckets, components } = await component.compile();
+
+	t.is(html, `<div>
+<component>
+</component>
+<component>
+</component>
+</div>`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+
+	t.deepEqual(buckets, {
+		css: {
+			'inherited-bucket': [`/* inline bucket style */`],
+		},
+		js: {
+			'inherited-bucket': [`/* inline bucket script */`],
+		},
+	});
+
+	t.deepEqual(components, [
+		"./test/stubs/bucket-inherit-attrs/index.webc",
+		"./test/stubs/bucket-inherit-attrs/component.webc",
+	]);
+});
+
+test("Bucket is not inherited", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setInputPath("./test/stubs/bucket-noinherit/index.webc");
+	component.defineComponents("./test/stubs/bucket-noinherit/component.webc");
+
+	let { html, css, js, buckets, components } = await component.compile();
+
+	t.is(html, `<component>
+</component>
+<component>
+</component>`);
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+
+	t.deepEqual(buckets, {
+		css: {
+			'my-bucket-override': [`/* inline bucket style */`],
+		},
+		js: {
+			'my-bucket-override': [`/* inline bucket script */`],
+		},
+	});
+
+	t.deepEqual(components, [
+		"./test/stubs/bucket-noinherit/index.webc",
+		"./test/stubs/bucket-noinherit/component.webc",
+	]);
+});

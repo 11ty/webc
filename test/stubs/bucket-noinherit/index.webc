@@ -1,0 +1,2 @@
+<component webc:bucket="my-bucket-override"></component>
+<component webc:bucket="my-bucket-override"></component>

@@ -1,0 +1,4 @@
+<div webc:bucket="inherited-bucket">
+<component></component>
+<component webc:bucket="my-bucket-override"></component>
+</div>

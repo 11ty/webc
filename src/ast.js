@@ -336,6 +336,13 @@ class AstSerializer {
 		return false;
 	}
 
+	isBundledTag(node, tagName) {
+		if(!tagName) {
+			tagName = AstQuery.getTagName(node);
+		}
+		return this.bundlerMode && (tagName === "style" || this.isScriptNode(tagName, node) || this.isLinkStylesheetNode(tagName, node));
+	}
+
 	isTagIgnored(node, component, renderingMode, options) {
 		let tagName = AstQuery.getTagName(node);
 
@@ -352,7 +359,7 @@ class AstSerializer {
 			return true;
 		}
 
-		let isBundledTag = this.bundlerMode && (tagName === "style" || this.isScriptNode(tagName, node) || this.isLinkStylesheetNode(tagName, node));
+		let isBundledTag = this.isBundledTag(node, tagName);
 		if(!isBundledTag && this.isUsingPropBasedContent(node)) {
 			return false;
 		}
@@ -875,12 +882,17 @@ class AstSerializer {
 		}
 	}
 
-	getBucketName(attrs) {
-		if(attrs['webc:bucket']) {
-			return attrs['webc:bucket'];
+	getBucketNamesForBundledNode(currentNodeAttrs, inheritedBuckets) {
+		// first look at the current node for a webc:bucket (they are not added to inheritedBuckets)
+		if(currentNodeAttrs[AstSerializer.attrs.ASSET_BUCKET]) {
+			return [...inheritedBuckets, currentNodeAttrs[AstSerializer.attrs.ASSET_BUCKET]];
 		}
 
-		return "default";
+		// otherwise use the inherited value
+		if(!Array.isArray(inheritedBuckets)) {
+			return ["default"];
+		}
+		return inheritedBuckets;
 	}
 
 	getExternalSource(tagName, node) {
@@ -1015,6 +1027,25 @@ class AstSerializer {
 		}
 	}
 
+	addToInheritedBuckets(newBucketName, node, tagName, options) {
+		if(!newBucketName) {
+			return;
+		}
+
+		// we must allow duplicates here
+		if(!options.inheritedBuckets || !Array.isArray(options.inheritedBuckets)) {
+			options.inheritedBuckets = ["default"];
+		}
+
+		let parentBucket = options.inheritedBuckets[options.inheritedBuckets.length - 1];
+
+		if(parentBucket !== newBucketName) {
+			if(!this.isBundledTag(node, tagName)) {
+				options.inheritedBuckets.push(newBucketName);
+			}
+		}
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 
@@ -1117,9 +1148,14 @@ class AstSerializer {
 			options.componentProps = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 			options.currentTagAttributes = {};
+
+			this.addToInheritedBuckets(options.componentProps[AstSerializer.attrs.ASSET_BUCKET], node, tagName, options);
 		} else {
 			options.currentTagAttributes = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
+
+			this.addToInheritedBuckets(options.currentTagAttributes[AstSerializer.attrs.ASSET_BUCKET], node, tagName, options);
 		}
+
 
 		// @html and @text are aliases for default slot content when used on a host component
 		let componentHasContent = null;
@@ -1194,12 +1230,14 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					// Aggregate to CSS/JS bundles, ignore if webc:keep
-					if(assetKey && !this.shouldKeepNode(node)) {
+					// Leave node-as is or bundle (e.g. CSS/JS), ignore if webc:keep
+					if(!assetKey || this.shouldKeepNode(node)) { // leave as-is
+						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
+						content += childContent;
+					} else {
 						let childContent;
-						if(externalSource) { // fetch file contents, note that child content is ignored here
-							// TODO make sure this isn’t already in the asset aggregation bucket *before* we read.
-
+						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
+							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
 							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
 							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, this.components[options.closestParentComponent], slots, options);
 						} else {
@@ -1207,32 +1245,41 @@ class AstSerializer {
 							childContent = html;
 						}
 
-						// generated via renderStartTag
-						let bucket = this.getBucketName(attrs);
-						if(bucket !== "default") {
-							if(!options.assets.buckets[assetKey]) {
-								options.assets.buckets[assetKey] = new Set();
+						// `attrs` is generated via renderStartTag
+						let buckets = this.getBucketNamesForBundledNode(attrs, options.inheritedBuckets);
+
+						// save to bucket dependency graph
+						let lastBucketName;
+						for(let bucketName of buckets) {
+							if(!options.bucketGraph.hasNode(bucketName)) {
+								options.bucketGraph.addNode(bucketName);
 							}
-							options.assets.buckets[assetKey].add(bucket);
+							if(lastBucketName) {
+								options.bucketGraph.addDependency(bucketName, lastBucketName);
+							}
+							lastBucketName = bucketName;
 						}
 
-						let entryKey = options.closestParentComponent || this.filePath;
-						if(!options.assets[assetKey][entryKey]) {
-							options.assets[assetKey][entryKey] = {};
+						let bucketName = buckets[buckets.length - 1];
+
+						if(!options.assets.buckets[assetKey]) {
+							options.assets.buckets[assetKey] = new Set();
 						}
-						if(!options.assets[assetKey][entryKey][bucket]) {
-							options.assets[assetKey][entryKey][bucket] = new Set();
+						options.assets.buckets[assetKey].add(bucketName);
+
+						let filepath = options.closestParentComponent || this.filePath;
+						if(!options.assets[assetKey][filepath]) {
+							options.assets[assetKey][filepath] = {};
 						}
-						if(!options.assets[assetKey][entryKey][bucket].has(childContent)) {
-							options.assets[assetKey][entryKey][bucket].add( childContent );
+						if(!options.assets[assetKey][filepath][bucketName]) {
+							options.assets[assetKey][filepath][bucketName] = new Set();
+						}
+						if(!options.assets[assetKey][filepath][bucketName].has(childContent)) {
+							options.assets[assetKey][filepath][bucketName].add( childContent );
 
 							// TODO should this entire branch be skipped and assets should always leave as-is when streaming?
 							this.streams.output(assetKey, childContent);
 						}
-
-					} else { // Otherwise, leave as-is
-						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
-						content += childContent;
 					}
 				}
 			}
@@ -1252,11 +1299,14 @@ class AstSerializer {
 			isSlottedContent: false,
 			isMatchingSlotSource: false,
 			assets: {
-				buckets: {},
+				buckets: {
+					// "key": new Set()
+				},
 				css: {},
 				js: {},
 			},
 			components: new DepGraph({ circular: true }),
+			bucketGraph: new DepGraph({ circular: true }),
 			closestParentComponent: this.filePath,
 			closestParentUid: this.getUid(),
 		}, options);
@@ -1277,7 +1327,7 @@ class AstSerializer {
 
 			let compiled = await this.compileNode(node, slots, options);
 			let content = compiled.html;
-			let assets = new AssetManager(options.components);
+			let assets = new AssetManager(options.components, options.bucketGraph);
 
 			let returnObject = {
 				html: content,
@@ -1288,16 +1338,7 @@ class AstSerializer {
 			};
 
 			if(this.bundlerMode) {
-				returnObject.css = assets.getOrderedAssets(options.assets.css);
-				returnObject.js = assets.getOrderedAssets(options.assets.js);
-
-				for(let type in options.assets.buckets) {
-					returnObject.buckets[type] = {};
-
-					for(let bucket of options.assets.buckets[type]) {
-						returnObject.buckets[type][bucket] = assets.getOrderedAssets(options.assets[type], bucket);
-					}
-				}
+				Object.assign(returnObject, assets.getBundledAssets(options.assets));
 			}
 
 			return returnObject;

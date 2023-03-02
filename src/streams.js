@@ -21,7 +21,6 @@ class Streams {
 
 	output(name, str) {
 		if(this.started && this.streams[name]) {
-			// console.log( "Streaming to", name, { str } );
 			this.streams[name].push(str);
 		}
 	}

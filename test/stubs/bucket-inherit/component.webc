@@ -1,0 +1,5 @@
+<p>Hi</p>
+<style webc:bucket="default">/* inline override bucket style */</style>
+<script webc:bucket="default">/* inline override bucket script */</script>
+<child></child>
+<child webc:bucket="override"></child>
