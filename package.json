@@ -41,6 +41,7 @@
 		"dependency-graph": "^0.11.0",
 		"entities": "^4.4.0",
 		"fast-glob": "^3.2.12",
+		"is-glob": "^4.0.3",
 		"nanoid": "^4.0.1",
 		"node-retrieve-globals": "^2.0.4",
 		"parse5": "^7.1.2"

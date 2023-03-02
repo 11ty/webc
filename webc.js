@@ -1,11 +1,13 @@
 import fs from "fs";
 import fastglob from "fast-glob";
+import isGlob from "is-glob";
 import path from "path";
 
 import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
 import { ModuleScript } from "./src/moduleScript.cjs";
 import { AstCache } from "./src/astCache.js";
+import { ModuleResolution } from "./src/moduleResolution.js";
 
 const localAstCache = new AstCache();
 
@@ -145,20 +147,45 @@ class WebC {
 		}
 	}
 
-	static getComponentsMap(globOrObject, ignores = []) {
-		if(typeof globOrObject === "string" || Array.isArray(globOrObject)) {
-			let files = globOrObject;
+	static findGlob(glob, ignores = []) {
+		return fastglob.sync(glob, {
+			ignore: ignores,
+			caseSensitiveMatch: false,
+			dot: false,
+		});
+	}
 
-			if(typeof globOrObject === "string") {
-				files = fastglob.sync(globOrObject, {
-					ignore: ignores,
-					caseSensitiveMatch: false,
-					dot: false,
-				});
+	static getComponentsMap(globOrObject, ignores) {
+		let rawFiles = globOrObject;
+
+		// Passing in a single string is assumed to be a glob
+		if(typeof rawFiles === "string") {
+			rawFiles = WebC.findGlob(globOrObject, ignores);
+		}
+
+		if(Array.isArray(rawFiles)) {
+			let moduleResolver = new ModuleResolution();
+			let resolvedFiles = new Set();
+			for(let file of rawFiles) {
+				// Resolve `npm:` aliases
+				let hasValidAlias = moduleResolver.hasValidAlias(file);
+				if(hasValidAlias) {
+					file = moduleResolver.resolveAliases(file);
+				}
+
+				// Multiple glob searches
+				if(isGlob(file)) {
+					let globResults = WebC.findGlob(file, ignores);
+					for(let globFile of globResults) {
+						resolvedFiles.add(globFile);
+					}
+				} else {
+					resolvedFiles.add(file);
+				}
 			}
 
 			let obj = {};
-			for(let file of files) {
+			for(let file of resolvedFiles) {
 				let {name} = path.parse(file);
 				if(obj[name]) {
 					throw new Error(`Global component name collision on "${name}" between: ${obj[name]} and ${file}`)

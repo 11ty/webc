@@ -33,11 +33,16 @@ class ModuleResolution {
 	}
 
 	hasValidAlias(fullPath) {
-		let alias = this.getAlias(fullPath);
-		return alias && this.aliases[alias];
+		let starts = Object.keys(this.aliases);
+		for(let start of starts) {
+			if(fullPath.startsWith(`${start}:`)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
-	getAlias(fullPath) {
+	static getAlias(fullPath) {
 		let match = fullPath.match(ModuleResolution.REGEX.startsWithAlias);
 		if(match && match[1]) {
 			return match[1];
@@ -46,7 +51,7 @@ class ModuleResolution {
 	}
 
 	resolveAliases(fullPath) {
-		let alias = this.getAlias(fullPath);
+		let alias = ModuleResolution.getAlias(fullPath);
 
 		// unaliased, relative from component path
 		if(!alias) {
@@ -62,7 +67,7 @@ class ModuleResolution {
 
 	// npm:@11ty/eleventy is supported when tag name is supplied by WebC (returns `node_modules/@11ty/eleventy/tagName.webc`)
 	// npm:@11ty/eleventy/folderName deep folder name is not supported
-	// npm:@11ty/eleventy/module.webc direct reference is not supported
+	// npm:@11ty/eleventy/module.webc direct reference is supported (with deep folder names too)
 	resolve(fullPath) {
 		// resolve aliases first
 		let resolvedPath = this.resolveAliases(fullPath);
