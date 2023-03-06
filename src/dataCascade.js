@@ -11,6 +11,7 @@ class DataCascade {
 		this.helpers[name] = callback;
 	}
 
+	// the renderAttributes function is one of these
 	setWebCGlobals(globals) {
 		this.webcGlobals = globals;
 	}

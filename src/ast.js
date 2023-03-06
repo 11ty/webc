@@ -272,7 +272,7 @@ class AstSerializer {
 		}
 	}
 
-	ignoreComponentParentTag(component) {
+	ignoreComponentParentTag(component, hasDeclarativeShadowDom) {
 		// Has <* webc:root> (has to be a root child, not script/style)
 		let tops = AstQuery.getTopLevelNodes(component);
 		for(let child of tops) {
@@ -306,7 +306,8 @@ class AstSerializer {
 		}
 
 		// Use parent tag if has declarative shadow dom node (can be anywhere in the component body)
-		if(AstQuery.hasDeclarativeShadowDomChild(component)) {
+		// We already did the AstQuery.hasDeclarativeShadowDomChild search upstream.
+		if(hasDeclarativeShadowDom) {
 			return false;
 		}
 
@@ -438,6 +439,7 @@ class AstSerializer {
 		let scopedStyleHash = this.getScopedStyleHash(ast, filePath);
 		// only executes once per component
 		let setupScript = await this.getSetupScriptValue(ast, filePath);
+		let hasDeclarativeShadowDom = AstQuery.hasDeclarativeShadowDomChild(ast);
 
 		this.components[filePath] = {
 			filePath,
@@ -451,7 +453,8 @@ class AstSerializer {
 			},
 			
 			mode,
-			ignoreRootTag: this.ignoreComponentParentTag(ast),
+			hasDeclarativeShadowDom,
+			ignoreRootTag: this.ignoreComponentParentTag(ast, hasDeclarativeShadowDom),
 			scopedStyleHash,
 			rootAttributes: this.getRootAttributes(ast, scopedStyleHash),
 			slotTargets: this.getSlotTargets(ast),
