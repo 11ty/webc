@@ -44,17 +44,15 @@ class AssetManager {
 						codeCheck[bucketCodeEntry] = bucketName;
 						continue;
 					}
-					
-					// let deps = this.bucketsGraph.dependenciesOf(bucketName);
 					let deps = this.bucketsGraph.dependenciesOf(bucketName);
 					let newBucketName = deps[deps.length - 1];
-					// this.bucketsGraph.dependantsOf(bucketName), this.bucketsGraph.dependenciesOf(bucketName)
+
+					// delete from previous bucket even if newBucketName is not defined
+					// e.g. already in `async` and `default`, delete from `async` keep in `default`
+					let previousBucketName = codeCheck[bucketCodeEntry];
+					buckets[type][previousBucketName].delete(bucketCodeEntry);
 
 					if(newBucketName) {
-						// delete from previous bucket
-						let previousBucketName = codeCheck[bucketCodeEntry];
-						buckets[type][previousBucketName].delete(bucketCodeEntry);
-
 						// delete current bucket duplicate
 						buckets[type][bucketName].delete(bucketCodeEntry);
 
