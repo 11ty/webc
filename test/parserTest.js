@@ -1360,8 +1360,22 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 		"my-sibling": "./test/stubs/components/child-css-js-d.webc",
 	});
 
-	t.deepEqual(js, ["/* component-a js */", "/* component-b js */", "/* component-c js */", "/* component-d js */", "/* component-e js */", "/* component-f js */"]);
-	t.deepEqual(css, ["/* component-a css */", "/* component-b css */", "/* component-c css */", "/* component-d css */", "/* component-e css */", "/* component-f css */"]);
+	t.deepEqual(js, [
+		"/* component-f js */",
+		"/* component-e js */",
+		"/* component-d js */",
+		"/* component-c js */",
+		"/* component-b js */",
+		"/* component-a js */",
+	]);
+	t.deepEqual(css, [
+		"/* component-f css */",
+		"/* component-e css */",
+		"/* component-d css */",
+		"/* component-c css */",
+		"/* component-b css */",
+		"/* component-a css */",
+	]);
 	t.deepEqual(components, [
 		"./test/stubs/components-order.webc",
 		"./test/stubs/components/child-css-js-a.webc",

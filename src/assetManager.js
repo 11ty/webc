@@ -11,6 +11,21 @@ class AssetManager {
 		return this._ordered;
 	}
 
+	get orderedComponentListForAssets() {
+		let foundIslands = false;
+		let deps = this.graph.overallOrder().filter(entry => {
+			if(!foundIslands && entry.endsWith("./node_modules/@11ty/is-land/is-land.webc")) {
+				foundIslands = entry;
+				return false;
+			}
+			return true;
+		});
+		if(foundIslands) {
+			deps.unshift(foundIslands);
+		}
+		return deps;
+	}
+
 	getBundledAssets(assets) {
 		let codeCheck = {};
 		let buckets = {};
@@ -80,7 +95,9 @@ class AssetManager {
 
 	getOrderedAssetsSet(assetObject, bucket = "default") {
 		let assets = new Set();
-		for(let component of this.orderedComponentList) {
+		let components = this.orderedComponentListForAssets;
+
+		for(let component of components) {
 			if(assetObject[component] && assetObject[component][bucket]) {
 				for(let entry of assetObject[component][bucket]) {
 					assets.add(entry);
