@@ -1,6 +1,6 @@
 {
 	"name": "@11ty/webc",
-	"version": "0.9.1",
+	"version": "0.9.2",
 	"description": "Single File Web Components",
 	"main": "webc.js",
 	"type": "module",
