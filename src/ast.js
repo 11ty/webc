@@ -291,7 +291,7 @@ class AstSerializer {
 		// use parent tag if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
 		for(let child of tops) {
 			let tagName = AstQuery.getTagName(child);
-			if(tagName !== "script" && tagName !== "style" || AstQuery.hasAttribute(child, AstSerializer.attrs.SETUP)) {
+			if(tagName !== "script" && tagName !== "style" && !this.isLinkStylesheetNode(tagName, child) || AstQuery.hasAttribute(child, AstSerializer.attrs.SETUP)) {
 				continue;
 			}
 
