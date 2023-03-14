@@ -7,6 +7,7 @@ import { ModuleScript } from "./moduleScript.cjs";
 
 class ComponentManager {
 	constructor() {
+		this.parsingPromises = {};
 		this.components = {};
 		this.hashOverrides = {};
 	}
@@ -141,6 +142,16 @@ class ComponentManager {
 			return;
 		}
 
+		// parsing in progress
+		if(this.parsingPromises[filePath]) {
+			return this.parsingPromises[filePath];
+		}
+
+		let parsingResolve;
+		this.parsingPromises[filePath] = new Promise((resolve) => {
+			parsingResolve = resolve;
+		});
+
 		let isTopLevelComponent = !!ast; // ast is passed in for Top Level components
 
 		// if ast is provided, this is the top level component
@@ -179,6 +190,8 @@ class ComponentManager {
 			slotTargets: AstQuery.getSlotTargets(ast),
 			setupScript,
 		};
+
+		parsingResolve();
 	}
 }
 

@@ -13,9 +13,9 @@ import { Streams } from "./streams.js";
 import { escapeText } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
-import { FileSystemCache } from "./fsCache.js"
-import { DataCascade } from "./dataCascade.js"
-import { ComponentManager } from "./componentManager.js"
+import { FileSystemCache } from "./fsCache.js";
+import { DataCascade } from "./dataCascade.js";
+import { ComponentManager } from "./componentManager.js";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -94,8 +94,19 @@ class AstSerializer {
 				return AttributeSerializer.getString(attributesObject);
 			}
 		});
+	}
 
-		this.componentManager = new ComponentManager();
+	get componentManager() {
+		if(!this._componentManager) {
+			this._componentManager = new ComponentManager();
+		}
+		return this._componentManager;
+	}
+
+	setComponentManager(manager) {
+		if(manager) {
+			this._componentManager = manager;
+		}
 	}
 
 	set filePath(value) {
