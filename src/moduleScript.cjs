@@ -2,6 +2,8 @@ const { Module } = require("module");
 const vm = require("vm");
 const { RetrieveGlobals } = require("node-retrieve-globals");
 
+let scriptCache = new Map();
+
 class ModuleScript {
 
 	static CJS_MODULE_EXPORTS = "module.exports = ";
@@ -44,20 +46,26 @@ class ModuleScript {
 		});
 	}
 
-	// The downstream code being evaluated here may return a promise!
 	static async evaluateScript(content, data, errorString) {
 		try {
 			let context = ModuleScript.getProxiedContext(data);
 
 			// Performance improvement: we may be able to cache these at some point
+			// careful here: re-using contexts generated here (e.g. via `evaluateAttributesArray`) was much slower!
 			vm.createContext(context, {
 				codeGeneration: {
 					strings: false
 				}
 			});
 
-			let returnValue = vm.runInContext(content, context);
+			let script = scriptCache.get(content);
+			if(!script) {
+				script = new vm.Script(content);
+				scriptCache.set(content, script);
+			}
 
+			// The downstream code being evaluated here may return a promise!
+			let returnValue = script.runInContext(context);
 			return { returns: await returnValue, context };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
