@@ -2,6 +2,8 @@ const { Module } = require("module");
 const vm = require("vm");
 const { RetrieveGlobals } = require("node-retrieve-globals");
 
+const { ProxyData } = require("./proxyData.cjs");
+
 let scriptCache = new Map();
 
 class ModuleScript {
@@ -10,9 +12,9 @@ class ModuleScript {
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context = {}) {
-		if(context && !context.require) {
-			context.require = function(target) {
+	static getGlobals() {
+		let context = {
+			require: function(target) {
 				const path = require("path");
 				// change relative paths to be relative to the root project dir
 				// module paths are always / and not \\ on Windows, see https://github.com/nodejs/node/issues/6049#issuecomment-205778576
@@ -20,20 +22,10 @@ class ModuleScript {
 					target = path.join(process.cwd(), target);
 				}
 				return require(target)
-			};
-		}
-
-		let proxiedContext = new Proxy(context, {
-			get(target, propertyName) {
-				if(Reflect.has(target, propertyName)) {
-					return Reflect.get(target, propertyName);
-				}
-
-				return global[propertyName] || undefined;
 			}
-		});
+		};
 
-		return proxiedContext;
+		return context;
 	}
 
 	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
@@ -48,15 +40,19 @@ class ModuleScript {
 
 	static async evaluateScript(content, data, errorString) {
 		try {
-			let context = ModuleScript.getProxiedContext(data);
+			let proxy = new ProxyData();
+			proxy.addGlobal(ModuleScript.getGlobals());
+			proxy.addGlobal(global);
+
+			let context = proxy.getData(data);
 
 			// Performance improvement: we may be able to cache these at some point
 			// careful here: re-using contexts generated here (e.g. via `evaluateAttributesArray`) was much slower!
-			vm.createContext(context, {
-				codeGeneration: {
-					strings: false
-				}
-			});
+			// vm.createContext(context, {
+			// 	codeGeneration: {
+			// 		strings: false
+			// 	}
+			// });
 
 			let script = scriptCache.get(content);
 			if(!script) {
@@ -65,7 +61,12 @@ class ModuleScript {
 			}
 
 			// The downstream code being evaluated here may return a promise!
-			let returnValue = script.runInContext(context);
+			// let returnValue = script.runInContext(context);
+			let returnValue = script.runInNewContext(context, {
+				contextCodeGeneration: {
+					strings: false
+				}
+			});
 			return { returns: await returnValue, context };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
