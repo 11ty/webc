@@ -458,16 +458,14 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let context = {
+		let context = this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, {
 			// Ideally these would be under `webc.*`
 			filePath: this.filePath,
 			slots: {
 				text: slotsText,
 			},
 			helpers: this.dataCascade.getHelpers(),
-
-			...this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript),
-		};
+		});
 
 		for(let type of transformTypes) {
 			content = await this.transforms[type].call({
@@ -721,7 +719,7 @@ class AstSerializer {
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
-		let data = this.dataCascade.getData(options.componentProps, undefined, parentComponent?.setupScript);
+		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript);
 
 		let { returns } = await ModuleScript.evaluateScript(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
 		return returns;
