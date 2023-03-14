@@ -173,21 +173,24 @@ class AttributeSerializer {
 	// returns: same array with additional properties added
 	static async evaluateAttributesArray(attributesArray, data) {
 		let evaluated = [];
-		// TODO promise.all
 		for(let attr of attributesArray) {
-			let entry = {};
-			let {name, rawName, value, rawValue, evaluation, privacy} = await AttributeSerializer.evaluateAttribute(attr.name, attr.value, data);
+			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data).then((result) => {
+				let { name, rawName, value, rawValue, evaluation, privacy } = result;
+				let entry = {};
 
-			entry.rawName = rawName;
-			entry.rawValue = rawValue;
+				entry.rawName = rawName;
+				entry.rawValue = rawValue;
+	
+				entry.name = name;
+				entry.value = value;
+				entry.privacy = privacy;
+				entry.evaluation = evaluation;
 
-			entry.name = name;
-			entry.value = value;
-			entry.privacy = privacy;
-			entry.evaluation = evaluation;
-			evaluated.push(entry);
+				return entry;
+			}));
 		}
-		return evaluated;
+
+		return Promise.all(evaluated);
 	}
 
 	static setKeyPrivacy(obj, name, privacy) {
