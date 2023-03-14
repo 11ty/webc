@@ -9,14 +9,6 @@ class Path {
 		}
 		return filePath;
 	}
-
-	static getComponentNameFromFilePath(filePath) {
-		if(typeof filePath === "string") {
-			let p = path.parse(filePath);
-			return p.name;
-		}
-		return filePath;
-	}
 }
 
 export { Path };
