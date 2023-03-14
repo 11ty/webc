@@ -137,6 +137,19 @@ class AstSerializer {
 		SCOPED: "css:scoped",
 	};
 
+	getComponentCache() {
+		return this.components;
+	}
+
+	restorePreparsedComponents(components = {}) {
+		for(let filePath in components) {
+			let name = Path.getComponentNameFromFilePath(filePath);
+			this.componentMapNameToFilePath[name] = filePath;
+		}
+
+		Object.assign(this.components, components);
+	}
+
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
 	}
@@ -177,10 +190,6 @@ class AstSerializer {
 
 	setData(data = {}) {
 		this.dataCascade.setGlobalData(data);
-	}
-
-	restorePreparsedComponents(components) {
-		Object.assign(this.components, components);
 	}
 
 	setUidFunction(fn) {
@@ -486,7 +495,7 @@ class AstSerializer {
 			promises.push(this.preparseComponentByFilePath(this.componentMapNameToFilePath[name]));
 		}
 
-		return Promise.all(promises);
+		await Promise.all(promises);
 	}
 
 	// This *needs* to be depth first instead of breadth first for **streaming**

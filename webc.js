@@ -15,6 +15,7 @@ class WebC {
 	constructor(options = {}) {
 		let { file, input } = options;
 
+		this.componentCache = {};
 		this.customTransforms = {};
 		this.customHelpers = {};
 		this.globalComponents = {};
@@ -207,11 +208,30 @@ class WebC {
 		this.uidFn = fn;
 	}
 
+	static async preparseComponents(components) {
+		let ast = new AstSerializer();
+		await ast.setComponentsByFilePath(components);
+
+		return ast.getComponentCache();
+	}
+
+	static async preparseContent(inputPath, content) {
+		let node = await WebC.getASTFromString(content);
+		let ast = new AstSerializer();
+		await ast.preparseComponentByFilePath(inputPath, node, content);
+		return ast.getComponentCache();
+	}
+
+	setPreparsedComponents(components = {}) {
+		Object.assign(this.componentCache, components);
+	}
+
 	async setup(options = {}) {
 		let { content, mode } = this.getContent();
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
+		ast.restorePreparsedComponents(this.componentCache);
 		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setContent(content);
