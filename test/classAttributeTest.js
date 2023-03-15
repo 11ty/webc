@@ -27,15 +27,3 @@ test("Real class in dynamic attributes #45", async (t) => {
 	});
 	t.is(html, `<div class="static value"></div>`);
 });
-
-// No longer relevant
-test.skip("Multiple statements in a dynamic attribute throws an error", async (t) => {
-	let component = new WebC();
-	component.setContent(`<div :class="'first'; 'inline'"></div>`);
-	component.setInputPath("./test/stubs/component-script-html.webc");
-
-	await t.throwsAsync(component.compile(), {
-		message: `Evaluating a dynamic attribute failed: \`:class="'first'; 'inline'"\`.
-Original error message: Unexpected token ';'`
-	});
-});
