@@ -74,8 +74,7 @@ test("throwing an Error works as expected, issue #99 #100", async t => {
 
 	await t.throwsAsync(async () => component.compile(), {
 		message: `Check the webc:type="js" element in _webc_raw_input_string.
-Original error message: Custom error message from attempted script:
-throw new Error('Custom error message');`
+Original error message: Custom error message`
 	});
 });
 

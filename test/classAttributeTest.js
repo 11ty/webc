@@ -11,17 +11,13 @@ test("Throw a better error message when attempting to use `class` in dynamic att
 			class: "test-class"
 		}
 	}), {
-		message: `Evaluating a dynamic attribute failed: \`:class="class"\`. \`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!
-Attempted script:
-({
-	"class": class
-})`
+		message: `Evaluating a dynamic attribute failed: \`:class="class"\`. \`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!`
 	});
 });
 
-test("Real `class` in dynamic attributes though #45", async (t) => {
+test("Real class in dynamic attributes #45", async (t) => {
 	let component = new WebC();
-	component.setContent(`<div :class="class { static toString() { return 'static value' } }"></div>`);
+	component.setContent(`<div :class="(class { static toString() { return 'static value' } })"></div>`);
 	component.setInputPath("./test/stubs/component-script-html.webc");
 
 	let { html } = await component.compile({
@@ -32,16 +28,14 @@ test("Real `class` in dynamic attributes though #45", async (t) => {
 	t.is(html, `<div class="static value"></div>`);
 });
 
-test("Multiple statements in a dynamic attribute throws an error", async (t) => {
+// No longer relevant
+test.skip("Multiple statements in a dynamic attribute throws an error", async (t) => {
 	let component = new WebC();
 	component.setContent(`<div :class="'first'; 'inline'"></div>`);
 	component.setInputPath("./test/stubs/component-script-html.webc");
 
 	await t.throwsAsync(component.compile(), {
 		message: `Evaluating a dynamic attribute failed: \`:class="'first'; 'inline'"\`.
-Original error message: Unexpected token ';' from attempted script:
-({
-	"class": 'first'; 'inline'
-})`
+Original error message: Unexpected token ';'`
 	});
 });

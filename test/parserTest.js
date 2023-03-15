@@ -1846,10 +1846,7 @@ test("Try to use a missing helper function in a dynamic attribute (without this)
 
 	await t.throwsAsync(component.compile(), {
 		message: `Evaluating a dynamic attribute failed: \`:key="helper()"\`.
-Original error message: helper is not a function from attempted script:
-({
-	"key": helper()
-})`
+Original error message: helper is not a function`
 	});
 });
 

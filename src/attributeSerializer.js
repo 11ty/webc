@@ -120,7 +120,7 @@ class AttributeSerializer {
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
 		if(evaluation === "script") {
-			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
+			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Evaluating a dynamic attribute failed: \`${rawName}="${value}"\`.`);
 			evaluatedValue = returns;
 		}
 
@@ -179,7 +179,6 @@ class AttributeSerializer {
 			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data).then((result) => {
 				let { name, rawName, value, rawValue, evaluation, privacy } = result;
 				let entry = {};
-
 				entry.rawName = rawName;
 				entry.rawValue = rawValue;
 	
@@ -187,11 +186,9 @@ class AttributeSerializer {
 				entry.value = value;
 				entry.privacy = privacy;
 				entry.evaluation = evaluation;
-
 				return entry;
 			}));
 		}
-
 		return Promise.all(evaluated);
 	}
 

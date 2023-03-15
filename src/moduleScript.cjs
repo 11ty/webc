@@ -75,14 +75,11 @@ class ModuleScript {
 			return { returns: await returnValue, context };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
-			if(e.message === "Unexpected token '}'" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {
-				throw new Error(`${errorString ? `${errorString} ` : ""}\`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!
-Attempted script:
-${content}`);
+			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {
+				throw new Error(`${errorString ? `${errorString} ` : ""}\`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!`);
 			}
 			throw new Error(`${errorString}
-Original error message: ${e.message} from attempted script:
-${content}`);
+Original error message: ${e.message}`);
 		}
 	}
 
