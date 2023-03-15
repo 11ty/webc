@@ -2,15 +2,20 @@ const { Module } = require("module");
 const vm = require("vm");
 const { RetrieveGlobals } = require("node-retrieve-globals");
 
+const { ProxyData } = require("./proxyData.cjs");
+const { FasterVmContext } = require("./fasterVmContext.cjs");
+
+let fasterVmContextGlobal = new FasterVmContext();
+
 class ModuleScript {
 
 	static CJS_MODULE_EXPORTS = "module.exports = ";
 	static ESM_EXPORT_DEFAULT = "export default ";
 	static FUNCTION_REGEX = /^(?:async )?function\s?\S*\(/;
 
-	static getProxiedContext(context = {}) {
-		if(context && !context.require) {
-			context.require = function(target) {
+	static getGlobals() {
+		let context = {
+			require: function(target) {
 				const path = require("path");
 				// change relative paths to be relative to the root project dir
 				// module paths are always / and not \\ on Windows, see https://github.com/nodejs/node/issues/6049#issuecomment-205778576
@@ -18,55 +23,53 @@ class ModuleScript {
 					target = path.join(process.cwd(), target);
 				}
 				return require(target)
-			};
-		}
-
-		let proxiedContext = new Proxy(context, {
-			get(target, propertyName) {
-				if(Reflect.has(target, propertyName)) {
-					return Reflect.get(target, propertyName);
-				}
-
-				return global[propertyName] || undefined;
 			}
-		});
+		};
 
-		return proxiedContext;
+		return context;
 	}
 
 	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
-		let vm = new RetrieveGlobals(code, filePath);
+		let nodeGlobals = new RetrieveGlobals(code, filePath);
 
 		// returns promise
-		return vm.getGlobalContext(data, {
+		return nodeGlobals.getGlobalContext(data, {
 			reuseGlobal: true, // re-use Node.js `global`, important if you want `console.log` to log to your console as expected.
 			dynamicImport: true, // allows `import()`
 		});
 	}
 
-	// The downstream code being evaluated here may return a promise!
-	static async evaluateScript(content, data, errorString) {
+	static async evaluateScriptInline(content, data, errorString, scriptContextKey) {
+		// no difference yet
+		return ModuleScript.evaluateScript(content, data, errorString, scriptContextKey);
+	}
+
+	static async evaluateScript(content, data, errorString, scriptContextKey) {
 		try {
-			let context = ModuleScript.getProxiedContext(data);
+			let proxy = new ProxyData();
+			proxy.addGlobal(ModuleScript.getGlobals());
+			proxy.addGlobal(global);
 
-			// Performance improvement: we may be able to cache these at some point
-			vm.createContext(context, {
-				codeGeneration: {
-					strings: false
-				}
-			});
+			let contextData = proxy.getData(data);
 
-			let returnValue = vm.runInContext(content, context);
+			let script  = new vm.Script(content);
 
-			return { returns: await returnValue, context };
+			// The downstream code being evaluated here may return a promise!
+			let returnValue;
+			if(scriptContextKey) {
+				returnValue = fasterVmContextGlobal.executeScriptWithData(script, contextData, scriptContextKey);
+			} else {
+				returnValue = fasterVmContextGlobal.executeScriptExpensivelyInNewContext(script, contextData);
+			}
+
+			return { returns: await returnValue, context: contextData };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {
-				throw new Error(`\`class\` is a reserved word in JavaScript.${errorString ? ` ${errorString}` : ""} Change \`class\` to \`this.class\` instead!
-Original error message: ${e.message}`);
+				throw new Error(`${errorString ? `${errorString} ` : ""}\`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!`);
 			}
-
-			throw e;
+			throw new Error(`${errorString}
+Original error message: ${e.message}`);
 		}
 	}
 

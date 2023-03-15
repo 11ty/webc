@@ -20,9 +20,10 @@ class DataCascade {
 		return this.helpers;
 	}
 
-	getData(attributes, hostAttributes, setupScript) {
+	getData(attributes, ...additionalObjects) {
 		// TODO improve perf by re-using a merged object of the global stuff
-		return Object.assign({}, this.globalData, this.helpers, setupScript, hostAttributes, attributes, {
+		let objs = additionalObjects.reverse();
+		return Object.assign({}, this.globalData, this.helpers, ...objs, attributes, {
 			webc: {
 				attributes,
 				...this.webcGlobals,

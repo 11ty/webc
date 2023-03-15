@@ -38,6 +38,36 @@ class AstQuery {
 		return AstQuery.voidElements[tagName] || false;
 	}
 
+	/* Specific queries */
+	static getSlotTargets(node) {
+		let targetNodes = AstQuery.findAllElements(node, "slot");
+		let map = {};
+		for(let target of targetNodes) {
+			let name = AstQuery.getAttributeValue(target, "name") || "default";
+			map[name] = true;
+		}
+		return map;
+	}
+
+	static isLinkStylesheetNode(tagName, node) {
+		return tagName === "link" && AstQuery.getAttributeValue(node, "rel") === "stylesheet";
+	}
+
+	// filter out webc:setup
+	static isScriptNode(tagName, node) {
+		return tagName === "script" && !AstQuery.hasAttribute(node, AstSerializer.attrs.SETUP);
+	}
+
+	static getExternalSource(tagName, node) {
+		if(AstQuery.isLinkStylesheetNode(tagName, node)) {
+			return AstQuery.getAttributeValue(node, "href");
+		}
+
+		if(AstQuery.isScriptNode(tagName, node)) {
+			return AstQuery.getAttributeValue(node, "src");
+		}
+	}
+
 	/* Attributes */
 	static hasAttribute(node, attributeName) {
 		return (node.attrs || []).find(({name}) => name === attributeName) !== undefined;
@@ -61,6 +91,40 @@ class AstQuery {
 		}
 
 		return nameAttr?.value;
+	}
+
+	static getRootNodeMode(node) {
+		// override is when child component definitions override the host component tag
+		let rootAttributeValue = AstQuery.getAttributeValue(node, AstSerializer.attrs.ROOT);
+		if(rootAttributeValue) {
+			return rootAttributeValue;
+		}
+		// merge is when webc:root attributes flow up to the host component (and the child component tag is ignored)
+		if(rootAttributeValue === "") {
+			return "merge";
+		}
+		return false;
+	}
+
+	static getRootAttributes(component, scopedStyleHash) {
+		let attrs = [];
+
+		// webc:root Attributes
+		let tops = AstQuery.getTopLevelNodes(component, [], [AstSerializer.attrs.ROOT]);
+		for(let root of tops) {
+			for(let attr of root.attrs) {
+				if(attr.name !== AstSerializer.attrs.ROOT) {
+					attrs.push({ name: attr.name, value: attr.value });
+				}
+			}
+		}
+
+		if(scopedStyleHash) {
+			// it’s okay if there are other `class` attributes, we merge them later
+			attrs.push({ name: "class", value: scopedStyleHash });
+		}
+
+		return attrs;
 	}
 
 	/* Declarative Shadow DOM */

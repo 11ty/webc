@@ -32,7 +32,10 @@ class AttributeSerializer {
 				continue;
 			}
 
-			for(let splitVal of value.split(merged[name].splitDelimiter)) {
+			if(typeof value !== "string") {
+				value = value.toString();
+			}
+			for(let splitVal of value.toString().split(merged[name].splitDelimiter)) {
 				splitVal = splitVal.trim();
 				if(splitVal) {
 					merged[name].value.push(splitVal);
@@ -113,24 +116,6 @@ class AttributeSerializer {
 		};
 	}
 
-	static async evaluateAttribute(rawName, value, data) {
-		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
-		let evaluatedValue = value;
-		if(evaluation === "script") {
-			let { returns } = await ModuleScript.evaluateScript(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
-			evaluatedValue = returns;
-		}
-
-		return {
-			name,
-			rawName,
-			value: evaluatedValue,
-			rawValue: value,
-			evaluation,
-			privacy,
-		};
-	}
-
 	// Remove props prefixes, swaps dash to camelcase
 	// Keeps private entries (used in data)
 	static async normalizeAttributesForData(attrs) {
@@ -168,26 +153,43 @@ class AttributeSerializer {
 		return newData;
 	}
 
+	static async evaluateAttribute(rawName, value, data, scriptContextKey) {
+		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
+		let evaluatedValue = value;
+		if(evaluation === "script") {
+			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Evaluating a dynamic attribute failed: \`${rawName}="${value}"\`.`, scriptContextKey);
+			evaluatedValue = returns;
+		}
+
+		return {
+			name,
+			rawName,
+			value: evaluatedValue,
+			rawValue: value,
+			evaluation,
+			privacy,
+		};
+	}
 
 	// attributesArray: parse5 format, Array of [{name, value}]
 	// returns: same array with additional properties added
-	static async evaluateAttributesArray(attributesArray, data) {
+	static async evaluateAttributesArray(attributesArray, data, scriptContextKey) {
 		let evaluated = [];
-		// TODO promise.all
 		for(let attr of attributesArray) {
-			let entry = {};
-			let {name, rawName, value, rawValue, evaluation, privacy} = await AttributeSerializer.evaluateAttribute(attr.name, attr.value, data);
-
-			entry.rawName = rawName;
-			entry.rawValue = rawValue;
-
-			entry.name = name;
-			entry.value = value;
-			entry.privacy = privacy;
-			entry.evaluation = evaluation;
-			evaluated.push(entry);
+			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data, scriptContextKey).then((result) => {
+				let { name, rawName, value, rawValue, evaluation, privacy } = result;
+				let entry = {};
+				entry.rawName = rawName;
+				entry.rawValue = rawValue;
+	
+				entry.name = name;
+				entry.value = value;
+				entry.privacy = privacy;
+				entry.evaluation = evaluation;
+				return entry;
+			}));
 		}
-		return evaluated;
+		return Promise.all(evaluated);
 	}
 
 	static setKeyPrivacy(obj, name, privacy) {

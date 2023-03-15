@@ -1845,7 +1845,8 @@ test("Try to use a missing helper function in a dynamic attribute (without this)
 	component.setContent(`<template :key="helper()"></template>`);
 
 	await t.throwsAsync(component.compile(), {
-		message: "helper is not a function"
+		message: `Evaluating a dynamic attribute failed: \`:key="helper()"\`.
+Original error message: helper is not a function`
 	});
 });
 
@@ -2147,34 +2148,6 @@ test("Transform result will resolves components (reprocessing, issue #33)", asyn
 	t.is(html, `<text-link><a href="/project">Link text</a>
 </text-link>`);
 	t.deepEqual(css, [`/* CSS */`]);
-});
-
-test("Throw a better error message when attempting to use `class` in dynamic attributes without this #45", async (t) => {
-	let component = new WebC();
-	component.setContent(`<div :class="class"></div>`);
-	component.setInputPath("./test/stubs/component-script-html.webc");
-
-	await t.throwsAsync(component.compile({
-		data: {
-			class: "test-class"
-		}
-	}), {
-		message: `\`class\` is a reserved word in JavaScript. Check the dynamic attribute: \`:class="class"\`. Change \`class\` to \`this.class\` instead!
-Original error message: Unexpected end of input`
-	});
-});
-
-test("You can use real `class` in dynamic attributes though #45", async (t) => {
-	let component = new WebC();
-	component.setContent(`<div :class="let b = class {}; 'inline'"></div>`);
-	component.setInputPath("./test/stubs/component-script-html.webc");
-
-	let { html } = await component.compile({
-		data: {
-			class: "test-class"
-		}
-	});
-	t.is(html, `<div class="inline"></div>`);
 });
 
 test("Template should be unparsed raw content, issue #48", async t => {

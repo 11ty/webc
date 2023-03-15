@@ -8,6 +8,7 @@ import { AstSerializer } from "./src/ast.js";
 import { ModuleScript } from "./src/moduleScript.cjs";
 import { AstCache } from "./src/astCache.js";
 import { ModuleResolution } from "./src/moduleResolution.js";
+import { ComponentManager } from "./src/componentManager.js";
 
 const localAstCache = new AstCache();
 
@@ -42,6 +43,10 @@ class WebC {
 		if(filePath) {
 			this.astOptions.filePath = filePath;
 		}
+	}
+
+	setGlobalComponentManager(manager) {
+		this.globalComponentManager = manager;
 	}
 
 	getRenderingMode(content) {
@@ -212,6 +217,7 @@ class WebC {
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
+		ast.setComponentManager(this.globalComponentManager);
 		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setContent(content);
@@ -274,4 +280,4 @@ class WebC {
 	}
 }
 
-export { WebC, ModuleScript };
+export { WebC, ModuleScript, ComponentManager };
