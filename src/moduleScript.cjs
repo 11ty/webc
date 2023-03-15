@@ -3,8 +3,9 @@ const vm = require("vm");
 const { RetrieveGlobals } = require("node-retrieve-globals");
 
 const { ProxyData } = require("./proxyData.cjs");
+const { FasterVmContext } = require("./fasterVmContext.cjs");
 
-let scriptCache = new Map();
+let fasterVmContextGlobal = new FasterVmContext();
 
 class ModuleScript {
 
@@ -29,50 +30,39 @@ class ModuleScript {
 	}
 
 	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
-		let vm = new RetrieveGlobals(code, filePath);
+		let nodeGlobals = new RetrieveGlobals(code, filePath);
 
 		// returns promise
-		return vm.getGlobalContext(data, {
+		return nodeGlobals.getGlobalContext(data, {
 			reuseGlobal: true, // re-use Node.js `global`, important if you want `console.log` to log to your console as expected.
 			dynamicImport: true, // allows `import()`
 		});
 	}
 
-	static async evaluateScriptInline(content, data, errorString) {
+	static async evaluateScriptInline(content, data, errorString, scriptContextKey) {
 		// no difference yet
-		return ModuleScript.evaluateScript(content, data, errorString);
+		return ModuleScript.evaluateScript(content, data, errorString, scriptContextKey);
 	}
 
-	static async evaluateScript(content, data, errorString) {
+	static async evaluateScript(content, data, errorString, scriptContextKey) {
 		try {
 			let proxy = new ProxyData();
 			proxy.addGlobal(ModuleScript.getGlobals());
 			proxy.addGlobal(global);
 
-			let context = proxy.getData(data);
+			let contextData = proxy.getData(data);
 
-			// Performance improvement: we may be able to cache these at some point
-			// careful here: re-using contexts generated here (e.g. via `evaluateAttributesArray`) was much slower!
-			// vm.createContext(context, {
-			// 	codeGeneration: {
-			// 		strings: false
-			// 	}
-			// });
-
-			let script = scriptCache.get(content);
-			if(!script) {
-				script = new vm.Script(content);
-				scriptCache.set(content, script);
-			}
+			let script  = new vm.Script(content);
 
 			// The downstream code being evaluated here may return a promise!
-			// let returnValue = script.runInContext(context);
-			let returnValue = script.runInNewContext(context, {
-				contextCodeGeneration: {
-					strings: false
-				}
-			});
-			return { returns: await returnValue, context };
+			let returnValue;
+			if(scriptContextKey) {
+				returnValue = fasterVmContextGlobal.executeScriptWithData(script, contextData, scriptContextKey);
+			} else {
+				returnValue = fasterVmContextGlobal.executeScriptExpensivelyInNewContext(script, contextData);
+			}
+
+			return { returns: await returnValue, context: contextData };
 		} catch(e) {
 			// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 			if(e.message === "Unexpected end of input" && content.match(/\bclass\b/) && !content.match(/\bclass\b\s*\{/)) {

@@ -402,7 +402,7 @@ class AstSerializer {
 		}
 
 		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData, parentComponent?.setupScript );
-		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
+		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
 		// @attributes
@@ -721,7 +721,7 @@ class AstSerializer {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
 		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript);
 
-		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
+		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 		return returns;
 	}
 
@@ -934,7 +934,7 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element (text only?)
 
 		// Start tag
-		let { content: startTagContent, attrs, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
+		let { content: startTagContent, attrs, evaluatedAttributes, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
@@ -982,11 +982,9 @@ class AstSerializer {
 		if(!options.rawMode && component) {
 			this.addComponentDependency(component, node, tagName, options);
 
-			// for attribute sharing
+			// for attribute sharing (from renderStartTag)
 			options.hostComponentNode = node;
-
-			let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(node.attrs, nodeData);
-			options.hostComponentData = AttributeSerializer.mergeAttributes(evaluatedAttributes);
+			options.hostComponentData = attrs;
 
 			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
