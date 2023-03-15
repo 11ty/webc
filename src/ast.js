@@ -721,7 +721,7 @@ class AstSerializer {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
 		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript);
 
-		let { returns } = await ModuleScript.evaluateScript(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
+		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`);
 		return returns;
 	}
 

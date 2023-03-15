@@ -32,7 +32,10 @@ class AttributeSerializer {
 				continue;
 			}
 
-			for(let splitVal of value.split(merged[name].splitDelimiter)) {
+			if(typeof value !== "string") {
+				value = value.toString();
+			}
+			for(let splitVal of value.toString().split(merged[name].splitDelimiter)) {
 				splitVal = splitVal.trim();
 				if(splitVal) {
 					merged[name].value.push(splitVal);
@@ -117,7 +120,7 @@ class AttributeSerializer {
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
 		if(evaluation === "script") {
-			let { returns } = await ModuleScript.evaluateScript(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
+			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Check the dynamic attribute: \`${rawName}="${value}"\`.`);
 			evaluatedValue = returns;
 		}
 
@@ -167,7 +170,6 @@ class AttributeSerializer {
 
 		return newData;
 	}
-
 
 	// attributesArray: parse5 format, Array of [{name, value}]
 	// returns: same array with additional properties added
