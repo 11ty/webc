@@ -17,6 +17,7 @@
 
 * [`@11ty/eleventy-plugin-webc`](https://www.11ty.dev/docs/languages/webc/) adds WebC to [Eleventy](https://www.11ty.dev/)
 * [`express-webc`](https://github.com/NickColley/express-webc) by [@NickColley](https://github.com/NickColley/) adds WebC to [Express](https://expressjs.com/)
+* [`koa-webc`](https://github.com/sombriks/koa-webc) by [@sombriks](https://github.com/sombriks) adds WebC to [Koa](https://github.com/sombriks/koa)
 
 ### Testimonials
 
