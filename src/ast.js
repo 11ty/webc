@@ -938,6 +938,10 @@ class AstSerializer {
 				return { html: escapeText(unescaped) };
 			}
 		} else if(node.nodeName === "#comment") {
+			// triple (or more) dashes is a server-only comment
+			if(node.data.startsWith("-") && node.data.endsWith("-")) {
+				return { html: "" };
+			}
 			return {
 				html: this.outputHtml(`<!--${node.data}-->`, streamEnabled)
 			};
