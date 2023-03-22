@@ -1,0 +1,1 @@
+<div webc:for="value of Object.values({a:1, b:2, c:4})" webc:if="value !== 2" @text="`${value}`"></div>

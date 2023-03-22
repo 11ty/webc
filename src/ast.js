@@ -5,8 +5,10 @@ import { DepGraph } from "dependency-graph";
 import { WebC } from "../webc.js";
 import { Path } from "./path.js";
 import { AstQuery } from "./astQuery.js";
+import { AstModify } from "./astModify.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
+import { Looping } from "./looping.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
@@ -138,7 +140,8 @@ class AstSerializer {
 		TEXT: "@text",
 		ATTRIBUTES: "@attributes",
 		SETUP: "webc:setup",
-		IGNORE: "webc:ignore", // ignore this node
+		IGNORE: "webc:ignore", // ignore the node
+		LOOP: "webc:for",
 	};
 
 	static transformTypes = {
@@ -401,7 +404,7 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData, parentComponent?.setupScript );
+		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData, parentComponent?.setupScript, options.injectedData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -458,7 +461,7 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let context = this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, {
+		let context = this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, options.injectedData, {
 			// Ideally these would be under `webc.*`
 			filePath: this.filePath,
 			slots: {
@@ -719,7 +722,7 @@ class AstSerializer {
 	// Used for @html and webc:if
 	async evaluateAttribute(name, attrContent, options) {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
-		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript);
+		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript, options.injectedData);
 
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 		return returns;
@@ -804,18 +807,18 @@ class AstSerializer {
 	addImpliedWebCAttributes(node) {
 		// if(AstQuery.getTagName(node) === "template") {
 		if(AstQuery.isDeclarativeShadowDomNode(node)) {
-			node.attrs.push({ name: AstSerializer.attrs.RAW, value: "" });
+			AstModify.addAttribute(node, AstSerializer.attrs.RAW, "");
 		}
 
 		// webc:type="js" (WebC v0.9.0+) has implied webc:is="template" webc:nokeep
 		if(AstQuery.getAttributeValue(node, AstSerializer.attrs.TYPE) === AstSerializer.transformTypes.JS) {
 			// this check is perhaps unnecessary since KEEP has a higher precedence than NOKEEP
 			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-				node.attrs.push({ name: AstSerializer.attrs.NOKEEP, value: "" });
+				AstModify.addAttribute(node, AstSerializer.attrs.NOKEEP, "");
 			}
 
 			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.IS)) {
-				node.attrs.push({ name: AstSerializer.attrs.IS, value: "template" });
+				AstModify.addAttribute(node, AstSerializer.attrs.IS, "template");
 			}
 		}
 	}
@@ -839,11 +842,61 @@ class AstSerializer {
 		}
 	}
 
+	
+	async runLoop(node, slots = {}, options = {}, streamEnabled = true) {
+		let loopAttrValue = AstQuery.getAttributeValue(node, AstSerializer.attrs.LOOP);
+		if(!loopAttrValue) {
+			AstModify.removeAttribute(node, AstSerializer.attrs.LOOP);
+			return { html: "" };
+		}
+
+		let { keys, type, content } = Looping.parse(loopAttrValue);
+		let loopContent = await this.evaluateAttribute(AstSerializer.attrs.LOOP, content, options);
+
+		AstModify.removeAttribute(node, AstSerializer.attrs.LOOP);
+
+		// if falsy, skip
+		if(!loopContent) {
+			return { html: "" };
+		}
+
+		let promises = [];
+
+		if(type === "Object") {
+			let index = 0;
+			for(let loopKey in loopContent) {
+				options.injectedData = {
+					[keys.key]: loopKey,
+					[keys.value]: loopContent[loopKey],
+					[keys.index]: index++,
+				};
+				promises.push(this.compileNode(node, slots, options, streamEnabled));
+			}
+		} else if(type === "Array") {
+			promises = loopContent.map(((loopValue, index) => {
+				options.injectedData = {
+					[keys.index]: index,
+					[keys.value]: loopValue
+				};
+
+				return this.compileNode(node, slots, options, streamEnabled);
+			}));
+		}
+
+		// Whitespace normalizer
+		let html = (await Promise.all(promises)).map(entry => entry.html).filter(entry => entry).join("\n");
+
+		return { html };
+	}
+
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
 		options = Object.assign({}, options);
 
 		if(AstQuery.hasAnyAttribute(node, [ AstSerializer.attrs.IGNORE, AstSerializer.attrs.SETUP ])) {
 			return { html: "" };
+		}
+		if(AstQuery.hasAttribute(node, AstSerializer.attrs.LOOP)) {
+			return this.runLoop(node, slots, options, streamEnabled);
 		}
 
 		this.addImpliedWebCAttributes(node);

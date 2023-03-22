@@ -1,0 +1,1 @@
+<div webc:for="value of [1,2,3,4]" webc:if="value >= 2" @text="`${value}-${index}`"></div>

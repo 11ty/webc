@@ -274,6 +274,10 @@ We do provide two built-in transforms in WebC: JavaScript Render Functions (`web
 
 See [_`webc:if` on the WebC Reference_](https://www.11ty.dev/docs/languages/webc/#webcif)
 
+### Loops
+
+See [_`webc:for` on the WebC Reference_](https://www.11ty.dev/docs/languages/webc/#webcfor-loops)
+
 ### Attributes
 
 See [_Attributes and `webc:root` on the WebC Reference_](https://www.11ty.dev/docs/languages/webc/#attributes-and-webcroot)

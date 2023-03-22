@@ -1,0 +1,1 @@
+<div webc:for="key of Object.keys({a:1, b:2, c:4})" webc:if="key !== 'b'" @text="`${key}`"></div>
