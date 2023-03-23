@@ -3,7 +3,7 @@
 const key = 2;
 
 function alwaysBlue() {
-	return "red"; // gotcha
+	return globalFunction("red"); // gotcha
 }
 </script>
 <div @html="alwaysBlue()"></div>

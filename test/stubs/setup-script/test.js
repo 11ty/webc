@@ -62,6 +62,7 @@ function alwaysBlue() {
 
 test("webc:setup with child component #87", async t => {
 	let component = new WebC();
+	component.setHelper("globalFunction", (a) => a);
 
 	component.defineComponents("./test/stubs/setup-script/component.webc");
 
