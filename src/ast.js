@@ -134,13 +134,15 @@ class AstSerializer {
 		IMPORT: "webc:import", // import another webc inline
 		SCOPED: "webc:scoped", // css scoping
 		ASSET_BUCKET: "webc:bucket", // css scoping
-		IF: "webc:if",
 		HTML: "@html",
 		RAWHTML: "@raw",
 		TEXT: "@text",
 		ATTRIBUTES: "@attributes",
 		SETUP: "webc:setup",
 		IGNORE: "webc:ignore", // ignore the node
+		IF: "webc:if",
+		ELSE: "webc:else",
+		ELSEIF: "webc:elseif",
 		LOOP: "webc:for",
 	};
 
@@ -327,8 +329,14 @@ class AstSerializer {
 	// This *needs* to be depth first instead of breadth first for **streaming**
 	async getChildContent(parentNode, slots, options, streamEnabled) {
 		let html = [];
+		let previousSiblingFlowControl = {};
+		
 		for(let child of parentNode.childNodes || []) {
-			let { html: nodeHtml } = await this.compileNode(child, slots, options, streamEnabled);
+			let { html: nodeHtml, currentNodeMetadata: meta } = await this.compileNode(child, slots, options, streamEnabled, { previousSiblingFlowControl });
+			previousSiblingFlowControl.type = meta.flowControlType;
+			// any success should be carried forward
+			previousSiblingFlowControl.success = previousSiblingFlowControl.success || meta.flowControlResult;
+
 			html.push(nodeHtml);
 		}
 
@@ -672,8 +680,6 @@ class AstSerializer {
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
-	
-
 	getAggregateAssetKey(tagName, node) {
 		if(!this.bundlerMode) {
 			return false;
@@ -842,8 +848,64 @@ class AstSerializer {
 		}
 	}
 
-	
-	async runLoop(node, slots = {}, options = {}, streamEnabled = true) {
+	async runFlowControl(node, options, metadata) {
+		let ret = {
+			// properties go to to currentNodeMetadata
+			metadata: {}
+		};
+
+		let hasIfExpr = AstQuery.hasAttribute(node, AstSerializer.attrs.IF);
+		let hasElseIfExpr = AstQuery.hasAttribute(node, AstSerializer.attrs.ELSEIF);
+		let hasElseExpr = AstQuery.hasAttribute(node, AstSerializer.attrs.ELSE);
+
+		if(hasIfExpr || hasElseIfExpr || hasElseExpr) {
+			let previousSiblingFlowControl = metadata.previousSiblingFlowControl;
+
+			let flowControlEvalContent;
+			let flowControlType;
+			if(hasIfExpr) {
+				flowControlType = AstSerializer.attrs.IF;
+				flowControlEvalContent = AstQuery.getAttributeValue(node, AstSerializer.attrs.IF);
+			} else if(hasElseIfExpr) {
+				if(!previousSiblingFlowControl.type || previousSiblingFlowControl.type !== AstSerializer.attrs.IF && previousSiblingFlowControl.type !== AstSerializer.attrs.ELSEIF) {
+					// TODO source code location in error
+					throw new Error(`${AstSerializer.attrs.ELSEIF} expected an ${AstSerializer.attrs.IF} or ${AstSerializer.attrs.ELSEIF} on the previous sibling!`);
+				}
+
+				flowControlType = AstSerializer.attrs.ELSEIF;
+				flowControlEvalContent = AstQuery.getAttributeValue(node, AstSerializer.attrs.ELSEIF);
+			} else {
+				if(!previousSiblingFlowControl.type || previousSiblingFlowControl.type !== AstSerializer.attrs.IF && previousSiblingFlowControl.type !== AstSerializer.attrs.ELSEIF) {
+					// TODO source code location in error
+					throw new Error(`${AstSerializer.attrs.ELSE} expected an ${AstSerializer.attrs.IF} or ${AstSerializer.attrs.ELSEIF} on the previous sibling!`);
+				}
+
+				flowControlType = AstSerializer.attrs.ELSE;
+			}
+
+			ret.metadata.flowControlType = flowControlType;
+
+			if(flowControlType === AstSerializer.attrs.IF || flowControlType === AstSerializer.attrs.ELSEIF && !previousSiblingFlowControl.success) {
+				let ifExprValue = false; // if the attribute has no value, assume false
+				if(flowControlEvalContent) {
+					ifExprValue = await this.evaluateAttribute(flowControlType, flowControlEvalContent, options);
+				}
+
+				if(ifExprValue) {
+					ret.metadata.flowControlResult = true;
+				} else {
+					ret.metadata.flowControlResult = false;
+					ret.html = "";
+				}
+			} else if(previousSiblingFlowControl.success) { // at an `else` and previous siblings already success
+				ret.html = "";
+			}
+		}
+
+		return ret;
+	}
+
+	async getLoopContent(node, slots = {}, options = {}, streamEnabled = true) {
 		let loopAttrValue = AstQuery.getAttributeValue(node, AstSerializer.attrs.LOOP);
 		if(!loopAttrValue) {
 			AstModify.removeAttribute(node, AstSerializer.attrs.LOOP);
@@ -883,20 +945,21 @@ class AstSerializer {
 			}));
 		}
 
-		// Whitespace normalizer
-		let html = (await Promise.all(promises)).map(entry => entry.html).filter(entry => entry).join("\n");
-
-		return { html };
+		// TODO whitespace
+		return (await Promise.all(promises)).map(entry => entry.html).filter(entry => entry).join("\n");
 	}
 
-	async compileNode(node, slots = {}, options = {}, streamEnabled = true) {
+	async compileNode(node, slots = {}, options = {}, streamEnabled = true, metadata = {}) {
 		options = Object.assign({}, options);
 
+		let currentNodeMetadata = {};
+
 		if(AstQuery.hasAnyAttribute(node, [ AstSerializer.attrs.IGNORE, AstSerializer.attrs.SETUP ])) {
-			return { html: "" };
+			return { html: "", currentNodeMetadata };
 		}
 		if(AstQuery.hasAttribute(node, AstSerializer.attrs.LOOP)) {
-			return this.runLoop(node, slots, options, streamEnabled);
+			let html = await this.getLoopContent(node, slots, options, streamEnabled);
+			return { html, currentNodeMetadata };
 		}
 
 		this.addImpliedWebCAttributes(node);
@@ -920,6 +983,12 @@ class AstSerializer {
 			// Should we use getPreparsedRawTextContent here instead? My hunch is that node.value is okay for now
 			let c = node.value;
 
+			// persist flow control info past whitespace only text nodes
+			if(metadata.previousSiblingFlowControl?.type && c.trim().length === 0) {
+				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
+				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
+			}
+
 			// Run transforms
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
 				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.componentManager.get(options.closestParentComponent), slots, options);
@@ -932,22 +1001,39 @@ class AstSerializer {
 
 			let unescaped = this.outputHtml(c, streamEnabled);
 			if(options.rawMode || this.isUnescapedTagContent(node)) {
-				return { html: unescaped };
+				return {
+					html: unescaped,
+					currentNodeMetadata
+				};
 			} else {
 				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
-				return { html: escapeText(unescaped) };
+				return {
+					html: escapeText(unescaped),
+					currentNodeMetadata
+				};
 			}
 		} else if(node.nodeName === "#comment") {
+			// persist flow control info past comment nodes
+			if(metadata.previousSiblingFlowControl?.type) {
+				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
+				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
+			}
+
 			// triple (or more) dashes is a server-only comment
 			if(node.data.startsWith("-") && node.data.endsWith("-")) {
-				return { html: "" };
+				return {
+					html: "",
+					currentNodeMetadata
+				};
 			}
 			return {
-				html: this.outputHtml(`<!--${node.data}-->`, streamEnabled)
+				html: this.outputHtml(`<!--${node.data}-->`, streamEnabled),
+				currentNodeMetadata,
 			};
 		} else if(renderingMode === "page" && node.nodeName === "#documentType") {
 			return {
-				html: this.outputHtml(`<!doctype ${node.name}>${AstSerializer.EOL}`, streamEnabled)
+				html: this.outputHtml(`<!doctype ${node.name}>${AstSerializer.EOL}`, streamEnabled),
+				currentNodeMetadata,
 			};
 		}
 
@@ -970,11 +1056,13 @@ class AstSerializer {
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
-		let ifExprContent = AstQuery.getAttributeValue(node, AstSerializer.attrs.IF);
-		if(ifExprContent) {
-			let ifExprValue = await this.evaluateAttribute(AstSerializer.attrs.IF, ifExprContent, options);
-			if(!ifExprValue) {
-				return { html: "" };
+		let flowControl = await this.runFlowControl(node, options, metadata);
+		Object.assign(currentNodeMetadata, flowControl.metadata);
+
+		if("html" in flowControl) {
+			return {
+				html: flowControl.html,
+				currentNodeMetadata,
 			}
 		}
 
@@ -1078,11 +1166,11 @@ class AstSerializer {
 					let { html: childContent } = await this.getChildContent(node, slots, options, false);
 					content += this.outputHtml(childContent, streamEnabled);
 				} else {
-					// Leave node-as is or bundle (e.g. CSS/JS), ignore if webc:keep
-					if(!assetKey || this.shouldKeepNode(node)) { // leave as-is
+					// Leave node-as is if not CSS/JS or if webc:keep
+					if(!assetKey || this.shouldKeepNode(node)) {
 						let { html: childContent } = await this.getChildContent(node, slots, options, streamEnabled);
 						content += childContent;
-					} else {
+					} else { // bundle the thing (e.g. CSS/JS)
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
 							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
@@ -1138,6 +1226,7 @@ class AstSerializer {
 
 		return {
 			html: content,
+			currentNodeMetadata,
 		}
 	}
 

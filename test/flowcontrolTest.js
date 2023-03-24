@@ -195,3 +195,250 @@ test("Using webc:if on a style based on host component attribute (false)", async
 
 	t.is(html, `<if-component-style>Test</if-component-style>`);
 });
+
+test("Using webc:if=false web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="false">Hi</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		
+		<div>Bye</div>
+	
+</body>
+</html>`);
+});
+
+test("Using webc:if=true web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="true">Hi</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		<div>Hi</div>
+		
+	
+</body>
+</html>`);
+});
+
+test("Using webc:if=true webc:elseif=false web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="true">Hi</div>
+		<div webc:elseif="true">Yo</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		<div>Hi</div>
+		
+		
+	
+</body>
+</html>`);
+});
+
+test("Using webc:if=false webc:elseif=true web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="false">Hi</div>
+		<div webc:elseif="true">Yo</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		
+		<div>Yo</div>
+		
+	
+</body>
+</html>`);
+});
+
+test("Using webc:if=false webc:elseif=false web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="false">Hi</div>
+		<div webc:elseif="false">Yo</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		
+		
+		<div>Bye</div>
+	
+</body>
+</html>`);
+});
+
+test("Using webc:if=true webc:elseif=true web:else", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="true">Hi</div>
+		<div webc:elseif="true">Yo</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		<div>Hi</div>
+		
+		
+	
+</body>
+</html>`);
+});
+
+test("Solo webc:else throws an error", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="true">Hi</div>
+		<div>Yo</div>
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `webc:else expected an webc:if or webc:elseif on the previous sibling!`
+	});
+});
+
+test("Solo webc:elseif throws an error", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="false">Hi</div>
+		<div>Yo</div>
+		<div webc:elseif>Bye</div>
+	</body>
+</html>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `webc:elseif expected an webc:if or webc:elseif on the previous sibling!`
+	});
+});
+
+test("Flow control works fine with comments in the middle", async t => {
+	let component = new WebC();
+
+	component.setContent(`<!doctype html>
+<html>
+	<body>
+		<div webc:if="false">Hi</div>
+		<!-- this works okay -->
+		<div webc:else>Bye</div>
+	</body>
+</html>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+
+	t.is(html, `<!doctype html>
+<html>
+<head></head><body>
+		
+		<!-- this works okay -->
+		<div>Bye</div>
+	
+</body>
+</html>`);
+});
