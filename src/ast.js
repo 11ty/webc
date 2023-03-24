@@ -276,7 +276,9 @@ class AstSerializer {
 			if(component?.rootAttributeMode !== "merge") { // webc:root="merge"
 				return true;
 			}
-		} else if(component?.ignoreRootTag) {
+		}
+
+		if(component?.ignoreRootTag) {
 			// do not include the parent element if this component has no styles or script associated with it
 			return true;
 		}
