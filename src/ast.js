@@ -269,10 +269,14 @@ class AstSerializer {
 		}
 
 		if(!component) {
-			component = this.getComponent(tagName);
+			component = this.getComponent(tagName, options);
 		}
 
-		if(component?.ignoreRootTag) {
+		if(component && AstQuery.isVoidElement(tagName)) {
+			if(component?.rootAttributeMode !== "merge") { // webc:root="merge"
+				return true;
+			}
+		} else if(component?.ignoreRootTag) {
 			// do not include the parent element if this component has no styles or script associated with it
 			return true;
 		}
@@ -300,13 +304,19 @@ class AstSerializer {
 	}
 
 	// synchronous (components should already be cached)
-	getComponent(name) {
+	getComponent(name, options) {
 		if(!name || !this.componentMapNameToFilePath[name]) {
 			// render as a plain-ol-tag
 			return false;
 		}
 
 		let filePath = this.componentMapNameToFilePath[name];
+
+		// is a circular dependency, render as a plain-ol-tag
+		if(this.isCircularDependency(filePath, options)) {
+			return false;
+		}
+
 		if(!this.componentManager.has(filePath)) {
 			throw new Error(`Component at "${filePath}" not found in the component registry.`);
 		}
@@ -654,22 +664,31 @@ class AstSerializer {
 
 		return Array.from(types);
 	}
-
-	addComponentDependency(component, node, tagName, options) {
-		let componentFilePath = Path.normalizePath(component.filePath);
-		if(!options.components.hasNode(componentFilePath)) {
-			options.components.addNode(componentFilePath);
-		}
-
+	
+	isCircularDependency(componentFilePath, options) {
 		if(options.closestParentComponent) {
 			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
 			// <web-component><child/></web-component>
 			if(!options.isSlottedContent) {
 				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
-					throw new Error(`Circular dependency error: You cannot use <${tagName}> inside the definition for ${options.closestParentComponent}`);
+					return true;
 				}
 			}
+		}
+		return false;
+	}
 
+	addComponentDependency(component, tagName, options) {
+		let componentFilePath = Path.normalizePath(component.filePath);
+		if(!options.components.hasNode(componentFilePath)) {
+			options.components.addNode(componentFilePath);
+		}
+
+		if(this.isCircularDependency(componentFilePath, options)) {
+			throw new Error(`Circular dependency error: You cannot use <${tagName}> inside the definition for ${options.closestParentComponent}`);
+		}
+
+		if(options.closestParentComponent) {
 			options.components.addDependency(options.closestParentComponent, componentFilePath);
 		}
 
@@ -1043,7 +1062,7 @@ class AstSerializer {
 			if(importSource) {
 				component = await this.importComponent(importSource, options.closestParentComponent, tagName);
 			} else {
-				component = this.getComponent(tagName);
+				component = this.getComponent(tagName, options);
 			}
 		}
 
@@ -1122,7 +1141,7 @@ class AstSerializer {
 
 		// Component content (foreshadow dom)
 		if(!options.rawMode && component) {
-			this.addComponentDependency(component, node, tagName, options);
+			this.addComponentDependency(component, tagName, options);
 
 			// for attribute sharing (from renderStartTag)
 			options.hostComponentNode = node;

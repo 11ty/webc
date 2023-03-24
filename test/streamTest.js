@@ -605,11 +605,15 @@ After`);
 });
 
 test("Circular dependencies check (fail)", async t => {
-	await t.throwsAsync(async () => {
-		await testGetResultFor("./test/stubs/nested.webc", {
-			"web-component": "./test/stubs/components/child-circular.webc",
-			"other-component": "./test/stubs/components/child-circular2.webc",
-		})
+	t.deepEqual(await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/components/child-circular.webc",
+		"other-component": "./test/stubs/components/child-circular2.webc",
+	}), {
+		css: [],
+		html: `Before
+<web-component>test</web-component>
+After`,
+		js: [],
 	});
 });
 

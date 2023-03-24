@@ -1,0 +1,6 @@
+<script webc:type="js">
+if(!alt) {
+	 throw new Error("oh no you didn’t");
+}
+`<img src="${src}" alt="${alt}" lol">`;
+</script>

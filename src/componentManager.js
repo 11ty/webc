@@ -26,25 +26,31 @@ class ComponentManager {
 			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
 		}
 	}
-
-	ignoreComponentParentTag(component, hasDeclarativeShadowDom) {
+	
+	getRootMode(topLevelNodes) {
 		// Has <* webc:root> (has to be a root child, not script/style)
-		let tops = AstQuery.getTopLevelNodes(component);
-		for(let child of tops) {
+		for(let child of topLevelNodes) {
 			let rootNodeMode = AstQuery.getRootNodeMode(child);
 			if(rootNodeMode) {
-				// do not use parent tag if webc:root="override"
-				if(rootNodeMode === "override") {
-					return true;
-				}
-
-				// use parent tag if webc:root (and not webc:root="override")
-				return false;
+				return rootNodeMode;
 			}
+		}
+	}
+
+	ignoreComponentParentTag(topLevelNodes, rootAttributeMode, hasDeclarativeShadowDom) {
+		if(rootAttributeMode) {
+			// do not use parent tag if webc:root="override"
+			if(rootAttributeMode === "override") {
+				return true;
+			}
+	
+			// use parent tag if webc:root (and not webc:root="override")
+			return false;
 		}
 
 		// use parent tag if <style> or <script> in component definition (unless <style webc:root> or <script webc:root>)
-		for(let child of tops) {
+		// TODO <script webc:type="js"> with implied webc:is="template" https://github.com/11ty/webc/issues/135
+		for(let child of topLevelNodes) {
 			let tagName = AstQuery.getTagName(child);
 			if(tagName !== "script" && tagName !== "style" && !AstQuery.isLinkStylesheetNode(tagName, child) || AstQuery.hasAttribute(child, AstSerializer.attrs.SETUP)) {
 				continue;
@@ -170,6 +176,10 @@ class ComponentManager {
 		// only executes once per component
 		let setupScript = await this.getSetupScriptValue(ast, filePath, dataCascade);
 		let hasDeclarativeShadowDom = AstQuery.hasDeclarativeShadowDomChild(ast);
+		
+		let topLevelNodes = AstQuery.getTopLevelNodes(ast);
+		let rootAttributeMode = this.getRootMode(topLevelNodes);
+		let ignoreRootTag = this.ignoreComponentParentTag(topLevelNodes, rootAttributeMode, hasDeclarativeShadowDom);
 
 		this.components[filePath] = {
 			filePath,
@@ -184,8 +194,9 @@ class ComponentManager {
 			
 			mode,
 			hasDeclarativeShadowDom,
-			ignoreRootTag: this.ignoreComponentParentTag(ast, hasDeclarativeShadowDom),
+			ignoreRootTag,
 			scopedStyleHash,
+			rootAttributeMode,
 			rootAttributes: AstQuery.getRootAttributes(ast, scopedStyleHash),
 			slotTargets: AstQuery.getSlotTargets(ast),
 			setupScript,
