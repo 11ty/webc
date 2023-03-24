@@ -5,12 +5,13 @@ class AstModify {
 		node.attrs.push({ name, value });
 	}
 
-	static removeAttribute(node, name) {
-		let index = node.attrs.findIndex(attr => attr.name === name);
-		if(index !== -1) {
-			node.attrs.splice(index, 1);
-		}
-	}
+	// Not in use
+	// static removeAttribute(node, name) {
+	// 	let index = node.attrs.findIndex(attr => attr.name === name);
+	// 	if(index !== -1) {
+	// 		node.attrs.splice(index, 1);
+	// 	}
+	// }
 }
 
 export { AstModify };

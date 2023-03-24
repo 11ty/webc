@@ -1,0 +1,1 @@
+<b webc:for="item of items" @text="item"></b>

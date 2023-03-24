@@ -82,3 +82,19 @@ test("webc:for using Object.values to convert to Array", async t => {
 	t.is(html.trim(), `<div>1</div>
 <div>4</div>`);
 });
+
+test("webc:for issue #139", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/issue-139.webc");
+	component.defineComponents("./test/stubs/looping/components/component.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<b>1</b>
+<b>2</b>
+<b>3</b>
+<b>1</b>
+<b>2</b>
+<b>3</b>`);
+});

@@ -1,0 +1,2 @@
+<component :@items="[1,2,3]"></component>
+<component :@items="[1,2,3]"></component>

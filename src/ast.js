@@ -908,14 +908,11 @@ class AstSerializer {
 	async getLoopContent(node, slots = {}, options = {}, streamEnabled = true) {
 		let loopAttrValue = AstQuery.getAttributeValue(node, AstSerializer.attrs.LOOP);
 		if(!loopAttrValue) {
-			AstModify.removeAttribute(node, AstSerializer.attrs.LOOP);
 			return { html: "" };
 		}
 
 		let { keys, type, content } = Looping.parse(loopAttrValue);
 		let loopContent = await this.evaluateAttribute(AstSerializer.attrs.LOOP, content, options);
-
-		AstModify.removeAttribute(node, AstSerializer.attrs.LOOP);
 
 		// if falsy, skip
 		if(!loopContent) {
@@ -932,7 +929,7 @@ class AstSerializer {
 					[keys.value]: loopContent[loopKey],
 					[keys.index]: index++,
 				};
-				promises.push(this.compileNode(node, slots, options, streamEnabled));
+				promises.push(this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
 			}
 		} else if(type === "Array") {
 			promises = loopContent.map(((loopValue, index) => {
@@ -941,7 +938,7 @@ class AstSerializer {
 					[keys.value]: loopValue
 				};
 
-				return this.compileNode(node, slots, options, streamEnabled);
+				return this.compileNode(node, slots, options, streamEnabled, { loopingActive: true });
 			}));
 		}
 
@@ -957,7 +954,7 @@ class AstSerializer {
 		if(AstQuery.hasAnyAttribute(node, [ AstSerializer.attrs.IGNORE, AstSerializer.attrs.SETUP ])) {
 			return { html: "", currentNodeMetadata };
 		}
-		if(AstQuery.hasAttribute(node, AstSerializer.attrs.LOOP)) {
+		if(AstQuery.hasAttribute(node, AstSerializer.attrs.LOOP) && !metadata.loopingActive) {
 			let html = await this.getLoopContent(node, slots, options, streamEnabled);
 			return { html, currentNodeMetadata };
 		}
