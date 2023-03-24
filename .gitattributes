@@ -1,0 +1,5 @@
+# Templates
+*.webc          text diff=html
+
+# Reclassify .webc files as HTML:
+*.webc linguist-language=HTML
