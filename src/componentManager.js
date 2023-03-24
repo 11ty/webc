@@ -2,6 +2,7 @@ import { createHash } from "crypto";
 
 import { WebC } from "../webc.js";
 import { AstQuery } from "./astQuery.js";
+import { AstModify } from "./astModify.js";
 import { AstSerializer } from "./ast.js";
 import { ModuleScript } from "./moduleScript.cjs";
 
@@ -133,6 +134,31 @@ class ComponentManager {
 			return this.getDigest(hash);
 		}
 	}
+	
+	/* Careful, this one mutates */
+	static addImpliedWebCAttributes(node) {
+		if(node._webcImpliedAttributesAdded) {
+			return;
+		}
+
+		node._webcImpliedAttributesAdded = true;
+
+		if(AstQuery.isDeclarativeShadowDomNode(node)) {
+			AstModify.addAttribute(node, AstSerializer.attrs.RAW, "");
+		}
+
+		// webc:type="js" (WebC v0.9.0+) has implied webc:is="template" webc:nokeep
+		if(AstQuery.getAttributeValue(node, AstSerializer.attrs.TYPE) === AstSerializer.transformTypes.JS) {
+			// this check is perhaps unnecessary since KEEP has a higher precedence than NOKEEP
+			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.KEEP)) {
+				AstModify.addAttribute(node, AstSerializer.attrs.NOKEEP, "");
+			}
+
+			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.IS)) {
+				AstModify.addAttribute(node, AstSerializer.attrs.IS, "template");
+			}
+		}
+	}
 
 	has(filePath) {
 		return filePath in this.components;
@@ -178,6 +204,12 @@ class ComponentManager {
 		let hasDeclarativeShadowDom = AstQuery.hasDeclarativeShadowDomChild(ast);
 		
 		let topLevelNodes = AstQuery.getTopLevelNodes(ast);
+
+		// important for ignoreComponentParentTag, issue #135
+		for(let node of topLevelNodes) {
+			ComponentManager.addImpliedWebCAttributes(node);
+		}
+
 		let rootAttributeMode = this.getRootMode(topLevelNodes);
 		let ignoreRootTag = this.ignoreComponentParentTag(topLevelNodes, rootAttributeMode, hasDeclarativeShadowDom);
 

@@ -829,25 +829,6 @@ class AstSerializer {
 		return rawContent;
 	}
 
-	addImpliedWebCAttributes(node) {
-		// if(AstQuery.getTagName(node) === "template") {
-		if(AstQuery.isDeclarativeShadowDomNode(node)) {
-			AstModify.addAttribute(node, AstSerializer.attrs.RAW, "");
-		}
-
-		// webc:type="js" (WebC v0.9.0+) has implied webc:is="template" webc:nokeep
-		if(AstQuery.getAttributeValue(node, AstSerializer.attrs.TYPE) === AstSerializer.transformTypes.JS) {
-			// this check is perhaps unnecessary since KEEP has a higher precedence than NOKEEP
-			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.KEEP)) {
-				AstModify.addAttribute(node, AstSerializer.attrs.NOKEEP, "");
-			}
-
-			if(!AstQuery.hasAttribute(node, AstSerializer.attrs.IS)) {
-				AstModify.addAttribute(node, AstSerializer.attrs.IS, "template");
-			}
-		}
-	}
-
 	addToInheritedBuckets(newBucketName, node, tagName, options) {
 		if(!newBucketName) {
 			return;
@@ -978,7 +959,7 @@ class AstSerializer {
 			return { html, currentNodeMetadata };
 		}
 
-		this.addImpliedWebCAttributes(node);
+		ComponentManager.addImpliedWebCAttributes(node);
 
 		let tagName = AstQuery.getTagName(node);
 		let content = "";
