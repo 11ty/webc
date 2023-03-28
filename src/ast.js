@@ -12,7 +12,7 @@ import { Looping } from "./looping.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
 import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
-import { escapeText } from "entities/lib/escape.js";
+import { escapeText, escapeAttribute } from "entities/lib/escape.js";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js";
@@ -99,6 +99,8 @@ class AstSerializer {
 			filterPublicAttributes: (attributesObject) => {
 				return AttributeSerializer.getPublicAttributesAsObject(attributesObject);
 			},
+			escapeText: escapeText,
+			escapeAttribute: escapeAttribute,
 		});
 	}
 
