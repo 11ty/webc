@@ -90,11 +90,15 @@ class AstSerializer {
 		this.fileCache = new FileSystemCache();
 
 		this.dataCascade = new DataCascade();
+
 		// Helpers/global variables for WebC things
 		this.dataCascade.setWebCGlobals({
 			renderAttributes: (attributesObject) => {
 				return AttributeSerializer.getString(attributesObject);
-			}
+			},
+			filterPublicAttributes: (attributesObject) => {
+				return AttributeSerializer.getPublicAttributesAsObject(attributesObject);
+			},
 		});
 	}
 
