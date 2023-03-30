@@ -1798,6 +1798,7 @@ test("Using props without “this”", async t => {
 
 	let { html, css, js, components } = await component.compile({
 		data: {
+			class: "tailwind-lol",
 			variable: "value",
 			3: "number key",
 			"3.1": "lol",
@@ -1821,13 +1822,18 @@ test("Using props without “this”", async t => {
 		"./test/stubs/props-no-this.webc",
 	]);
 
-	t.is(html, `<p key="value"></p>
+	t.is(html, `<p key="tailwind-lol"></p>
+<p key="value"></p>
+<p key="value"></p>
 <p key="value"></p>
 <p key="2"></p>
 <p key="3"></p>
 <p key="number key"></p>
+<p key="number key"></p>
 <p key="3.1"></p>
 <p key="float key"></p>
+<p key="float key"></p>
+<p key="Boo!"></p>
 <p key="Boo!"></p>
 <p key="2"></p>
 <p key="-urns!"></p>`);

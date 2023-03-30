@@ -192,8 +192,8 @@ class AstSerializer {
 
 	// helper functions are used in @html and render functions
 	// TODO lookup attributes too?
-	setHelper(name, callback) {
-		this.dataCascade.setHelper(name, callback);
+	setHelper(name, callback, isScoped) {
+		this.dataCascade.setHelper(name, callback, isScoped);
 	}
 
 	setData(data = {}) {
@@ -430,7 +430,7 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = this.dataCascade.getData( options.componentProps, options.hostComponentData, parentComponent?.setupScript, options.injectedData );
+		let nodeData = this.dataCascade.getData( parentComponent.isTopLevelComponent, options.componentProps, options.hostComponentData, parentComponent?.setupScript, options.injectedData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -487,7 +487,7 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let context = this.dataCascade.getData(options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, options.injectedData, {
+		let context = this.dataCascade.getData(parentComponent.isTopLevelComponent, options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, options.injectedData, {
 			// Ideally these would be under `webc.*`
 			filePath: this.filePath,
 			slots: {
@@ -755,7 +755,7 @@ class AstSerializer {
 	// Used for @html, @raw, @text, @attributes, webc:if, webc:elseif, webc:for
 	async evaluateAttribute(name, attrContent, options) {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
-		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript, options.injectedData);
+		let data = this.dataCascade.getData(parentComponent.isTopLevelComponent, options.componentProps, parentComponent?.setupScript, options.injectedData);
 
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 		return returns;

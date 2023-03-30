@@ -18,6 +18,7 @@ class WebC {
 
 		this.customTransforms = {};
 		this.customHelpers = {};
+		this.customScopedHelpers = {};
 		this.globalComponents = {};
 		this.astOptions = {};
 		this.bundlerMode = false;
@@ -130,8 +131,12 @@ class WebC {
 		this.customTransforms[key] = callback;
 	}
 
-	setHelper(key, callback) {
-		this.customHelpers[key] = callback;
+	setHelper(key, callback, isScoped = false) {
+		if(isScoped) {
+			this.customScopedHelpers[key] = callback;
+		} else {
+			this.customHelpers[key] = callback;
+		}
 	}
 
 	setAlias(key, folder) {
@@ -236,7 +241,10 @@ class WebC {
 		}
 
 		for(let name in this.customHelpers) {
-			ast.setHelper(name, this.customHelpers[name]);
+			ast.setHelper(name, this.customHelpers[name], false);
+		}
+		for(let name in this.customScopedHelpers) {
+			ast.setHelper(name, this.customScopedHelpers[name], true);
 		}
 
 		await ast.setComponentsByFilePath(this.globalComponents);

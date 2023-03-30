@@ -21,7 +21,7 @@ class ComponentManager {
 			let content = AstQuery.getTextContent(setupScriptNode).toString();
 
 			// importantly for caching: this has no attributes or context sensitive things, only global helpers and global data
-			let data = dataCascade.getData();
+			let data = dataCascade.getData(true);
 
 			// async-friendly
 			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
@@ -225,6 +225,7 @@ class ComponentManager {
 			},
 			
 			mode,
+			isTopLevelComponent,
 			hasDeclarativeShadowDom,
 			ignoreRootTag,
 			scopedStyleHash,

@@ -1,10 +1,15 @@
+<p :key="$data.class"></p>
 <p :key="variable"></p>
 <p :key="this.variable"></p>
+<p :key="$data.variable"></p>
 <p :key="2"></p>
 <p :key="3"></p>
 <p :key="this[3]"></p>
+<p :key="$data[3]"></p>
 <p :key="3.1"></p>
 <p :key="this[3.1]"></p>
+<p :key="$data[3.1]"></p>
 <p :key="this.nested.object.fn()"></p>
+<p :key="$data.nested.object.fn()"></p>
 <p :key="false ? 3 : 2"></p>
 <p :key="this.nested.object.asyncfn()"></p>

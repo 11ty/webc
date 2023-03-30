@@ -1,1 +1,1 @@
-<script @html="this.sampleScript"></script>
+<script @html="$data.sampleScript"></script>

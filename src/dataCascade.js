@@ -1,14 +1,19 @@
 class DataCascade {
 	constructor() {
 		this.helpers = {};
+		this.scopedHelpers = {};
 	}
 
 	setGlobalData(data) {
 		this.globalData = data;
 	}
 
-	setHelper(name, callback) {
-		this.helpers[name] = callback;
+	setHelper(name, callback, isScoped = false) {
+		if(isScoped) {
+			this.scopedHelpers[name] = callback;
+		} else {
+			this.helpers[name] = callback;
+		}
 	}
 
 	// the renderAttributes function is one of these
@@ -17,18 +22,35 @@ class DataCascade {
 	}
 
 	getHelpers() {
+		// unscoped
 		return this.helpers;
 	}
 
-	getData(attributes, ...additionalObjects) {
-		// TODO improve perf by re-using a merged object of the global stuff
+	/*
+	 * When `isTopLevelComponent` is not true (for inner components, not page-level) this scopes:
+	 *   - global data under $data
+	 *   - helpers under webc.*
+	*
+	 * This prevents global data leaking into inner components.
+	 * Notably webc:setup always operates in top level component mode.
+	 */
+	getData(isTopLevelComponent, attributes, ...additionalObjects) {
+		let self = this;
 		let objs = additionalObjects.reverse();
-		return Object.assign({}, this.globalData, this.helpers, ...objs, attributes, {
+		let globals = isTopLevelComponent ? this.globalData : undefined;
+
+		let ret = Object.assign({}, globals, this.helpers, ...objs, attributes, {
+			get $data() {
+				return self.globalData;
+			},
 			webc: {
+				helpers: this.scopedHelpers,
 				attributes,
 				...this.webcGlobals,
 			}
 		});
+
+		return ret;
 	}
 }
 
