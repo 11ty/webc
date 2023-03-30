@@ -39,8 +39,11 @@ class CssPrefixer {
 
 				const shouldSkip =
 					skipLevel > 0 ||
+					// from/to in @keyframes
 					(first.type === "TypeSelector" && first.name === "from") ||
-					first.name === "to";
+					(first.type === "TypeSelector" && first.name === "to") ||
+					// percentage selectors in @keyframes
+					(first.type === "Percentage");
 
 				if (shouldSkip) {
 					// do nothing
