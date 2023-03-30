@@ -98,3 +98,15 @@ test("webc:for issue #139", async t => {
 <b>2</b>
 <b>3</b>`);
 });
+
+test("script webc:setup feeds data for looping", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/script-setup-data.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<b>1</b>
+<b>2</b>
+<b>3</b>`);
+});
