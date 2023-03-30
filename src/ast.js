@@ -752,7 +752,7 @@ class AstSerializer {
 		return false;
 	}
 
-	// Used for @html and webc:if
+	// Used for @html, @raw, @text, @attributes, webc:if, webc:elseif, webc:for
 	async evaluateAttribute(name, attrContent, options) {
 		let parentComponent = this.componentManager.get(options.closestParentComponent);
 		let data = this.dataCascade.getData(options.componentProps, parentComponent?.setupScript, options.injectedData);
@@ -769,15 +769,27 @@ class AstSerializer {
 
 		if([htmlProp, textProp, rawProp].filter(entry => !!entry).length > 1) {
 			let tagName = AstQuery.getTagName(node);
-			throw new Error(`Node ${tagName} cannot have more than one @html${htmlProp ? `="${htmlProp}"` : ""}, @text${textProp ? `="${textProp}"` : ""}, or @raw${rawProp ? `="${rawProp}"` : ""} properties. Pick one!`);
+			throw new Error(`Node ${tagName} cannot have more than one of: @html${htmlProp ? `="${htmlProp}"` : ""}, @text${textProp ? `="${textProp}"` : ""}, or @raw${rawProp ? `="${rawProp}"` : ""}. Pick one!`);
 		}
 
-		let propContent = htmlProp || textProp || rawProp;
+		let propName;
+		let propContent;
+		if(htmlProp) {
+			propName = AstSerializer.attrs.HTML;
+			propContent = htmlProp;
+		} else if(textProp) {
+			propName = AstSerializer.attrs.TEXT;
+			propContent = textProp;
+		} else if(rawProp) {
+			propName = AstSerializer.attrs.RAWHTML;
+			propContent = rawProp;
+		}
+
 		if(!propContent) {
 			return false;
 		}
 
-		let content = await this.evaluateAttribute(AstSerializer.attrs.HTML, propContent, options);
+		let content = await this.evaluateAttribute(propName, propContent, options);
 
 		if(typeof content !== "string") {
 			content = `${content || ""}`;

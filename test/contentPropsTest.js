@@ -220,7 +220,7 @@ test("@html and @text", async (t) => {
 	component.setContent(`<template @html="'Test'" @text="'Test'"></template>`);
 
 	await t.throwsAsync(component.compile(), {
-		message: `Node template cannot have more than one @html="'Test'", @text="'Test'", or @raw properties. Pick one!`
+		message: `Node template cannot have more than one of: @html="'Test'", @text="'Test'", or @raw. Pick one!`
 	});
 });
 
@@ -229,7 +229,7 @@ test("@raw and @text", async (t) => {
 	component.setContent(`<template @raw="'Test'" @text="'Test'"></template>`);
 
 	await t.throwsAsync(component.compile(), {
-		message: `Node template cannot have more than one @html, @text="'Test'", or @raw="'Test'" properties. Pick one!`
+		message: `Node template cannot have more than one of: @html, @text="'Test'", or @raw="'Test'". Pick one!`
 	});
 });
 
@@ -238,7 +238,7 @@ test("@html and @raw", async (t) => {
 	component.setContent(`<template @html="'Test'" @raw="'Test'"></template>`);
 
 	await t.throwsAsync(component.compile(), {
-		message: `Node template cannot have more than one @html="'Test'", @text, or @raw="'Test'" properties. Pick one!`
+		message: `Node template cannot have more than one of: @html="'Test'", @text, or @raw="'Test'". Pick one!`
 	});
 });
 
@@ -247,7 +247,7 @@ test("@html and @text and @raw", async (t) => {
 	component.setContent(`<template @html="'Test'" @text="'Test'" @raw="'Test'"></template>`);
 
 	await t.throwsAsync(component.compile(), {
-		message: `Node template cannot have more than one @html="'Test'", @text="'Test'", or @raw="'Test'" properties. Pick one!`
+		message: `Node template cannot have more than one of: @html="'Test'", @text="'Test'", or @raw="'Test'". Pick one!`
 	});
 });
 
