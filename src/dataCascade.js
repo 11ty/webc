@@ -34,10 +34,10 @@ class DataCascade {
 	 * This prevents global data leaking into inner components.
 	 * Notably webc:setup always operates in top level component mode.
 	 */
-	getData(isTopLevelComponent, attributes, ...additionalObjects) {
+	getData(useGlobalDataAtTopLevel, attributes, ...additionalObjects) {
 		let self = this;
 		let objs = additionalObjects.reverse();
-		let globals = isTopLevelComponent ? this.globalData : undefined;
+		let globals = useGlobalDataAtTopLevel ? this.globalData : undefined;
 
 		let ret = Object.assign({}, globals, this.helpers, ...objs, attributes, {
 			get $data() {

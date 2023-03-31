@@ -405,6 +405,20 @@ class AstSerializer {
 		return str;
 	}
 
+	// This will be the parent component in component definition files, and the host component in slotted content
+	getAncestorComponentForData(options) {
+		// slot content is content in the host component, not in the component definition.
+		// https://github.com/11ty/webc/issues/152
+		if(options.isSlottedContent) {
+			return this.componentManager.get(options.hostComponentContextFilePath);
+		}
+		return this.componentManager.get(options.closestParentComponent);
+	}
+
+	useGlobalDataAtTopLevel(ancestorComponent) {
+		return ancestorComponent?.isTopLevelComponent ?? true;
+	}
+
 	async renderStartTag(node, tagName, component, renderingMode, options) {
 		let content = "";
 
@@ -430,7 +444,9 @@ class AstSerializer {
 			}
 		}
 
-		let nodeData = this.dataCascade.getData( parentComponent.isTopLevelComponent, options.componentProps, options.hostComponentData, parentComponent?.setupScript, options.injectedData );
+		let ancestorComponent = this.getAncestorComponentForData(options);
+		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
+		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -473,7 +489,7 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformTypes, node, parentComponent, slots, options) {
+	async transformContent(content, transformTypes, node, slots, options) {
 		if(!transformTypes) {
 			transformTypes = [];
 		}
@@ -487,7 +503,9 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let context = this.dataCascade.getData(parentComponent.isTopLevelComponent, options.componentProps, options.currentTagAttributes, parentComponent?.setupScript, options.injectedData, {
+		let ancestorComponent = this.getAncestorComponentForData(options);
+		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
+		let context = this.dataCascade.getData(useGlobalData, options.componentProps, options.currentTagAttributes, ancestorComponent?.setupScript, options.injectedData, {
 			// Ideally these would be under `webc.*`
 			filePath: this.filePath,
 			slots: {
@@ -500,7 +518,7 @@ class AstSerializer {
 			content = await this.transforms[type].call({
 				type,
 				...context
-			}, content, parentComponent);
+			}, content, ancestorComponent);
 		}
 
 		return content;
@@ -615,7 +633,7 @@ class AstSerializer {
 			return rawContent;
 		}
 
-		return this.transformContent(rawContent, options.currentTransformTypes, node, this.componentManager.get(options.closestParentComponent), slots, options);
+		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options);
 	}
 
 	/**
@@ -754,8 +772,9 @@ class AstSerializer {
 
 	// Used for @html, @raw, @text, @attributes, webc:if, webc:elseif, webc:for
 	async evaluateAttribute(name, attrContent, options) {
-		let parentComponent = this.componentManager.get(options.closestParentComponent);
-		let data = this.dataCascade.getData(parentComponent.isTopLevelComponent, options.componentProps, parentComponent?.setupScript, options.injectedData);
+		let ancestorComponent = this.getAncestorComponentForData(options);
+		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
+		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
 
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 		return returns;
@@ -1008,7 +1027,7 @@ class AstSerializer {
 
 			// Run transforms
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
-				c = await this.transformContent(node.value, options.currentTransformTypes, node, this.componentManager.get(options.closestParentComponent), slots, options);
+				c = await this.transformContent(node.value, options.currentTransformTypes, node, slots, options);
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(!node._webCProcessed && node.parentNode && AstQuery.getTagName(node.parentNode) === "template") {
@@ -1096,7 +1115,7 @@ class AstSerializer {
 		// TODO warning if top level page component using a style hash but has no root element (text only?)
 
 		// Start tag
-		let { content: startTagContent, attrs, evaluatedAttributes, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
+		let { content: startTagContent, attrs, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
 		if(component) {
@@ -1192,7 +1211,7 @@ class AstSerializer {
 						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
 							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
 							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
-							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, this.componentManager.get(options.closestParentComponent), slots, options);
+							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;
