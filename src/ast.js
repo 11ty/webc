@@ -562,7 +562,7 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	 async getContentForNamedSlot(slotName, slots, node, options) {
+	 async getContentForNamedSlotNode(slotName, slots, slotNode, options) {
 		slotName = slotName || "default";
 
 		let slotAst = slots[slotName];
@@ -575,9 +575,9 @@ class AstSerializer {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
 
-			// no matching slot found, return child content
+			// Use fallback content in named slot (but no matching name found)
 			if(!slotAst && slotName !== "default") {
-				let { html: mismatchedSlotHtml } = await this.getChildContent(node, slots, options, true);
+				let { html: mismatchedSlotHtml } = await this.getChildContent(slotNode, slots, options, true);
 				return mismatchedSlotHtml;
 			}
 
@@ -585,8 +585,8 @@ class AstSerializer {
 			return slotHtml;
 		}
 
-		// Use light dom fallback content in <slot> if no slot source exists to fill it
-		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, true);
+		// Use fallback content in default slot <slot>fallback content</slot> if no slot source exists to fill it
+		let { html: slotFallbackHtml } = await this.getChildContent(slotNode, null, options, true);
 		return slotFallbackHtml;
 	}
 
@@ -597,9 +597,9 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async getContentForSlot(node, slots, options) {
-		let slotName = AstQuery.getAttributeValue(node, "name");
-		return this.getContentForNamedSlot(slotName, slots, node, options);
+	async getContentForSlotNode(slotNode, slots, options) {
+		let slotName = AstQuery.getAttributeValue(slotNode, "name");
+		return this.getContentForNamedSlotNode(slotName, slots, slotNode, options);
 	}
 
 	/**

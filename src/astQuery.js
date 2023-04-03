@@ -6,11 +6,24 @@ class AstQuery {
 		return util.inspect(node, false, 0, true);
 	}
 
-	static logNode(node) {
-		let tagName = AstQuery.getTagName(node);
-		if(tagName && tagName !== "body" && tagName !== "html" && tagName !== "head") {
-			console.log(AstQuery.inspectNode(node))
+	static log(...args) {
+		let content = [];
+		for(let arg of args) {
+			if(typeof arg === "string") {
+				content.push(arg);
+				continue;
+			}
+
+			let tagName = AstQuery.getTagName(arg);
+			if(tagName) {
+				if(tagName === "body" || tagName === "html" || tagName === "head") {
+					content.push( "Skipping", tagName );
+				} else {
+					content.push(AstQuery.inspectNode(arg))
+				}
+			}
 		}
+		console.log(...content);
 	}
 
 	// List from the parse5 serializer
