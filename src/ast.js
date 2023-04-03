@@ -351,7 +351,7 @@ class AstSerializer {
 	async getChildContent(parentNode, slots, options, streamEnabled) {
 		let html = [];
 		let previousSiblingFlowControl = {};
-		
+
 		for(let child of parentNode.childNodes || []) {
 			let { html: nodeHtml, currentNodeMetadata: meta } = await this.compileNode(child, slots, options, streamEnabled, { previousSiblingFlowControl });
 			previousSiblingFlowControl.type = meta.flowControlType;
@@ -575,7 +575,7 @@ class AstSerializer {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
 
-			// Use fallback content in named slot (but no matching name found)
+			// Use fallback content in named slot (no slottable content for named slot found)
 			if(!slotAst && slotName !== "default") {
 				let { html: mismatchedSlotHtml } = await this.getChildContent(slotNode, slots, options, true);
 				return mismatchedSlotHtml;
@@ -585,7 +585,7 @@ class AstSerializer {
 			return slotHtml;
 		}
 
-		// Use fallback content in default slot <slot>fallback content</slot> if no slot source exists to fill it
+		// No slottable content for `default` found: use fallback content in default slot <slot>fallback content</slot>
 		let { html: slotFallbackHtml } = await this.getChildContent(slotNode, null, options, true);
 		return slotFallbackHtml;
 	}
@@ -693,7 +693,7 @@ class AstSerializer {
 
 		return Array.from(types);
 	}
-	
+
 	isCircularDependency(componentFilePath, options) {
 		if(options.closestParentComponent) {
 			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
@@ -1184,7 +1184,7 @@ class AstSerializer {
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottedContent = true;
 
-				content += await this.getContentForSlot(node, slots, options);
+				content += await this.getContentForSlotNode(node, slots, options);
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
 
