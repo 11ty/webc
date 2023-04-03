@@ -588,6 +588,7 @@ class AstSerializer {
 
 			// Slottable content found, compile it
 			options.isSlottableContent = true;
+			// do not set options.authoredInComponent, inherit it
 
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
@@ -1197,7 +1198,6 @@ class AstSerializer {
 			content += foreshadowDom;
 		}
 
-		// Skip the remaining content if we have foreshadow dom!
 		// Skip the remaining if we have shadow dom in the component definition
 		if(!componentDefinitionHasContent) {
 			let externalSource = AstQuery.getExternalSource(tagName, node);
@@ -1295,6 +1295,7 @@ class AstSerializer {
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false, // plaintext output
+			authoredInComponent: this.filePath,
 			isSlottedContent: false,
 			isSlottableContent: false,
 			isMatchingSlotSource: false,
