@@ -21,8 +21,7 @@ test("Slotted global data access nested #152", async t => {
 	let component = new WebC();
 
 	component.setBundlerMode(true);
-	// component.setContent(`<child>test</child>`);
-	component.setContent(`<child><parent><span @text="globalData"></span></parent></child>`);
+	component.setContent(`<parent><child><span @text="globalData"></span></child></parent>`);
 	component.defineComponents("./test/stubs/issue-152/parent.webc");
 	component.defineComponents("./test/stubs/issue-152/child.webc");
 
@@ -32,5 +31,56 @@ test("Slotted global data access nested #152", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<h2><h1><span>Hello</span></h1></h2>`);
+	t.is(html.trim(), `<h1><h2><span>Hello</span></h2></h1>`);
+});
+
+test("Slotted global data access even more nested #152", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setContent(`<parent><child><child><span @text="globalData"></span></child></child></parent>`);
+	component.defineComponents("./test/stubs/issue-152/parent.webc");
+	component.defineComponents("./test/stubs/issue-152/child.webc");
+
+	let { html } = await component.compile({
+		data: {
+			globalData: "Hello"
+		}
+	});
+
+	t.is(html.trim(), `<h1><h2><h2><span>Hello</span></h2></h2></h1>`);
+});
+
+test("Slotted global data access parent without slot #152", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setContent(`<parent-nohtml><child><span @text="globalData"></span></child></parent-nohtml>`);
+	component.defineComponents("./test/stubs/issue-152/parent-nohtml.webc");
+	component.defineComponents("./test/stubs/issue-152/child.webc");
+
+	let { html } = await component.compile({
+		data: {
+			globalData: "Hello"
+		}
+	});
+
+	t.is(html.trim(), `<h2><span>Hello</span></h2>`);
+});
+
+test("Slotted global data access parent without slot even nestier #152", async t => {
+	let component = new WebC();
+
+	component.setBundlerMode(true);
+	component.setContent(`<parent-nohtml><child><child><span @text="globalData"></span></child></child></parent-nohtml>`);
+	component.defineComponents("./test/stubs/issue-152/parent-nohtml.webc");
+	component.defineComponents("./test/stubs/issue-152/child.webc");
+
+	let { html } = await component.compile({
+		data: {
+			globalData: "Hello"
+		}
+	});
+
+	t.is(html.trim(), `<h2><h2><span>Hello</span></h2></h2>`);
 });

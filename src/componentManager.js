@@ -212,6 +212,7 @@ class ComponentManager {
 
 		let rootAttributeMode = this.getRootMode(topLevelNodes);
 		let ignoreRootTag = this.ignoreComponentParentTag(topLevelNodes, rootAttributeMode, hasDeclarativeShadowDom);
+		let slotTargets = AstQuery.getSlotTargets(ast);
 
 		this.components[filePath] = {
 			filePath,
@@ -231,7 +232,7 @@ class ComponentManager {
 			scopedStyleHash,
 			rootAttributeMode,
 			rootAttributes: AstQuery.getRootAttributes(ast, scopedStyleHash),
-			slotTargets: AstQuery.getSlotTargets(ast),
+			slotTargets: slotTargets,
 			setupScript,
 		};
 

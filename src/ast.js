@@ -518,11 +518,12 @@ class AstSerializer {
 			helpers: this.dataCascade.getHelpers(),
 		});
 
+		let parentComponent = this.componentManager.get(options.closestParentComponent);
 		for(let type of transformTypes) {
 			content = await this.transforms[type].call({
 				type,
 				...context
-			}, content, ancestorComponent);
+			}, content, parentComponent);
 		}
 
 		return content;
@@ -563,7 +564,7 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	 async getContentForNamedSlotNode(slotName, slots, slotNode, options) {
+	 async getContentForNamedSlotNode(component, slotName, slots, slotNode, options) {
 		slotName = slotName || "default";
 
 		let slotAst = slots[slotName];
@@ -579,6 +580,7 @@ class AstSerializer {
 			// Use fallback content in named slot (no slottable content for named slot found)
 			if(!slotAst && slotName !== "default") {
 				options.isSlottableContent = false;
+				options.authoredInComponent = component.filePath;
 
 				let { html: mismatchedSlotHtml } = await this.getChildContent(slotNode, slots, options, true);
 				return mismatchedSlotHtml;
@@ -593,6 +595,7 @@ class AstSerializer {
 
 		// No slottable content for `default` found: use fallback content in default slot <slot>fallback content</slot>
 		options.isSlottableContent = false;
+		options.authoredInComponent = component.filePath;
 
 		let { html: slotFallbackHtml } = await this.getChildContent(slotNode, null, options, true);
 		return slotFallbackHtml;
@@ -605,9 +608,9 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async getContentForSlotNode(slotNode, slots, options) {
+	async getContentForSlotNode(component, slotNode, slots, options) {
 		let slotName = AstQuery.getAttributeValue(slotNode, "name");
-		return this.getContentForNamedSlotNode(slotName, slots, slotNode, options);
+		return this.getContentForNamedSlotNode(component, slotName, slots, slotNode, options);
 	}
 
 	/**
@@ -1061,7 +1064,7 @@ class AstSerializer {
 				};
 			}
 		} else if(node.nodeName === "#comment") {
-			// persist flow control info past comment nodes
+			// passthrough flow control info through comment nodes
 			if(metadata.previousSiblingFlowControl?.type) {
 				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
 				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
@@ -1104,7 +1107,9 @@ class AstSerializer {
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
-		if(component && !options.isSlottableContent) {
+		if(options.isSlottableContent) {
+			// do nothing, inherit authoredInComponent
+		} else if(component) {
 			options.authoredInComponent = options.closestParentComponent;
 		}
 
@@ -1179,25 +1184,30 @@ class AstSerializer {
 		if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
 
+			// TODO revert this to options?
+			let o = Object.assign({}, options);
+
 			// for attribute sharing (from renderStartTag)
-			options.hostComponentNode = node;
-			options.hostComponentData = attrs;
-			options.isSlottableContent = false;
+			o.hostComponentNode = node;
+			o.hostComponentData = attrs;
 
 			let slots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp);
-			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
+
+			// none of the shadow dom in here should inherit slottable info
+			o.isSlottableContent = false;
+			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, o, streamEnabled);
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
 		}
 
 		// Skip the remaining content if we have foreshadow dom!
+		// Skip the remaining if we have shadow dom in the component definition
 		if(!componentHasContent) {
 			let externalSource = AstQuery.getExternalSource(tagName, node);
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottedContent = true;
-
-				content += await this.getContentForSlotNode(node, slots, options);
+				content += await this.getContentForSlotNode(component, node, slots, options);
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
 
@@ -1207,8 +1217,10 @@ class AstSerializer {
 
 				content += this.outputHtml(c, streamEnabled);
 			} else if(node.childNodes?.length > 0 || externalSource) {
-				// Fallback to light DOM if no component dom exists (default slot content)
+				// Fallback to default slottable content if no component shadow dom exists (default slot content)
 				if(componentHasContent === false) {
+					// TODO combine isSlottable with isSlotted
+					options.isSlottableContent = true;
 					options.isSlottedContent = true;
 				}
 
