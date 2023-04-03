@@ -410,11 +410,12 @@ class AstSerializer {
 
 	// This will be the parent component in component definition files, and the host component in slotted content
 	getAuthoredInComponent(options) {
-		// slot content is content in the host component, not in the component definition.
+		// slottable content in the host, not in the component definition.
 		// https://github.com/11ty/webc/issues/152
-		if(options.isSlottedContent) {
-			return this.componentManager.get(options.hostComponentContextFilePath);
+		if(options.authoredInComponent) {
+			return this.componentManager.get(options.authoredInComponent);
 		}
+
 		return this.componentManager.get(options.closestParentComponent);
 	}
 
@@ -577,15 +578,22 @@ class AstSerializer {
 
 			// Use fallback content in named slot (no slottable content for named slot found)
 			if(!slotAst && slotName !== "default") {
+				options.isSlottableContent = false;
+
 				let { html: mismatchedSlotHtml } = await this.getChildContent(slotNode, slots, options, true);
 				return mismatchedSlotHtml;
 			}
+
+			// Slottable content found, compile it
+			options.isSlottableContent = true;
 
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
 		}
 
 		// No slottable content for `default` found: use fallback content in default slot <slot>fallback content</slot>
+		options.isSlottableContent = false;
+
 		let { html: slotFallbackHtml } = await this.getChildContent(slotNode, null, options, true);
 		return slotFallbackHtml;
 	}
@@ -1096,6 +1104,10 @@ class AstSerializer {
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
+		if(component && !options.isSlottableContent) {
+			options.authoredInComponent = options.closestParentComponent;
+		}
+
 		let flowControl = await this.runFlowControl(node, options, metadata);
 		Object.assign(currentNodeMetadata, flowControl.metadata);
 
@@ -1170,6 +1182,7 @@ class AstSerializer {
 			// for attribute sharing (from renderStartTag)
 			options.hostComponentNode = node;
 			options.hostComponentData = attrs;
+			options.isSlottableContent = false;
 
 			let slots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
@@ -1274,6 +1287,7 @@ class AstSerializer {
 		options = Object.assign({
 			rawMode: false, // plaintext output
 			isSlottedContent: false,
+			isSlottableContent: false,
 			isMatchingSlotSource: false,
 			assets: {
 				buckets: {

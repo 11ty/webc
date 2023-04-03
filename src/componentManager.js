@@ -27,7 +27,7 @@ class ComponentManager {
 			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
 		}
 	}
-	
+
 	getRootMode(topLevelNodes) {
 		// Has <* webc:root> (has to be a root child, not script/style)
 		for(let child of topLevelNodes) {
@@ -44,7 +44,7 @@ class ComponentManager {
 			if(rootAttributeMode === "override") {
 				return true;
 			}
-	
+
 			// use parent tag if webc:root (and not webc:root="override")
 			return false;
 		}
@@ -134,7 +134,7 @@ class ComponentManager {
 			return this.getDigest(hash);
 		}
 	}
-	
+
 	/* Careful, this one mutates */
 	static addImpliedWebCAttributes(node) {
 		if(node._webcImpliedAttributesAdded) {
@@ -202,7 +202,7 @@ class ComponentManager {
 		// only executes once per component
 		let setupScript = await this.getSetupScriptValue(ast, filePath, dataCascade);
 		let hasDeclarativeShadowDom = AstQuery.hasDeclarativeShadowDomChild(ast);
-		
+
 		let topLevelNodes = AstQuery.getTopLevelNodes(ast);
 
 		// important for ignoreComponentParentTag, issue #135
@@ -223,7 +223,7 @@ class ComponentManager {
 				}
 				return this._lineStarts;
 			},
-			
+
 			mode,
 			isTopLevelComponent,
 			hasDeclarativeShadowDom,
