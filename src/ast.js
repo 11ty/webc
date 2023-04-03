@@ -5,7 +5,6 @@ import { DepGraph } from "dependency-graph";
 import { WebC } from "../webc.js";
 import { Path } from "./path.js";
 import { AstQuery } from "./astQuery.js";
-import { AstModify } from "./astModify.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { Looping } from "./looping.js";
