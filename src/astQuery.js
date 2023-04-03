@@ -1,6 +1,18 @@
+import util from "util";
 import { AstSerializer } from "./ast.js";
 
 class AstQuery {
+	static inspectNode(node) {
+		return util.inspect(node, false, 0, true);
+	}
+
+	static logNode(node) {
+		let tagName = AstQuery.getTagName(node);
+		if(tagName && tagName !== "body" && tagName !== "html" && tagName !== "head") {
+			console.log(AstQuery.inspectNode(node))
+		}
+	}
+
 	// List from the parse5 serializer
 	// https://github.com/inikulin/parse5/blob/3955dcc158031cc773a18517d2eabe8b17107aa3/packages/parse5/lib/serializer/index.ts
 	static voidElements = {

@@ -311,6 +311,10 @@ class AstSerializer {
 		return this.componentManager.parse(filePath, this.mode, this.dataCascade, ast, content);
 	}
 
+	getComponentFilePath(name) {
+		return this.componentMapNameToFilePath[name];
+	}
+
 	// synchronous (components should already be cached)
 	getComponent(name, options) {
 		if(!name || !this.componentMapNameToFilePath[name]) {
@@ -318,7 +322,7 @@ class AstSerializer {
 			return false;
 		}
 
-		let filePath = this.componentMapNameToFilePath[name];
+		let filePath = this.getComponentFilePath(name);
 
 		// is a circular dependency, render as a plain-ol-tag
 		if(this.isCircularDependency(filePath, options)) {
@@ -406,7 +410,7 @@ class AstSerializer {
 	}
 
 	// This will be the parent component in component definition files, and the host component in slotted content
-	getAncestorComponentForData(options) {
+	getAuthoredInComponent(options) {
 		// slot content is content in the host component, not in the component definition.
 		// https://github.com/11ty/webc/issues/152
 		if(options.isSlottedContent) {
@@ -444,7 +448,7 @@ class AstSerializer {
 			}
 		}
 
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
@@ -503,7 +507,7 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let context = this.dataCascade.getData(useGlobalData, options.componentProps, options.currentTagAttributes, ancestorComponent?.setupScript, options.injectedData, {
 			// Ideally these would be under `webc.*`
@@ -572,7 +576,7 @@ class AstSerializer {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
 
-			// not found in slots object
+			// no matching slot found, return child content
 			if(!slotAst && slotName !== "default") {
 				let { html: mismatchedSlotHtml } = await this.getChildContent(node, slots, options, true);
 				return mismatchedSlotHtml;
@@ -772,7 +776,7 @@ class AstSerializer {
 
 	// Used for @html, @raw, @text, @attributes, webc:if, webc:elseif, webc:for
 	async evaluateAttribute(name, attrContent, options) {
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
 
@@ -998,6 +1002,7 @@ class AstSerializer {
 			return { html, currentNodeMetadata };
 		}
 
+		// Warning: Side effects
 		ComponentManager.addImpliedWebCAttributes(node);
 
 		let tagName = AstQuery.getTagName(node);
@@ -1133,14 +1138,14 @@ class AstSerializer {
 
 		// @html and @text are aliases for default slot content when used on a host component
 		let componentHasContent = null;
-		let defaultSlotNodes = [];
+		let defaultSlotNodesFromProp = [];
 
 		let propContentNode = await this.getPropContentAst(node, slots, options);
 		let assetKey = this.getAggregateAssetKey(tagName, node);
 		if(propContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
-				defaultSlotNodes.push(propContentNode);
+				defaultSlotNodesFromProp.push(propContentNode);
 			} else if(assetKey) { // assets for aggregation
 				if(!node.childNodes) {
 					node.childNodes = [];
@@ -1167,7 +1172,7 @@ class AstSerializer {
 			options.hostComponentNode = node;
 			options.hostComponentData = attrs;
 
-			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
+			let slots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp);
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
 			componentHasContent = foreshadowDom.trim().length > 0;
 			content += foreshadowDom;
