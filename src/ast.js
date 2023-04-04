@@ -519,12 +519,11 @@ class AstSerializer {
 			helpers: this.dataCascade.getHelpers(),
 		});
 
-		let parentComponent = this.componentManager.get(options.closestParentComponent);
 		for(let type of transformTypes) {
 			content = await this.transforms[type].call({
 				type,
 				...context
-			}, content, parentComponent);
+			}, content, ancestorComponent);
 		}
 
 		return content;
