@@ -17,6 +17,7 @@ import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js";
 import { DataCascade } from "./dataCascade.js";
 import { ComponentManager } from "./componentManager.js";
+import { Util } from "./util.js";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -412,7 +413,7 @@ class AstSerializer {
 	getAuthoredInComponent(options) {
 		// slottable content in the host, not in the component definition.
 		// https://github.com/11ty/webc/issues/152
-		if(options.authoredInComponent) {
+		if(options.isSlottableContent && options.authoredInComponent) {
 			return this.componentManager.get(options.authoredInComponent);
 		}
 
@@ -588,6 +589,12 @@ class AstSerializer {
 
 			// Slottable content found, compile it
 			options.isSlottableContent = true;
+
+			if(options.authoredInParentComponent) {
+				options.authoredInComponent = options.authoredInParentComponent;
+				delete options.authoredInParentComponent;
+			}
+
 			// do not set options.authoredInComponent, inherit it
 
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
@@ -790,8 +797,8 @@ class AstSerializer {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
-
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
+
 		return returns;
 	}
 
