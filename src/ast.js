@@ -1114,11 +1114,6 @@ class AstSerializer {
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
 
-		if(options.isSlottableContent) {
-			// do nothing, inherit authoredInComponent
-		} else if(component) {
-			options.authoredInComponent = options.closestParentComponent;
-		}
 
 		let flowControl = await this.runFlowControl(node, options, metadata);
 		Object.assign(currentNodeMetadata, flowControl.metadata);
@@ -1199,8 +1194,11 @@ class AstSerializer {
 
 			// none of the shadow dom in here should inherit slottable info
 			options.isSlottableContent = false;
+			options.authoredInParentComponent = options.authoredInComponent;
+
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
 			componentDefinitionHasContent = foreshadowDom.trim().length > 0;
+
 			content += foreshadowDom;
 		}
 
