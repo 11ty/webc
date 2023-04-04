@@ -1,0 +1,14 @@
+<c-red>Hi I am red</c-red>
+<c-blue>Hi I am blue</c-blue>
+
+<c-red>
+I am red.
+<c-blue>Hi I am blue</c-blue>
+still red
+</c-red>
+
+<c-blue>
+I am blue.
+<c-red>Hi I am red</c-red>
+still blue
+</c-blue>

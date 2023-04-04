@@ -1,0 +1,7 @@
+<div webc:root="override"><slot></slot></div>
+
+<style webc:scoped>
+:host {
+	background-color: blue;
+}
+</style>
