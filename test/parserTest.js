@@ -163,7 +163,7 @@ for(let filename in fileInputStubs) {
 
 test("Using a top level <template>", async t => {
 	let component = new WebC();
-	
+
 	component.setInputPath("./test/stubs/template.webc");
 
 	let { html, css, js, components } = await component.compile();
@@ -461,7 +461,7 @@ const slotsStubs = {
 		},
 		content: `<div>hello<p>Testing</p></div>`,
 	},
-	
+
 	"./test/stubs/slot-fallback-content.webc": {
 		description: "Slot uses fallback content",
 		slots: {},
@@ -483,7 +483,7 @@ for(let filename in slotsStubs) {
 		let component = new WebC();
 
 		component.setInputPath(filename);
-		
+
 		let { html, css, js, components } = await component.compile({
 			slots: stub.slots
 		});
@@ -513,7 +513,7 @@ test("<slot webc:raw>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/slot-raw.webc");
-	
+
 	let { html, css, js, components } = await component.compile({
 		slots: {
 			name1: "Hello",
@@ -531,7 +531,7 @@ test("<slot webc:keep>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/slot-keep.webc");
-	
+
 	let { html, css, js, components } = await component.compile({
 		slots: {
 			name1: "Hello",
@@ -602,7 +602,7 @@ test("Full page (with uppercase doctype) Issue #24", async t => {
 test("Component in page mode (error case)", async t => {
 	let page = new WebC();
 	page.setInputPath("./test/stubs/component-in-page-mode.webc");
-	
+
 	let { html, css, js, components } = await page.compile();
 
 	t.deepEqual(js, []);
@@ -1839,6 +1839,14 @@ test("Using props without “this”", async t => {
 <p key="-urns!"></p>`);
 });
 
+test("Use a falsy property in a dynamic attribute", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template :key="false"></template>`);
+
+	let { html } = await component.compile();
+
+	t.is(html, `<template></template>`);
+});
 
 test("Use a missing property in a dynamic attribute", async (t) => {
 	let component = new WebC();
