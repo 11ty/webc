@@ -589,12 +589,11 @@ class AstSerializer {
 			// Slottable content found, compile it
 			options.isSlottableContent = true;
 
+			// inherit one level up
 			if(options.authoredInParentComponent) {
 				options.authoredInComponent = options.authoredInParentComponent;
 				delete options.authoredInParentComponent;
 			}
-
-			// do not set options.authoredInComponent, inherit it
 
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
@@ -1113,7 +1112,6 @@ class AstSerializer {
 			// we need to set this so that the props of the host component are evaluated with the webc:root attributes inside the component definition
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 		}
-
 
 		let flowControl = await this.runFlowControl(node, options, metadata);
 		Object.assign(currentNodeMetadata, flowControl.metadata);
