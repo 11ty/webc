@@ -1,3 +1,4 @@
+
 import { AstSerializer } from "./ast.js";
 
 class AstQuery {

@@ -5,7 +5,6 @@ import { DepGraph } from "dependency-graph";
 import { WebC } from "../webc.js";
 import { Path } from "./path.js";
 import { AstQuery } from "./astQuery.js";
-import { AstModify } from "./astModify.js";
 import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { Looping } from "./looping.js";
@@ -18,6 +17,7 @@ import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js";
 import { DataCascade } from "./dataCascade.js";
 import { ComponentManager } from "./componentManager.js";
+import { Util } from "./util.js";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -26,7 +26,7 @@ import { ComponentManager } from "./componentManager.js";
 /**
  * @typedef {object} CompileOptions
  * @property {boolean} rawMode
- * @property {boolean} isSlottedContent
+ * @property {boolean} isSlottableContent
  * @property {boolean} isMatchingSlotSource
  * @property {string} closestParentComponent
  * @property {string} closestParentUid
@@ -311,6 +311,10 @@ class AstSerializer {
 		return this.componentManager.parse(filePath, this.mode, this.dataCascade, ast, content);
 	}
 
+	getComponentFilePath(name) {
+		return this.componentMapNameToFilePath[name];
+	}
+
 	// synchronous (components should already be cached)
 	getComponent(name, options) {
 		if(!name || !this.componentMapNameToFilePath[name]) {
@@ -318,7 +322,7 @@ class AstSerializer {
 			return false;
 		}
 
-		let filePath = this.componentMapNameToFilePath[name];
+		let filePath = this.getComponentFilePath(name);
 
 		// is a circular dependency, render as a plain-ol-tag
 		if(this.isCircularDependency(filePath, options)) {
@@ -348,7 +352,7 @@ class AstSerializer {
 	async getChildContent(parentNode, slots, options, streamEnabled) {
 		let html = [];
 		let previousSiblingFlowControl = {};
-		
+
 		for(let child of parentNode.childNodes || []) {
 			let { html: nodeHtml, currentNodeMetadata: meta } = await this.compileNode(child, slots, options, streamEnabled, { previousSiblingFlowControl });
 			previousSiblingFlowControl.type = meta.flowControlType;
@@ -406,12 +410,13 @@ class AstSerializer {
 	}
 
 	// This will be the parent component in component definition files, and the host component in slotted content
-	getAncestorComponentForData(options) {
-		// slot content is content in the host component, not in the component definition.
+	getAuthoredInComponent(options) {
+		// slottable content in the host, not in the component definition.
 		// https://github.com/11ty/webc/issues/152
-		if(options.isSlottedContent) {
-			return this.componentManager.get(options.hostComponentContextFilePath);
+		if(options.isSlottableContent && options.authoredInComponent) {
+			return this.componentManager.get(options.authoredInComponent);
 		}
+
 		return this.componentManager.get(options.closestParentComponent);
 	}
 
@@ -444,7 +449,7 @@ class AstSerializer {
 			}
 		}
 
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
@@ -503,7 +508,7 @@ class AstSerializer {
 			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
 		}
 
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let context = this.dataCascade.getData(useGlobalData, options.componentProps, options.currentTagAttributes, ancestorComponent?.setupScript, options.injectedData, {
 			// Ideally these would be under `webc.*`
@@ -559,7 +564,7 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	 async getContentForNamedSlot(slotName, slots, node, options) {
+	 async getContentForNamedSlotNode(slotName, slots, slotNode, options) {
 		slotName = slotName || "default";
 
 		let slotAst = slots[slotName];
@@ -572,18 +577,33 @@ class AstSerializer {
 				slotAst = await WebC.getASTFromString(slotAst);
 			}
 
-			// not found in slots object
+			// Render fallback content in a named slot (no slottable content for named slot found)
 			if(!slotAst && slotName !== "default") {
-				let { html: mismatchedSlotHtml } = await this.getChildContent(node, slots, options, true);
+				options.isSlottableContent = false;
+				options.authoredInComponent = options.closestParentComponent;
+
+				let { html: mismatchedSlotHtml } = await this.getChildContent(slotNode, slots, options, true);
 				return mismatchedSlotHtml;
+			}
+
+			// Slottable content found, compile it
+			options.isSlottableContent = true;
+
+			// inherit one level up
+			if(options.authoredInParentComponent) {
+				options.authoredInComponent = options.authoredInParentComponent;
+				delete options.authoredInParentComponent;
 			}
 
 			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
 			return slotHtml;
 		}
 
-		// Use light dom fallback content in <slot> if no slot source exists to fill it
-		let { html: slotFallbackHtml } = await this.getChildContent(node, null, options, true);
+		// No slottable content for `default` found: use fallback content in default slot <slot>fallback content</slot>
+		options.isSlottableContent = false;
+		options.authoredInComponent = options.closestParentComponent;
+
+		let { html: slotFallbackHtml } = await this.getChildContent(slotNode, null, options, true);
 		return slotFallbackHtml;
 	}
 
@@ -594,9 +614,9 @@ class AstSerializer {
 	 * @returns {Promise<string>}
 	 * @private
 	 */
-	async getContentForSlot(node, slots, options) {
-		let slotName = AstQuery.getAttributeValue(node, "name");
-		return this.getContentForNamedSlot(slotName, slots, node, options);
+	async getContentForSlotNode(slotNode, slots, options) {
+		let slotName = AstQuery.getAttributeValue(slotNode, "name");
+		return this.getContentForNamedSlotNode(slotName, slots, slotNode, options);
 	}
 
 	/**
@@ -690,12 +710,12 @@ class AstSerializer {
 
 		return Array.from(types);
 	}
-	
+
 	isCircularDependency(componentFilePath, options) {
 		if(options.closestParentComponent) {
 			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
 			// <web-component><child/></web-component>
-			if(!options.isSlottedContent) {
+			if(!options.isSlottableContent) {
 				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
 					return true;
 				}
@@ -772,11 +792,11 @@ class AstSerializer {
 
 	// Used for @html, @raw, @text, @attributes, webc:if, webc:elseif, webc:for
 	async evaluateAttribute(name, attrContent, options) {
-		let ancestorComponent = this.getAncestorComponentForData(options);
+		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
-
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
+
 		return returns;
 	}
 
@@ -998,6 +1018,7 @@ class AstSerializer {
 			return { html, currentNodeMetadata };
 		}
 
+		// Warning: Side effects
 		ComponentManager.addImpliedWebCAttributes(node);
 
 		let tagName = AstQuery.getTagName(node);
@@ -1049,7 +1070,7 @@ class AstSerializer {
 				};
 			}
 		} else if(node.nodeName === "#comment") {
-			// persist flow control info past comment nodes
+			// passthrough flow control info through comment nodes
 			if(metadata.previousSiblingFlowControl?.type) {
 				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
 				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
@@ -1104,7 +1125,7 @@ class AstSerializer {
 
 		let slotSource = AstQuery.getAttributeValue(node, "slot");
 		if(!options.rawMode && options.closestParentComponent) {
-			if(slotSource && options.isSlottedContent) {
+			if(slotSource && options.isSlottableContent) {
 				let { slotTargets } = this.componentManager.get(options.closestParentComponent);
 				if(slotTargets[slotSource]) {
 					options.isMatchingSlotSource = true;
@@ -1132,15 +1153,15 @@ class AstSerializer {
 
 
 		// @html and @text are aliases for default slot content when used on a host component
-		let componentHasContent = null;
-		let defaultSlotNodes = [];
+		let componentDefinitionHasContent = null;
+		let defaultSlotNodesFromProp = [];
 
 		let propContentNode = await this.getPropContentAst(node, slots, options);
 		let assetKey = this.getAggregateAssetKey(tagName, node);
 		if(propContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
-				defaultSlotNodes.push(propContentNode);
+				defaultSlotNodesFromProp.push(propContentNode);
 			} else if(assetKey) { // assets for aggregation
 				if(!node.childNodes) {
 					node.childNodes = [];
@@ -1154,7 +1175,7 @@ class AstSerializer {
 				// WARNING: side effects (filtered above)
 				node.childNodes.push(propContentNode);
 			} else {
-				componentHasContent = propContentNode.value.trim().length > 0;
+				componentDefinitionHasContent = propContentNode.value.trim().length > 0;
 				content += propContentNode.value;
 			}
 		}
@@ -1167,20 +1188,25 @@ class AstSerializer {
 			options.hostComponentNode = node;
 			options.hostComponentData = attrs;
 
-			let slots = this.getSlottedContentNodes(node, defaultSlotNodes);
+			let slots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp);
+
+			// none of the shadow dom in here should inherit slottable info
+			options.isSlottableContent = false;
+			options.authoredInParentComponent = options.authoredInComponent;
+
 			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
-			componentHasContent = foreshadowDom.trim().length > 0;
+			componentDefinitionHasContent = foreshadowDom.trim().length > 0;
+
 			content += foreshadowDom;
 		}
 
-		// Skip the remaining content if we have foreshadow dom!
-		if(!componentHasContent) {
+		// Skip the remaining if we have shadow dom in the component definition
+		if(!componentDefinitionHasContent) {
 			let externalSource = AstQuery.getExternalSource(tagName, node);
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
-				options.isSlottedContent = true;
-
-				content += await this.getContentForSlot(node, slots, options);
+				options.isSlottableContent = true;
+				content += await this.getContentForSlotNode(node, slots, options);
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
 
@@ -1190,9 +1216,9 @@ class AstSerializer {
 
 				content += this.outputHtml(c, streamEnabled);
 			} else if(node.childNodes?.length > 0 || externalSource) {
-				// Fallback to light DOM if no component dom exists (default slot content)
-				if(componentHasContent === false) {
-					options.isSlottedContent = true;
+				// Fallback to default slottable content if no component shadow dom exists (default slot content)
+				if(componentDefinitionHasContent === false) {
+					options.isSlottableContent = true;
 				}
 
 				if(options.rawMode) {
@@ -1269,7 +1295,8 @@ class AstSerializer {
 	async compile(node, slots = {}, options = {}) {
 		options = Object.assign({
 			rawMode: false, // plaintext output
-			isSlottedContent: false,
+			authoredInComponent: this.filePath,
+			isSlottableContent: false,
 			isMatchingSlotSource: false,
 			assets: {
 				buckets: {
