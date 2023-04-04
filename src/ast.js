@@ -26,7 +26,7 @@ import { Util } from "./util.js";
 /**
  * @typedef {object} CompileOptions
  * @property {boolean} rawMode
- * @property {boolean} isSlottedContent
+ * @property {boolean} isSlottableContent
  * @property {boolean} isMatchingSlotSource
  * @property {string} closestParentComponent
  * @property {string} closestParentUid
@@ -716,7 +716,7 @@ class AstSerializer {
 		if(options.closestParentComponent) {
 			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
 			// <web-component><child/></web-component>
-			if(!options.isSlottedContent) {
+			if(!options.isSlottableContent) {
 				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
 					return true;
 				}
@@ -1127,7 +1127,7 @@ class AstSerializer {
 
 		let slotSource = AstQuery.getAttributeValue(node, "slot");
 		if(!options.rawMode && options.closestParentComponent) {
-			if(slotSource && options.isSlottedContent) {
+			if(slotSource && options.isSlottableContent) {
 				let { slotTargets } = this.componentManager.get(options.closestParentComponent);
 				if(slotTargets[slotSource]) {
 					options.isMatchingSlotSource = true;
@@ -1207,7 +1207,7 @@ class AstSerializer {
 			let externalSource = AstQuery.getExternalSource(tagName, node);
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
-				options.isSlottedContent = true;
+				options.isSlottableContent = true;
 				content += await this.getContentForSlotNode(node, slots, options);
 			} else if(node.content) {
 				let c = await this.getContentForTemplate(node, slots, options);
@@ -1220,9 +1220,7 @@ class AstSerializer {
 			} else if(node.childNodes?.length > 0 || externalSource) {
 				// Fallback to default slottable content if no component shadow dom exists (default slot content)
 				if(componentDefinitionHasContent === false) {
-					// TODO combine isSlottable with isSlotted
 					options.isSlottableContent = true;
-					options.isSlottedContent = true;
 				}
 
 				if(options.rawMode) {
@@ -1300,7 +1298,6 @@ class AstSerializer {
 		options = Object.assign({
 			rawMode: false, // plaintext output
 			authoredInComponent: this.filePath,
-			isSlottedContent: false,
 			isSlottableContent: false,
 			isMatchingSlotSource: false,
 			assets: {
