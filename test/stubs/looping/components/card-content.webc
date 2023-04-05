@@ -1,0 +1,5 @@
+<!--- loop variable should be accessible here? --->
+<div @text="c.name"></div>
+<ul>
+	<li webc:for="num of info.numbers" @text="`${info.name} - ${num}`"></li>
+</ul>

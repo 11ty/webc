@@ -1,0 +1,9 @@
+<!--- card --->
+<div :style="`border-color:${info.color}`">
+	<slot></slot>
+</div>
+<style>
+	div {
+		border: 1px solid green;
+	}
+</style>
