@@ -871,14 +871,15 @@ class AstSerializer {
 			return "";
 		}
 
-		let {closestParentComponent} = options;
+		let component;
 
-		// The template resides in the host component child content
 		if(options.useHostComponentMarkup && options.hostComponentContextFilePath) {
-			closestParentComponent = options.hostComponentContextFilePath;
+			component = this.componentManager.get(options.hostComponentContextFilePath)
+		} else {
+			component = this.getAuthoredInComponent(options);
 		}
 
-		let {newLineStartIndeces, content} = this.componentManager.get(closestParentComponent);
+		let {newLineStartIndeces, content} = component;
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
 
