@@ -144,7 +144,7 @@ class ComponentManager {
 		node._webcImpliedAttributesAdded = true;
 
 		if(AstQuery.isDeclarativeShadowDomNode(node)) {
-			AstModify.addAttribute(node, AstSerializer.attrs.RAW, "");
+			AstModify.addAttribute(node, AstSerializer.attrs.NOBUNDLE, "");
 		}
 
 		// webc:type="js" (WebC v0.9.0+) has implied webc:is="template" webc:nokeep

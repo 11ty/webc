@@ -2,5 +2,5 @@
 	<style>
 		b { color: red; }
 	</style>
-	Hello <b>World</b>!
+	Hello <b @text="$data.globalData"></b>!
 </template>

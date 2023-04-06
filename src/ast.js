@@ -135,6 +135,7 @@ class AstSerializer {
 		KEEP: "webc:keep",
 		NOKEEP: "webc:nokeep",
 		RAW: "webc:raw",
+		NOBUNDLE: "webc:nobundle",
 		IS: "webc:is",
 		ROOT: "webc:root",
 		IMPORT: "webc:import", // import another webc inline
@@ -241,9 +242,12 @@ class AstSerializer {
 		return false;
 	}
 
-	isBundledTag(node, tagName) {
+	isBundledTag(node, tagName, options) {
 		if(!tagName) {
 			tagName = AstQuery.getTagName(node);
+		}
+		if(options.skipBundle) {
+			return false;
 		}
 		return this.bundlerMode && (tagName === "style" || AstQuery.isScriptNode(tagName, node) || AstQuery.isLinkStylesheetNode(tagName, node));
 	}
@@ -264,7 +268,7 @@ class AstSerializer {
 			return true;
 		}
 
-		let isBundledTag = this.isBundledTag(node, tagName);
+		let isBundledTag = this.isBundledTag(node, tagName, options);
 		if(!isBundledTag && this.isUsingPropBasedContent(node)) {
 			return false;
 		}
@@ -745,8 +749,8 @@ class AstSerializer {
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
 
-	getAggregateAssetKey(tagName, node) {
-		if(!this.bundlerMode) {
+	getAggregateAssetKey(tagName, node, options) {
+		if(!this.bundlerMode || options.skipBundle) {
 			return false;
 		}
 
@@ -901,7 +905,7 @@ class AstSerializer {
 		let parentBucket = options.inheritedBuckets[options.inheritedBuckets.length - 1];
 
 		if(parentBucket !== newBucketName) {
-			if(!this.isBundledTag(node, tagName)) {
+			if(!this.isBundledTag(node, tagName, options)) {
 				options.inheritedBuckets.push(newBucketName);
 			}
 		}
@@ -1020,6 +1024,10 @@ class AstSerializer {
 
 		// Warning: Side effects
 		ComponentManager.addImpliedWebCAttributes(node);
+
+		if(AstQuery.hasAttribute(node, AstSerializer.attrs.NOBUNDLE)) {
+			options.skipBundle = true;
+		}
 
 		let tagName = AstQuery.getTagName(node);
 		let content = "";
@@ -1157,7 +1165,7 @@ class AstSerializer {
 		let defaultSlotNodesFromProp = [];
 
 		let propContentNode = await this.getPropContentAst(node, slots, options);
-		let assetKey = this.getAggregateAssetKey(tagName, node);
+		let assetKey = this.getAggregateAssetKey(tagName, node, options);
 		if(propContentNode !== false) {
 			if(!options.rawMode && component) {
 				// Fake AST text node
@@ -1296,6 +1304,7 @@ class AstSerializer {
 		options = Object.assign({
 			rawMode: false, // plaintext output
 			authoredInComponent: this.filePath,
+			skipBundle: false,
 			isSlottableContent: false,
 			isMatchingSlotSource: false,
 			assets: {
