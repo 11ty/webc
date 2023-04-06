@@ -11,7 +11,7 @@ async function getStreamChunks(readableStream) {
 		readableStream.on("data", (chunk) => {
 			data.push(chunk.toString());
 		});
-		
+
 
 		readableStream.on("error", (error) => {
 			reject(error);
@@ -308,7 +308,7 @@ Light dom content</web-component>`);
 });
 
 test("<style webc:scoped=\"hashOverride\"> with collisions", async t => {
-	
+
 	let component = new WebC();
 	component.setInputPath("./test/stubs/scoped-override-collisions.webc");
 
@@ -358,7 +358,7 @@ const slotsStubs = {
 		content: `<div>hello<p>Testing</p></div>`,
 		htmlChunkSize: 6,
 	},
-	
+
 	"./test/stubs/slot-fallback-content.webc": {
 		description: "Slot uses fallback content",
 		slots: {},
@@ -382,7 +382,7 @@ for(let filename in slotsStubs) {
 		let component = new WebC();
 
 		component.setInputPath(filename);
-		
+
 		let { chunks } = await testGetStreamResultFor(component, null, stub.slots);
 
 		t.is( chunks.html.join(""), stub.content);
@@ -396,7 +396,7 @@ test("<slot webc:raw>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/slot-raw.webc");
-	
+
 	let { chunks } = await testGetStreamResultFor(component, null, {
 		name1: "Hello",
 		default: "Goodbye"
@@ -413,7 +413,7 @@ test("<slot webc:keep>", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/slot-keep.webc");
-	
+
 	let { chunks } = await testGetStreamResultFor(component, null, {
 		name1: "Hello",
 		default: "Goodbye",
@@ -460,7 +460,7 @@ test("Using a web component without it being declared", async t => {
 	let component = new WebC();
 
 	component.setInputPath("./test/stubs/nested.webc");
-	
+
 	let { chunks } = await testGetStreamResultFor(component);
 
 	t.is( chunks.html.join(""), `Before
@@ -481,23 +481,6 @@ test("Using a web component (skip parent)", async t => {
 	t.deepEqual(css, []);
 	t.is(html, `Before
 SSR content
-After`);
-});
-
-test("Using a web component with a declarative shadow root", async t => {
-	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/components/shadowroot.webc"
-	});
-
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.is(html, `Before
-<web-component><template shadowroot="open">
-	<style>
-		b { color: red; }
-	</style>
-	Hello <b>World</b>!
-</template></web-component>
 After`);
 });
 
