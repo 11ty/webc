@@ -1,0 +1,1 @@
+<button :onclick="`alert('Hello ${info.name}')`">Say hello</button>

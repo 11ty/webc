@@ -110,3 +110,20 @@ test("script webc:setup feeds data for looping", async t => {
 <b>2</b>
 <b>3</b>`);
 });
+
+test("nesting webc:for over component hierarchy", async t => {
+	let component = new WebC();
+	let {contacts} = await import("./stubs/looping/complex/data.js");
+
+	component.defineComponents("./test/stubs/looping/components/*.webc");
+	component.setInputPath("./test/stubs/looping/complex/entry-point.webc");
+
+	let { html } = await component.compile({data:{contacts}});
+	
+	t.true(html.indexOf(`<button onclick="alert('Hello Monica')">Say hello</button>`) > -1)
+	t.true(html.indexOf(`<li>Ross - 1</li>`) > -1)
+	t.true(html.indexOf(`<div style="border-color:violet">`) > -1)
+	t.true(html.indexOf(`<div>Chandler</div>`) > -1)
+	t.true(html.indexOf(`border: 1px solid green;`) > -1)
+	
+})
