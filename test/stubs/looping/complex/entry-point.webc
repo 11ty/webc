@@ -1,0 +1,6 @@
+<!--- correct notation to pass down the js object and call it 'info' --->
+<card-thing webc:for="c of contacts" :@info="c">
+	<card-header :@info="c"></card-header>
+	<card-content :@info="c"></card-content>
+	<card-actions :@info="c"></card-actions>
+</card-thing>
