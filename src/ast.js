@@ -167,18 +167,6 @@ class AstSerializer {
 		this.aliases = aliases;
 	}
 
-	static getNewLineStartIndeces(content) {
-		let lineStarts = [];
-		let sum = 0;
-		let lineEnding = "\n";
-		// this should work okay with \r\n too, \r will just be treated as another character
-		for(let line of content.split(lineEnding)) {
-			lineStarts.push(sum);
-			sum += line.length + lineEnding.length;
-		}
-		return lineStarts;
-	}
-
 	setContent(content) {
 		this.content = content;
 	}
@@ -742,9 +730,6 @@ class AstSerializer {
 			options.components.addDependency(options.closestParentComponent, componentFilePath);
 		}
 
-		// save the previous
-		options.hostComponentContextFilePath = options.closestParentComponent;
-
 		// reset for next time
 		options.closestParentComponent = Path.normalizePath(componentFilePath);
 	}
@@ -857,7 +842,7 @@ class AstSerializer {
 	// Requires parse5’s sourceLocationInfo option to be set to true
 	getPreparsedRawTextContent(node, options) {
 		if(!node.sourceCodeLocation) {
-			throw new Error("`getPreparsedRawTextContent` requires `parse5->parse->sourceLocationInfo: true`. This is a WebC error that needs to be filed on the issue tracker: https://github.com/11ty/webc/issues/");
+			throw new Error(`We encountered a parsing error. You may have unexpected HTML in your document (${options.authoredInComponent}) or more rarely this may be a WebC error that needs to be filed on our issue tracker: https://github.com/11ty/webc/issues/ (\`getPreparsedRawTextContent\` requires \`parse5->parse->sourceLocationInfo: true\`)`);
 		}
 
 		// if void element, fallback to the node’s sourceCodeLocation (issue #67)
@@ -872,9 +857,8 @@ class AstSerializer {
 		}
 
 		let component;
-
-		if(options.useHostComponentMarkup && options.hostComponentContextFilePath) {
-			component = this.componentManager.get(options.hostComponentContextFilePath)
+		if(options.useHostComponentMarkup && options.authoredInComponent) {
+			component = this.componentManager.get(options.authoredInComponent)
 		} else {
 			component = this.getAuthoredInComponent(options);
 		}

@@ -1,4 +1,5 @@
 import util from "util";
+import { AstQuery } from "./astQuery.js";
 
 class Util {
 	static inspect(arg) {
@@ -27,9 +28,11 @@ class Util {
 			if(tagName === "body" || tagName === "html" || tagName === "head") {
 				// skip
 			} else {
-				content.push("Node: " + AstQuery.inspect(AstQuery.getNodeToStringRaw(node, tagName)));
+				content.push("Node: " + Util.inspect(Util.getNodeToStringRaw(node, tagName)));
 				// content.push(AstQuery.inspect(arg));
 			}
+		} else if(node.nodeName === "#text") {
+			content.push("Text node: " + Util.inspect(node.value))
 		}
 		console.log(...content);
 	}
