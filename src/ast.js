@@ -1,5 +1,5 @@
-import path from "path";
-import os from "os";
+import path from "node:path";
+import os from "node:os";
 import { DepGraph } from "dependency-graph";
 
 import { WebC } from "../webc.js";
