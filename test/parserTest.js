@@ -1834,6 +1834,16 @@ Original error message: helper is not a function`
 	});
 });
 
+test("Try to use a missing helper function in a dynamic prop (without this)", async (t) => {
+	let component = new WebC();
+	component.setContent(`<template :@key="helper()"></template>`);
+
+	await t.throwsAsync(component.compile(), {
+		message: `Evaluating a dynamic prop failed: \`:@key="helper()"\`.
+Original error message: helper is not a function`
+	});
+});
+
 
 test("Issue #3 slot inconsistency", async t => {
 	let component = new WebC();
