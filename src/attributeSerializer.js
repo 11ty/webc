@@ -157,7 +157,7 @@ class AttributeSerializer {
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
 		if(evaluation === "script") {
-			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Evaluating a dynamic attribute failed: \`${rawName}="${value}"\`.`, scriptContextKey);
+			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.`, scriptContextKey);
 			evaluatedValue = returns;
 		}
 
@@ -181,7 +181,7 @@ class AttributeSerializer {
 				let entry = {};
 				entry.rawName = rawName;
 				entry.rawValue = rawValue;
-	
+
 				entry.name = name;
 				entry.value = value;
 				entry.privacy = privacy;
