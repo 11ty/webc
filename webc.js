@@ -222,7 +222,7 @@ class WebC {
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);
-		ast.setComponentManager(this.globalComponentManager);
+		ast.setComponentManager(new ComponentManager());
 		ast.setBundlerMode(this.bundlerMode);
 		ast.setMode(mode);
 		ast.setContent(content);
