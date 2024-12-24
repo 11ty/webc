@@ -784,6 +784,11 @@ class AstSerializer {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
+		for (const attrName in options.hostComponentData) {
+			if (!attrName.includes(AttributeSerializer.DASH)) continue;
+			if (!attrContent.includes(attrName)) continue;
+			attrContent = attrContent.replaceAll(attrName, AttributeSerializer.camelCaseAttributeName(attrName));
+		  }
 		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 
 		return returns;

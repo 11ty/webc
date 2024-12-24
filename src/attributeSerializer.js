@@ -8,6 +8,8 @@ class AttributeSerializer {
 		dynamicProp: ":@",
 	}
 
+	static DASH = "-";
+
 	// Merge multiple style/class attributes into a single one, operates on :dynamic and @prop but with transformed values
 	// Usage by: `getString` function when writing attributes to the HTML tag output
 	// Usage by: when generating data object for render functions
@@ -72,9 +74,8 @@ class AttributeSerializer {
 
 	// Inputs are guaranteed to be lower case (per the HTML specification)
 	static camelCaseAttributeName(name) {
-		const DASH = "-";
-		if(name.includes(DASH)) {
-			return name.split(DASH).map((entry, j) => {
+		if(name.includes(this.DASH)) {
+			return name.split(this.DASH).map((entry, j) => {
 				if(j === 0) {
 					return entry;
 				}
