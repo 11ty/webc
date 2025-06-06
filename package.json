@@ -51,5 +51,13 @@
 		"ava": "^5.2.0",
 		"markdown-it": "^13.0.1",
 		"typescript": "^5.0.2"
-	}
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/11ty/webc"
+	},
+	"bugs": {
+		"url": "https://github.com/11ty/webc/issues"
+	},
+	"homepage": "https://github.com/11ty/webc"
 }
