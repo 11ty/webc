@@ -99,6 +99,29 @@ test("webc:for issue #139", async t => {
 <b>3</b>`);
 });
 
+//	looping over iterables that are not Objects or Arrays
+test("webc:for issue #179", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/issue-179-iterables.webc");
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<dl>
+<dt>one</dt>
+<dd>1</dd>
+<dt>two</dt>
+<dd>2</dd>
+<dt>three</dt>
+<dd>3</dd>
+</dl>
+<ul>
+<li>one</li>
+<li>two</li>
+<li>three</li>
+</ul>`);
+});
+
 test("script webc:setup feeds data for looping", async t => {
 	let component = new WebC();
 
@@ -119,11 +142,11 @@ test("nesting webc:for over component hierarchy", async t => {
 	component.setInputPath("./test/stubs/looping/complex/entry-point.webc");
 
 	let { html } = await component.compile({data:{contacts}});
-	
+
 	t.true(html.indexOf(`<button onclick="alert('Hello Monica')">Say hello</button>`) > -1)
 	t.true(html.indexOf(`<li>Ross - 1</li>`) > -1)
 	t.true(html.indexOf(`<div style="border-color:violet">`) > -1)
 	t.true(html.indexOf(`<div>Chandler</div>`) > -1)
 	t.true(html.indexOf(`border: 1px solid green;`) > -1)
-	
+
 })
