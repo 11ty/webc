@@ -1,7 +1,7 @@
-import fs from "fs";
+import fs from "node:fs";
 import fastglob from "fast-glob";
 import isGlob from "is-glob";
-import path from "path";
+import path from "node:path";
 
 import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
@@ -82,7 +82,7 @@ class WebC {
 		if(mode === "component" || !content.startsWith("<!doctype ") && !content.startsWith("<!DOCTYPE")) {
 			content = `<!doctype html>${content}`;
 		}
-		
+
 		return {
 			content,
 			mode,
