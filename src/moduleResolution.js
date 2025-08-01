@@ -1,5 +1,5 @@
 import { TemplatePath } from "@11ty/eleventy-utils";
-import path from "path";
+import path from "node:path";
 import { Path } from "./path.js";
 
 class ModuleResolution {

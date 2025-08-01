@@ -1,4 +1,4 @@
-const vm = require("vm");
+const vm = require("node:vm");
 
 class ContextInstance {
 	constructor() {
