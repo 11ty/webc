@@ -1,5 +1,5 @@
 import { ModuleScript } from "./moduleScript.cjs";
-import { escapeAttribute } from 'entities/lib/escape.js';
+import { escapeAttribute } from 'entities/escape';
 
 class AttributeSerializer {
 	static prefixes = {

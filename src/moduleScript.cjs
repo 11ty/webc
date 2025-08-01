@@ -1,6 +1,5 @@
 const { Module } = require("module");
 const vm = require("vm");
-const { RetrieveGlobals } = require("node-retrieve-globals");
 
 const { ProxyData } = require("./proxyData.cjs");
 const { FasterVmContext } = require("./fasterVmContext.cjs");
@@ -30,6 +29,7 @@ class ModuleScript {
 	}
 
 	static async evaluateScriptAndReturnAllGlobals(code, filePath, data) {
+		let { RetrieveGlobals } = await import("node-retrieve-globals");
 		let nodeGlobals = new RetrieveGlobals(code, filePath);
 
 		// returns promise
