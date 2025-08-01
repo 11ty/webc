@@ -5,14 +5,15 @@ import path from "path";
 
 import { Path } from "./src/path.js";
 import { AstSerializer } from "./src/ast.js";
-import { ModuleScript } from "./src/moduleScript.cjs";
 import { AstCache } from "./src/astCache.js";
 import { ModuleResolution } from "./src/moduleResolution.js";
-import { ComponentManager } from "./src/componentManager.js";
+
+export { ComponentManager } from "./src/componentManager.js";
+export { ModuleScript } from "./src/moduleScript.cjs";
 
 const localAstCache = new AstCache();
 
-class WebC {
+export class WebC {
 	constructor(options = {}) {
 		let { file, input } = options;
 
@@ -287,5 +288,3 @@ class WebC {
 		return serializer.compile(ast, options.slots);
 	}
 }
-
-export { WebC, ModuleScript, ComponentManager };
