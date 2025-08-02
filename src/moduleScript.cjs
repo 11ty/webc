@@ -48,7 +48,7 @@ class ModuleScript {
 		try {
 			let proxy = new ProxyData();
 			proxy.addGlobal(ModuleScript.getGlobals());
-			proxy.addGlobal(global);
+			proxy.addGlobal(globalThis); // Node 12+
 
 			let contextData = proxy.getData(data);
 

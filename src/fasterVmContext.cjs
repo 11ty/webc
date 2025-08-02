@@ -19,8 +19,8 @@ class ContextInstance {
 				if(Reflect.has(target, propertyName)) {
 					return Reflect.get(target, propertyName);
 				}
-				if(Reflect.has(global, propertyName)) {
-					return Reflect.get(global, propertyName);
+				if(Reflect.has(globalThis, propertyName)) {
+					return Reflect.get(globalThis, propertyName);
 				}
 				return undefined;
 			}
