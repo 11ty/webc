@@ -1,5 +1,5 @@
-const { Module } = require("module");
-const vm = require("vm");
+const { Module } = require("node:module");
+const vm = require("node:vm");
 
 const { ProxyData } = require("./proxyData.cjs");
 const { FasterVmContext } = require("./fasterVmContext.cjs");
