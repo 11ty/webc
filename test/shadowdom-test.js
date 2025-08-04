@@ -57,3 +57,24 @@ test("Using a web component with a declarative shadow root using shadowrootmode"
 </template></web-component>
 After`);
 });
+
+test("Using a web component with a declarative shadow root using shadowrootmode and a slot", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
+		"web-component": "./test/stubs/components/shadowrootmode-slot.webc"
+	}, {});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/nested.webc",
+		"./test/stubs/components/shadowrootmode-slot.webc"
+	]);
+	t.is(html, `Before
+<web-component><template shadowrootmode="open">
+	<style>
+		b { color: red; }
+	</style>
+	Hello <b>World</b>!
+</template>World</web-component>
+After`);
+});
