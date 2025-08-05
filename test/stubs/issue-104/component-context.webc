@@ -1,0 +1,5 @@
+<script webc:type="js" webc:root="override">
+export default function() {
+	return `<img ${this.webc.renderAttributes(this.webc.attributes)}>`
+}
+</script>

@@ -13,6 +13,18 @@ test("Easy way to render all public attributes in script #104", async t => {
 	t.is(html.trim(), `<img attr1="1" attr2="2">`);
 });
 
+test("Easy way to render all public attributes in script (using `this`) #104", async t => {
+	let component = new WebC();
+
+	component.defineComponents("./test/stubs/issue-104/component-context.webc");
+
+	component.setContent(`<component-context :attr1="1" attr2="2" @attr3="3" :@attr4="4"></component-context>`);
+
+	let { html } = await component.compile();
+
+	t.is(html.trim(), `<img attr1="1" attr2="2">`);
+});
+
 test("@attributes with object #114", async t => {
 	let component = new WebC();
 
