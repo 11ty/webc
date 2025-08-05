@@ -70,26 +70,7 @@ class AstSerializer {
 			return prefixer.process(content);
 		});
 
-		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
-			return importFromString(content, {
-				// These need to be POSIX paths
-				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
-				addRequire: true,
-				implicitExports: false,
-				// data is not exposed as globals in this (see componentManager for serializeData approach)
-			}).then(mod => {
-				let fn = mod.default;
-				if(typeof fn !== "function") {
-					throw new Error(`Expected an \`export default function\` from the [webc:type="render"] element in ${this.filePath}.`);
-				}
-				// Context override
-				return fn.call(this);
-			}, e => {
-				throw new Error(`Check the webc:type="render" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
-			});
-		});
-
-		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
+		async function transformJavaScriptNode(content) {
 			return importFromString(content, {
 				// These need to be POSIX paths
 				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
@@ -99,7 +80,7 @@ class AstSerializer {
 			}).then(mod => {
 				let defaultExport = mod.default;
 				if(!defaultExport) {
-					throw new Error(`Expected an \`export default\` from the [webc:type="js"] element in ${this.filePath}.`);
+					throw new Error(`Expected an \`export default\` from the [webc:type="${this.type}"] element in ${this.filePath}.`);
 				}
 				if(typeof defaultExport === "function") {
 					// Context override
@@ -107,9 +88,12 @@ class AstSerializer {
 				}
 				return defaultExport;
 			}, e => {
-				throw new Error(`Check the webc:type="js" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
+				throw new Error(`Check the webc:type="${this.type}" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
 			});
-		});
+		}
+
+		this.setTransform(AstSerializer.transformTypes.RENDER, transformJavaScriptNode);
+		this.setTransform(AstSerializer.transformTypes.JS, transformJavaScriptNode);
 
 		// Component cache
 		this.componentMapNameToFilePath = {};
