@@ -94,7 +94,7 @@ class AstSerializer {
 			return importFromString(content, {
 				// These need to be POSIX paths
 				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
-				// addRequire: false,
+				addRequire: true,
 				implicitExports: false,
 				// data is not exposed as globals in this (see componentManager for serializeData approach)
 			}).then(mod => {
