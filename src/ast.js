@@ -73,8 +73,9 @@ class AstSerializer {
 		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
 			// throw new Error(`The CommonJS arbitrary script transform [webc:type="render"] has been removed in this version of WebC (used in ${this.filePath}). Please use the new ESM [webc:type="module"] instead.`)
 			return importFromString(content, {
-				addRequire: true,
+				// These need to be POSIX paths
 				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
+				addRequire: true,
 				implicitExports: false,
 				// data is not exposed as globals in this (see componentManager for serializeData approach)
 			}).then(mod => {
@@ -91,8 +92,9 @@ class AstSerializer {
 
 		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
 			return importFromString(content, {
-				// addRequire: false,
+				// These need to be POSIX paths
 				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
+				// addRequire: false,
 				implicitExports: false,
 				// data is not exposed as globals in this (see componentManager for serializeData approach)
 			}).then(mod => {
