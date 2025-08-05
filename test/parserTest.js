@@ -1523,12 +1523,6 @@ test("Scripted render function with a webc:raw webc:nokeep", async t => {
 
 
 test("Scripted render function with a require", async t => {
-	// await t.throwsAsync(async () => {
-	// 	await testGetResultFor("./test/stubs/render-require.webc");
-	// }, {
-	// 	message: `The CommonJS arbitrary script transform [webc:type="render"] has been removed in this version of WebC (used in ./test/stubs/render-require.webc). Please use the new ESM [webc:type="module"] instead.`
-	// });
-
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-require.webc");
 
 	t.deepEqual(js, []);

@@ -71,7 +71,6 @@ class AstSerializer {
 		});
 
 		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
-			// throw new Error(`The CommonJS arbitrary script transform [webc:type="render"] has been removed in this version of WebC (used in ${this.filePath}). Please use the new ESM [webc:type="module"] instead.`)
 			return importFromString(content, {
 				// These need to be POSIX paths
 				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
@@ -83,6 +82,7 @@ class AstSerializer {
 				if(typeof fn !== "function") {
 					throw new Error(`Expected an \`export default function\` from the [webc:type="render"] element in ${this.filePath}.`);
 				}
+				// Context override
 				return fn.call(this);
 			}, e => {
 				throw new Error(`Check the webc:type="render" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
@@ -102,7 +102,7 @@ class AstSerializer {
 					throw new Error(`Expected an \`export default\` from the [webc:type="js"] element in ${this.filePath}.`);
 				}
 				if(typeof defaultExport === "function") {
-					// TODO remove context override this
+					// Context override
 					return defaultExport.call(this, this);
 				}
 				return defaultExport;
