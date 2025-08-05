@@ -157,7 +157,7 @@ class AstSerializer {
 		if(!filePath || filePath === AstSerializer.FAKE_FS_PATH) {
 			return;
 		}
-		return path.resolve(filePath);
+		return path.posix.resolve(filePath);
 	}
 
 	static FAKE_FS_PATH = "_webc_raw_input_string";
