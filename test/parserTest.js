@@ -1563,6 +1563,19 @@ test("Scripted js function with an import", async t => {
 
 });
 
+test("Scripted webc:setup function with an import #225", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-setup-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-setup-import.webc",
+	]);
+
+	t.is(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
 
 test("Scripted render function with access to slots", async t => {
 	let component = new WebC();
