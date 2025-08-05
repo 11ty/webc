@@ -165,7 +165,7 @@ class AttributeSerializer {
 				let {used} = walkCode(parseCode(value));
 				varsInUse = used;
 			} catch(e) {
-				let errorString = `Error parsing dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\``;
+				let errorString = `Error parsing dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.`;
 
 				// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 				if(e.message.startsWith("Unexpected token ") && value.match(/\bclass\b/) && !value.match(/\bclass\b\s*\{/)) {

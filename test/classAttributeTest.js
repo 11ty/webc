@@ -24,7 +24,7 @@ test("Throw a better error message when attempting to use `class` in dynamic att
 			class: "test-class"
 		}
 	}), {
-		message: 'Error parsing dynamic attribute failed: `:class="class"` `class` is a reserved word in JavaScript. Change `class` to `this.class` instead!'
+		message: 'Error parsing dynamic attribute failed: `:class="class"`. `class` is a reserved word in JavaScript. Change `class` to `this.class` instead!'
 	});
 });
 
