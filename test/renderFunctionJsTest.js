@@ -32,16 +32,16 @@ test("Using webc:type=js", async t => {
 test("Using webc:type=js with require", async t => {
 	let component = new WebC();
 
-	// Start here, needs a filePath
-	component.setInputPath("./test/stubs/component.webc");
+	// Needs a filePath for require/import
+	component.setInputPath("./component.webc");
 
 	// identical to <script webc:nokeep @html="myArray.join('/')"></script>
 	component.setContent(`<!doctype html>
 <html>
 	<body>
 	<script webc:type="js">
-	import sample from "./sample-require.cjs";
-	export default sample;
+	const test = require("./test/stubs/sample-require.cjs");
+	export default test;
 	</script>
 	</body>
 </html>`);
@@ -50,7 +50,7 @@ test("Using webc:type=js with require", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/component.webc"]);
+	t.deepEqual(components, ["./component.webc"]);
 
 	t.is(html, `<!doctype html>
 <html>
