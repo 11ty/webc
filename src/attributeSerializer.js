@@ -1,5 +1,5 @@
-import { ModuleScript } from "./moduleScript.cjs";
 import { escapeAttribute } from 'entities/escape';
+import { parseCode, walkCode, importFromString } from "import-module-string";
 
 class AttributeSerializer {
 	static prefixes = {
@@ -153,12 +153,45 @@ class AttributeSerializer {
 		return newData;
 	}
 
-	static async evaluateAttribute(rawName, value, data, scriptContextKey) {
+	static async evaluateAttribute(rawName, value, data, isForcedEvaluatation = false) {
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
-		if(evaluation === "script") {
-			let { returns } = await ModuleScript.evaluateScriptInline(value, data, `Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.`, scriptContextKey);
-			evaluatedValue = returns;
+
+		if(isForcedEvaluatation || evaluation === "script") {
+			let varsInUse = [];
+			try {
+				let {used} = walkCode(parseCode(value));
+				varsInUse = used;
+			} catch(e) {
+				let errorString = `Error parsing dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\``;
+
+				// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
+				if(e.message.startsWith("Unexpected token ") && value.match(/\bclass\b/) && !value.match(/\bclass\b\s*\{/)) {
+					throw new Error(`${errorString ? `${errorString} ` : ""}\`class\` is a reserved word in JavaScript. Change \`class\` to \`this.class\` instead!`);
+				}
+
+				throw new Error(`${errorString}\nOriginal error message: ${e.message}`);
+			}
+
+			let argString = "";
+			if(!Array.isArray(varsInUse)) {
+				varsInUse = Array.from(varsInUse)
+			}
+			if(varsInUse.length > 0) {
+				argString = `{ ${varsInUse.join(", ")} }`;
+			}
+
+			let code = `export default function(${argString}) { return ${value} };`;
+
+			evaluatedValue = await importFromString(code, {
+				implicitExports: false,
+			}).then(mod => {
+				let fn = mod.default;
+				// TODO remove context override thisTODO remove this
+				return fn.call(data, data);
+			}).catch(e => {
+				throw new Error(`Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.\nOriginal error message: ${e.message}`, { cause: e })
+			});
 		}
 
 		return {
@@ -173,20 +206,19 @@ class AttributeSerializer {
 
 	// attributesArray: parse5 format, Array of [{name, value}]
 	// returns: same array with additional properties added
-	static async evaluateAttributesArray(attributesArray, data, scriptContextKey) {
+	static async evaluateAttributesArray(attributesArray, data) {
 		let evaluated = [];
 		for(let attr of attributesArray) {
-			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data, scriptContextKey).then((result) => {
+			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data).then((result) => {
 				let { name, rawName, value, rawValue, evaluation, privacy } = result;
-				let entry = {};
-				entry.rawName = rawName;
-				entry.rawValue = rawValue;
-
-				entry.name = name;
-				entry.value = value;
-				entry.privacy = privacy;
-				entry.evaluation = evaluation;
-				return entry;
+				return {
+					rawName,
+					rawValue,
+					name,
+					value,
+					privacy,
+					evaluation
+				};
 			}));
 		}
 		return Promise.all(evaluated);

@@ -1,6 +1,7 @@
 import path from "node:path";
 import os from "node:os";
 import { DepGraph } from "dependency-graph";
+import { importFromString } from "import-module-string";
 
 import { WebC } from "../webc.js";
 import { Path } from "./path.js";
@@ -9,7 +10,6 @@ import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { Looping } from "./looping.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
-import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
 import { escapeText, escapeAttribute } from "entities/escape";
 import { nanoid } from "nanoid";
@@ -17,7 +17,6 @@ import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js";
 import { DataCascade } from "./dataCascade.js";
 import { ComponentManager } from "./componentManager.js";
-import { Util } from "./util.js";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -72,14 +71,43 @@ class AstSerializer {
 		});
 
 		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
-			let fn = ModuleScript.getModule(content, this.filePath);
-			return fn.call(this);
+			// throw new Error(`The CommonJS arbitrary script transform [webc:type="render"] has been removed in this version of WebC (used in ${this.filePath}). Please use the new ESM [webc:type="module"] instead.`)
+			return importFromString(content, {
+				addRequire: true,
+				filePath: path.resolve(this.filePath),
+				implicitExports: false,
+				// data is not exposed as globals in this (see componentManager for serializeData approach)
+			}).then(mod => {
+				let fn = mod.default;
+				if(typeof fn !== "function") {
+					throw new Error(`Expected an \`export default function\` from the [webc:type="render"] element in ${this.filePath}.`);
+				}
+				// TODO remove context override this
+				return fn.call(this);
+			}, e => {
+				throw new Error(`Check the webc:type="render" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
+			});
 		});
 
 		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
-			// returns promise
-			let { returns } = await ModuleScript.evaluateScript(content, this, `Check the webc:type="js" element in ${this.filePath}.`);
-			return returns;
+			return importFromString(content, {
+				// addRequire: false,
+				filePath: path.resolve(this.filePath),
+				implicitExports: false,
+				// data is not exposed as globals in this (see componentManager for serializeData approach)
+			}).then(mod => {
+				let defaultExport = mod.default;
+				if(!defaultExport) {
+					throw new Error(`Expected an \`export default\` from the [webc:type="js"] element in ${this.filePath}.`);
+				}
+				if(typeof defaultExport === "function") {
+					// TODO remove context override this
+					return defaultExport.call(this, this);
+				}
+				return defaultExport;
+			}, e => {
+				throw new Error(`Check the webc:type="js" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
+			});
 		});
 
 		// Component cache
@@ -155,8 +183,9 @@ class AstSerializer {
 
 	static transformTypes = {
 		JS: "js",
-		RENDER: "render",
+		MODULE: "module",
 		SCOPED: "css:scoped",
+		RENDER: "render", // removed, CJS only
 	};
 
 	setBundlerMode(mode) {
@@ -444,7 +473,7 @@ class AstSerializer {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
-		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
+		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
 		// @attributes
@@ -784,9 +813,18 @@ class AstSerializer {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
-		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 
-		return returns;
+		return AttributeSerializer.evaluateAttribute(name, attrContent, data, true).then(result => result.value);
+
+		// return importFromString(`export default function() { return ${attrContent} }`, {
+		// 	// data,
+		// }).then(mod => {
+		// 	let fn = mod.default;
+		// 	console.log( data );
+		// 	return fn.call(data);
+		// }, e => {
+		// 	throw new Error(`Check the dynamic attribute: \`${name}="${attrContent}"\`.`, { cause: e })
+		// });
 	}
 
 	// @html or @text or @raw

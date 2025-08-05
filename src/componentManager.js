@@ -1,10 +1,11 @@
 import { createHash } from "node:crypto";
+import { importFromString } from "import-module-string";
+import serialize from "serialize-to-js";
 
 import { WebC } from "../webc.js";
 import { AstQuery } from "./astQuery.js";
 import { AstModify } from "./astModify.js";
 import { AstSerializer } from "./ast.js";
-import { ModuleScript } from "./moduleScript.cjs";
 
 class ComponentManager {
 	constructor() {
@@ -36,7 +37,17 @@ class ComponentManager {
 			let data = dataCascade.getData(true);
 
 			// async-friendly
-			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
+			return importFromString(content, {
+				implicitExports: true,
+				filePath,
+				data,
+				// allow using functions in data:
+				serializeData: function(data) {
+					return Object.entries(data).map(([varName, varValue]) => {
+						return `const ${varName} = ${serialize(varValue)};`;
+					}).join("\n");
+				}
+			});
 		}
 	}
 
