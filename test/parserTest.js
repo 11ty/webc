@@ -1549,6 +1549,21 @@ test("Scripted render function with an import", async t => {
 
 });
 
+test("Scripted js function with an import", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-js-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-js-import.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
+
 test("Scripted render function with access to slots", async t => {
 	let component = new WebC();
 
