@@ -74,7 +74,7 @@ class AstSerializer {
 			// throw new Error(`The CommonJS arbitrary script transform [webc:type="render"] has been removed in this version of WebC (used in ${this.filePath}). Please use the new ESM [webc:type="module"] instead.`)
 			return importFromString(content, {
 				addRequire: true,
-				filePath: path.resolve(this.filePath),
+				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
 				implicitExports: false,
 				// data is not exposed as globals in this (see componentManager for serializeData approach)
 			}).then(mod => {
@@ -92,7 +92,7 @@ class AstSerializer {
 		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
 			return importFromString(content, {
 				// addRequire: false,
-				filePath: path.resolve(this.filePath),
+				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
 				implicitExports: false,
 				// data is not exposed as globals in this (see componentManager for serializeData approach)
 			}).then(mod => {
@@ -151,6 +151,13 @@ class AstSerializer {
 
 	get filePath() {
 		return this._filePath || AstSerializer.FAKE_FS_PATH;
+	}
+
+	static resolveAbsoluteFilePath(filePath) {
+		if(!filePath || filePath === AstSerializer.FAKE_FS_PATH) {
+			return;
+		}
+		return path.resolve(filePath);
 	}
 
 	static FAKE_FS_PATH = "_webc_raw_input_string";
@@ -814,17 +821,10 @@ class AstSerializer {
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
 
-		return AttributeSerializer.evaluateAttribute(name, attrContent, data, true).then(result => result.value);
-
-		// return importFromString(`export default function() { return ${attrContent} }`, {
-		// 	// data,
-		// }).then(mod => {
-		// 	let fn = mod.default;
-		// 	console.log( data );
-		// 	return fn.call(data);
-		// }, e => {
-		// 	throw new Error(`Check the dynamic attribute: \`${name}="${attrContent}"\`.`, { cause: e })
-		// });
+		return AttributeSerializer.evaluateAttribute(name, attrContent, data, {
+			forceEvaluate: true,
+			filePath: this.filePath,
+		}).then(result => result.value);
 	}
 
 	// @html or @text or @raw

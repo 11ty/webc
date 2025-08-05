@@ -153,11 +153,13 @@ class AttributeSerializer {
 		return newData;
 	}
 
-	static async evaluateAttribute(rawName, value, data, isForcedEvaluatation = false) {
+	static async evaluateAttribute(rawName, value, data, options = {}) {
+		let { forceEvaluate, filePath } = Object.assign({ forceEvaluate: false }, options);
+
 		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
 		let evaluatedValue = value;
 
-		if(isForcedEvaluatation || evaluation === "script") {
+		if(forceEvaluate || evaluation === "script") {
 			let varsInUse = [];
 			try {
 				let {used} = walkCode(parseCode(value));
@@ -184,10 +186,11 @@ class AttributeSerializer {
 			let code = `export default function(${argString}) { return ${value} };`;
 
 			evaluatedValue = await importFromString(code, {
+				filePath,
 				implicitExports: false,
 			}).then(mod => {
 				let fn = mod.default;
-				// TODO remove context override thisTODO remove this
+				// TODO remove context override this
 				return fn.call(data, data);
 			}).catch(e => {
 				throw new Error(`Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.\nOriginal error message: ${e.message}`, { cause: e })
