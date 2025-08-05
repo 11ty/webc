@@ -190,7 +190,7 @@ class AttributeSerializer {
 				implicitExports: false,
 			}).then(mod => {
 				let fn = mod.default;
-				// TODO remove context override this
+				// Context override
 				return fn.call(data, data);
 			}).catch(e => {
 				throw new Error(`Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.\nOriginal error message: ${e.message}`, { cause: e })

@@ -83,7 +83,6 @@ class AstSerializer {
 				if(typeof fn !== "function") {
 					throw new Error(`Expected an \`export default function\` from the [webc:type="render"] element in ${this.filePath}.`);
 				}
-				// TODO remove context override this
 				return fn.call(this);
 			}, e => {
 				throw new Error(`Check the webc:type="render" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
