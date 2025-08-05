@@ -1533,8 +1533,36 @@ test("Scripted render function with a require", async t => {
 
 	t.is(html, `<div test2="2"></div>
 <picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+});
+
+test("Scripted render function with an import", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-import.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
+
+test("Scripted js function with an import", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-js-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-js-import.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
 
 test("Scripted render function with access to slots", async t => {
 	let component = new WebC();
@@ -1659,20 +1687,20 @@ test("Using scripted render function to generate CSS (webc:root)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wzlbemqff .selector{}`]);
+	t.deepEqual(css, [`.wkiuqaeds .selector{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css-root.webc",
 		"./test/stubs/components/render-css-root.webc",
 	]);
 
-	t.is(html, `<some-css class="wzlbemqff"></some-css>`);
+	t.is(html, `<some-css class="wkiuqaeds"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS (webc:root=override)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root-override.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.waltwzk-v .selector{}`]);
+	t.deepEqual(css, [`.wneppuwzd .selector{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css-root-override.webc",
 		"./test/stubs/components/render-css-root-override.webc",
@@ -1685,13 +1713,13 @@ test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wjmnc5heg .selector{color:red}`]);
+	t.deepEqual(css, [`.wly5roxxz .selector{color:red}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, `<some-css class="wjmnc5heg"></some-css>`);
+	t.is(html, `<some-css class="wly5roxxz"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {

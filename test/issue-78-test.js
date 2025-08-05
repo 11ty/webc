@@ -23,7 +23,7 @@ test("stock webc:type=js #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js">
-\`hello\`;
+export default \`hello\`;
 </script>`);
 
 	let { html } = await component.compile();
@@ -35,7 +35,7 @@ test("stock webc:type=js with template #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js" webc:is="template">
-\`hello\`;
+export default \`hello\`;
 </script>`);
 
 	let { html } = await component.compile();
@@ -47,7 +47,7 @@ test("stock webc:type=js with template/keep #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js" webc:is="template" webc:keep>
-\`hello\`;
+export default \`hello\`;
 </script>`);
 
 	let { html } = await component.compile();
@@ -59,7 +59,7 @@ test("stock webc:type=js with webc:is #78", async t => {
 	let component = new WebC();
 
 	component.setContent(`<script webc:type="js">
-\`<ul><li>test</li></ul>\`;
+export default \`<ul><li>test</li></ul>\`;
 </script>`);
 
 	let { html } = await component.compile();

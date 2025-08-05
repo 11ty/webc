@@ -5,7 +5,7 @@ import { WebC } from "../webc.js";
 test("Non string output from webc:type=js #84", async t => {
 	let component = new WebC();
 	component.setContent(`<script webc:type="js" webc:is="template">
-1;
+export default 1;
 </script>`);
 
 	let { html } = await component.compile();

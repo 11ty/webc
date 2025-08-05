@@ -1,6 +1,6 @@
 <div test2="2"></div>
-<script webc:type="render" webc:is="template">
-const Image = require("@11ty/eleventy-img");
+<script type="module" webc:type="js" webc:is="template">
+import Image from "@11ty/eleventy-img";
 
 export default function() {
 	return Image.generateHTML({

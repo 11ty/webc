@@ -1005,18 +1005,18 @@ test("Using scripted render function to generate CSS (webc:root)", async t => {
 	let { html, css, js } = await testGetResultFor("./test/stubs/using-css-root.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wzlbemqff .selector{}`]);
+	t.deepEqual(css, [`.wkiuqaeds .selector{}`]);
 
-	t.is(html, `<some-css class="wzlbemqff"></some-css>`);
+	t.is(html, `<some-css class="wkiuqaeds"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wjmnc5heg .selector{color:red}`]);
+	t.deepEqual(css, [`.wly5roxxz .selector{color:red}`]);
 
-	t.is(html, `<some-css class="wjmnc5heg"></some-css>`);
+	t.is(html, `<some-css class="wly5roxxz"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {

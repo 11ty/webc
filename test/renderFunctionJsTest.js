@@ -7,7 +7,9 @@ test("Using webc:type=js", async t => {
 	// identical to <script webc:nokeep @html="myArray.join('/')"></script>
 	component.setContent(`<!doctype html>
 <html>
-	<body><script webc:type="js">myArray.join("/")</script></body>
+	<body><script webc:type="js">export default function({myArray}) {
+		return myArray.join("/");
+	}</script></body>
 </html>`);
 
 	let { html, css, js, components } = await component.compile({
@@ -30,13 +32,16 @@ test("Using webc:type=js", async t => {
 test("Using webc:type=js with require", async t => {
 	let component = new WebC();
 
+	// Needs a filePath for require/import
+	component.setInputPath("./component.webc");
+
 	// identical to <script webc:nokeep @html="myArray.join('/')"></script>
 	component.setContent(`<!doctype html>
 <html>
 	<body>
 	<script webc:type="js">
 	const test = require("./test/stubs/sample-require.cjs");
-	test;
+	export default test;
 	</script>
 	</body>
 </html>`);
@@ -45,7 +50,7 @@ test("Using webc:type=js with require", async t => {
 
 	t.deepEqual(js, []);
 	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.deepEqual(components, ["./component.webc"]);
 
 	t.is(html, `<!doctype html>
 <html>
@@ -89,11 +94,13 @@ test("Using webc:type=js and promises", async t => {
 <html>
 	<body>
 	<script webc:type="js">
-	new Promise(resolve => {
-		setTimeout(function() {
-			resolve(myArray)
-		}, 50);
-	});
+	export default function({myArray}) {
+		return new Promise(resolve => {
+			setTimeout(function() {
+				resolve(myArray)
+			}, 50);
+		});
+	}
 	</script>
 	</body>
 </html>`);
@@ -124,15 +131,17 @@ test("Using webc:type=js and async function", async t => {
 <html>
 	<body>
 	<script webc:type="js">
-	async function test() {
+	async function test(myArray) {
 		return new Promise(resolve => {
 			setTimeout(function() {
 				resolve(myArray)
 			}, 50);
 		});
 	}
-	// yes this is an async function
-	test()
+	export default function({ myArray }) {
+		// yes this is an async function
+		return test(myArray)
+	}
 	</script>
 	</body>
 </html>`);
@@ -164,10 +173,12 @@ test("Using webc:type=js and if true", async t => {
 <html>
 	<body>
 	<script webc:type="js">
-	if(true) {
-		"true";
-	} else {
-		"false";
+	export default function() {
+		if(true) {
+			return "true";
+		} else {
+			return "false";
+		}
 	}
 	</script>
 	</body>
@@ -195,10 +206,12 @@ test("Using webc:type=js and if false", async t => {
 <html>
 	<body>
 	<script webc:type="js">
-	if(false) {
-		"true";
-	} else {
-		"false";
+	export default function() {
+		if(false) {
+			return "true";
+		} else {
+			return "false";
+		}
 	}
 	</script>
 	</body>

@@ -9,7 +9,6 @@ import { AstCache } from "./src/astCache.js";
 import { ModuleResolution } from "./src/moduleResolution.js";
 
 export { ComponentManager } from "./src/componentManager.js";
-export { ModuleScript } from "./src/moduleScript.cjs";
 
 const localAstCache = new AstCache();
 
