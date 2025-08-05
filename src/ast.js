@@ -192,9 +192,8 @@ class AstSerializer {
 
 	static transformTypes = {
 		JS: "js",
-		MODULE: "module",
+		RENDER: "render",
 		SCOPED: "css:scoped",
-		RENDER: "render", // removed, CJS only
 	};
 
 	setBundlerMode(mode) {
