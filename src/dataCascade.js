@@ -26,6 +26,21 @@ class DataCascade {
 		return this.helpers;
 	}
 
+	getSetupScriptData() {
+		return {
+			// Breaking v0.12 dropped global data on top: use $data instead
+			// ...this.globalData,
+			...this.helpers,
+			$data: {
+				...this.globalData,
+			},
+			webc: {
+				helpers: this.scopedHelpers,
+				...this.webcGlobals,
+			}
+		}
+	}
+
 	/*
 	 * When `isTopLevelComponent` is not true (for inner components, not page-level) this scopes:
 	 *   - global data under $data

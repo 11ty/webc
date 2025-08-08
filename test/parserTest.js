@@ -841,6 +841,30 @@ After`);
 });
 
 
+test("Nested slots default", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/import-alias-nested.webc");
+	component.defineComponents("./test/stubs/import-alias-nested-quickstart.webc");
+	// aliases are from project root
+	component.setAlias("npm", "./test/stubs/fake_node_modules/");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/import-alias-nested.webc",
+		"./test/stubs/import-alias-nested-quickstart.webc",
+		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc",
+	]);
+	t.is(html, `Before
+Before
+<pre language="html">This is a paragraph—we still cool?</pre>
+After
+After`);
+});
+
+
 test("Using a web component (class attribute merging)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
 		"web-component": "./test/stubs/components/child-root.webc"
@@ -1549,6 +1573,8 @@ test("Scripted render function with an import", async t => {
 
 });
 
+// If this test is failing and you’re using a locally installed import-module-string, e.g. file:import-module-string
+// double check that @11ty/eleventy-img is an installed dependency relative to import-module-string
 test("Scripted js function with an import", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-js-import.webc");
 
@@ -1563,6 +1589,8 @@ test("Scripted js function with an import", async t => {
 
 });
 
+// If this test is failing and you’re using a locally installed import-module-string, e.g. file:import-module-string
+// double check that @11ty/eleventy-img is an installed dependency relative to import-module-string
 test("Scripted webc:setup function with an import #225", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-setup-import.webc");
 

@@ -506,18 +506,23 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformTypes, node, slots, options) {
+	async transformContent(content, transformTypes, node, slots, options, streamEnabled = false) {
 		if(!transformTypes) {
 			transformTypes = [];
 		}
 
 		let slotsText = {}
+
 		if(slots && slots.default) {
 			let o = Object.assign({}, options);
 			delete o.currentTransformTypes;
 			o.useHostComponentMarkup = true;
 
-			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
+			// v0.12.0: switched away from getPreparsedRawTextContent here to fix nested access to slots in `this.slots.text.default`
+			if(Array.isArray(slots.default?.childNodes)) {
+				o.rawMode = true;
+				slotsText.default = await this.getChildContent(slots.default, {}, o, streamEnabled).then(result => result.html);
+			}
 		}
 
 		let ancestorComponent = this.getAuthoredInComponent(options);
@@ -580,6 +585,7 @@ class AstSerializer {
 		slotName = slotName || "default";
 
 		let slotAst = slots[slotName];
+		// must have slots OR slot name not be default
 		if(
 			(typeof slotAst === "object" && slotAst.childNodes?.length > 0) || // might be a childNodes: []
 			(typeof slotAst !== "object" && slotAst) || // might be a string
@@ -665,7 +671,7 @@ class AstSerializer {
 			return rawContent;
 		}
 
-		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options);
+		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options); // streamEnabled
 	}
 
 	/**
@@ -888,12 +894,10 @@ class AstSerializer {
 		let {newLineStartIndeces, content} = component;
 		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
 		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
-
 		let rawContent = content.slice(startIndex, endIndex);
 
 		if(os.EOL !== AstSerializer.EOL) {
-			// Use replaceAll(os.EOL) when we drop support for Node 14 (see node.green)
-			return rawContent.replace(/\r\n/g, AstSerializer.EOL);
+			return rawContent.replaceAll(os.EOL, AstSerializer.EOL);
 		}
 
 		return rawContent;
@@ -1040,7 +1044,7 @@ class AstSerializer {
 		let content = "";
 
 		let transformTypes = this.getTransformTypes(node);
-		if(transformTypes.length) {
+		if(transformTypes.length && !options.rawMode) {
 			options.currentTransformTypes = transformTypes;
 		}
 
@@ -1063,7 +1067,7 @@ class AstSerializer {
 
 			// Run transforms
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
-				c = await this.transformContent(node.value, options.currentTransformTypes, node, slots, options);
+				c = await this.transformContent(node.value, options.currentTransformTypes, node, slots, options, streamEnabled);
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(!node._webCProcessed && node.parentNode && AstQuery.getTagName(node.parentNode) === "template") {
@@ -1252,7 +1256,7 @@ class AstSerializer {
 						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
 							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
 							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
-							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options);
+							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options, streamEnabled);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;

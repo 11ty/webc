@@ -41,7 +41,7 @@
 		"dependency-graph": "^1.0.0",
 		"entities": "^6.0.1",
 		"fast-glob": "^3.3.3",
-		"import-module-string": "^2.0.2",
+		"import-module-string": "^2.0.3",
 		"is-glob": "^4.0.3",
 		"nanoid": "^5.1.5",
 		"node-retrieve-globals": "^6.0.1",

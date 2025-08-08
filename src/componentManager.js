@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
-import { importFromString } from "import-module-string";
-import serialize from "serialize-to-js";
+import os from "node:os";
 
 import { WebC } from "../webc.js";
 import { AstQuery } from "./astQuery.js";
 import { AstModify } from "./astModify.js";
 import { AstSerializer } from "./ast.js";
+import { wrapAndExecute } from "./dynamicScript.js";
 
 class ComponentManager {
 	constructor() {
@@ -17,8 +17,7 @@ class ComponentManager {
 	static getNewLineStartIndeces(content) {
 		let lineStarts = [];
 		let sum = 0;
-		let lineEnding = "\n";
-		// this should work okay with \r\n too, \r will just be treated as another character
+		let lineEnding = os.EOL;
 		for(let line of content.split(lineEnding)) {
 			lineStarts.push(sum);
 			sum += line.length + lineEnding.length;
@@ -33,20 +32,10 @@ class ComponentManager {
 		if(setupScriptNode) {
 			let content = AstQuery.getTextContent(setupScriptNode).toString();
 
-			// importantly for caching: this has no attributes or context sensitive things, only global helpers and global data
-			let data = dataCascade.getData(true);
-
 			// async-friendly
-			return importFromString(content, {
-				implicitExports: true,
+			return wrapAndExecute(content, {
+				context: dataCascade.getSetupScriptData(),
 				filePath,
-				data,
-				// allow using functions in data:
-				serializeData: function(data) {
-					return Object.entries(data).map(([varName, varValue]) => {
-						return `const ${varName} = ${serialize(varValue)};`;
-					}).join("\n");
-				}
 			});
 		}
 	}
