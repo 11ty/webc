@@ -2427,3 +2427,30 @@ test("Bucket is not inherited", async t => {
 		"./test/stubs/bucket-noinherit/component.webc",
 	]);
 });
+
+test("webc:if should short circuit dynamic attribute evaluation #191 (throws)", async t => {
+	let component = new WebC();
+	component.setContent(`<div webc:if="true" :test="Promise.reject(new Error('This should not evaluate'))"></div>`);
+
+	let error = await t.throwsAsync(async () => {
+		await component.compile({
+			data: {}
+		});
+	});
+	t.is(error.message, `Evaluating a dynamic attribute failed: \`:test="Promise.reject(new Error('This should not evaluate'))"\`.
+Original error message: This should not evaluate`);
+});
+
+test("webc:if should short circuit dynamic attribute evaluation #191", async t => {
+	let component = new WebC();
+	component.setContent(`<div webc:if="false" :test="Promise.reject(new Error('This should not evaluate'))"></div>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, ``);
+});
