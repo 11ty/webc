@@ -1089,7 +1089,8 @@ class AstSerializer {
 			} else {
 				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
 				return {
-					html: escapeText(unescaped),
+					// if already processed, it’s already escaped
+					html: node._webCProcessed ? unescaped : escapeText(unescaped),
 					currentNodeMetadata
 				};
 			}
