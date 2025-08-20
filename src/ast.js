@@ -369,8 +369,13 @@ class AstSerializer {
 			let { html: nodeHtml, currentNodeMetadata: meta } = await this.compileNode(child, slots, options, streamEnabled, { previousSiblingFlowControl });
 			previousSiblingFlowControl.type = meta.flowControlType;
 			// any success should be carried forward
-			previousSiblingFlowControl.success = previousSiblingFlowControl.success || meta.flowControlResult;
-
+			if(meta.flowControlType === AstSerializer.attrs.IF) {
+				previousSiblingFlowControl.success = meta.flowControlResult;
+			} else if(meta.flowControlType === AstSerializer.attrs.ELSE) {
+				// do nothing
+			} else {
+				previousSiblingFlowControl.success = previousSiblingFlowControl.success || meta.flowControlResult;
+			}
 			html.push(nodeHtml);
 		}
 
@@ -1060,7 +1065,7 @@ class AstSerializer {
 			let c = node.value;
 
 			// persist flow control info past whitespace only text nodes
-			if(metadata.previousSiblingFlowControl?.type && c.trim().length === 0) {
+			if(metadata.previousSiblingFlowControl?.type) {
 				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
 				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
 			}

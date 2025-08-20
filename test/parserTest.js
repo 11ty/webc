@@ -2454,3 +2454,123 @@ test("webc:if should short circuit dynamic attribute evaluation #191", async t =
 	t.deepEqual(components, []);
 	t.is(html, ``);
 });
+
+test("webc:if with void elements (if) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="true" alt="first"><img webc:elseif="true" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="first">`);
+});
+
+test("webc:if with void elements (elseif) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first"><img webc:elseif="true" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="second">`);
+});
+
+test("webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first"><img webc:elseif="false" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="third">`);
+});
+
+test("two webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first-a"><img webc:else alt="first-b"><img webc:if="true" alt="second-a"><img webc:else alt="second-b">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="first-b"><img alt="second-a">`);
+});
+
+test("more complex webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<meta webc:if="true" name="test1" content="this should be returned">
+<meta webc:if="false" name="test2" content="this should not be returned">
+<meta webc:else name="test2" content="this should be returned">
+`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<meta name="test1" content="this should be returned">
+
+<meta name="test2" content="this should be returned">
+`);
+});
+
+test("super complex webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<meta webc:if="true" name="test1" content="this should be returned">
+<meta webc:else name="test1" content="this should not be returned">
+<!-- should return with test1 -->
+<meta webc:if="false" name="test2" content="this should not be returned">
+<meta webc:else name="test2" content="this should be returned">
+<!-- if is false, should return else -->
+<meta webc:if="false" name="test3" content="this should not be returned">
+<meta webc:else name="test3" content="this should be returned">
+<!-- if is false, should return else -->
+<meta webc:if="false" name="test4" content="this not should be returned">
+<meta webc:elseif="true" name="test4" content="this should be returned">
+<meta webc:else name="test4" content="this should not be returned">
+<!-- elseif is true, should return elseif -->
+<meta webc:if="true" name="test5" content="this should be returned">
+<meta webc:else name="test5" content="this should not be returned">
+<!-- if is true, should return elseif -->`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<meta name="test1" content="this should be returned">
+
+<!-- should return with test1 -->
+
+<meta name="test2" content="this should be returned">
+<!-- if is false, should return else -->
+
+<meta name="test3" content="this should be returned">
+<!-- if is false, should return else -->
+
+<meta name="test4" content="this should be returned">
+
+<!-- elseif is true, should return elseif -->
+<meta name="test5" content="this should be returned">
+
+<!-- if is true, should return elseif -->`);
+});
