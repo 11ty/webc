@@ -998,31 +998,32 @@ class AstSerializer {
 			return { html: "" };
 		}
 
-		let promises = [];
-
+		let results = [];
+		// Changed to depth-first not breadth-first in v0.12
 		if(type === "Object") {
 			let index = 0;
 			for(let loopKey in loopContent) {
-				options.injectedData = {
+				options.injectedData = Object.assign({}, options.injectedData, {
 					[keys.key]: loopKey,
 					[keys.value]: loopContent[loopKey],
 					[keys.index]: index++,
-				};
-				promises.push(this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
+				});
+				results.push(await this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
 			}
 		} else if(type === "Array") {
-			promises = Array.from(loopContent).map(((loopValue, index) => {
-				options.injectedData = {
-					[keys.index]: index,
+			let index = 0;
+			for(let loopValue of Array.from(loopContent)) {
+				options.injectedData = Object.assign({}, options.injectedData, {
+					...(keys.index ? { [keys.index]: index } : {}), // keys.index may not be specified
 					[keys.value]: loopValue
-				};
-
-				return this.compileNode(node, slots, options, streamEnabled, { loopingActive: true });
-			}));
+				});
+				results.push(await this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
+				index++;
+			}
 		}
 
 		// TODO whitespace
-		return (await Promise.all(promises)).map(entry => entry.html).filter(entry => entry).join("\n");
+		return results.map(entry => entry.html).filter(entry => Boolean(entry)).join("\n");
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true, metadata = {}) {
