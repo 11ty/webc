@@ -125,5 +125,40 @@ test("nesting webc:for over component hierarchy", async t => {
 	t.true(html.indexOf(`<div style="border-color:violet">`) > -1)
 	t.true(html.indexOf(`<div>Chandler</div>`) > -1)
 	t.true(html.indexOf(`border: 1px solid green;`) > -1)
-	
-})
+});
+
+test("script webc:for over a Set", async t => {
+	let component = new WebC();
+	component.setContent('<div webc:for="value of $data.source" @text="value"></div>');
+
+	let { html } = await component.compile({
+		data: {
+			source: new Set([1,2,3]),
+			// source: [1,2,3],
+		}
+	});
+
+	t.is(html.trim(), `<div>1</div>
+<div>2</div>
+<div>3</div>`);
+});
+
+test("script webc:for over a Map", async t => {
+	let component = new WebC();
+	component.setContent('<div webc:for="(value) of $data.source" @text="value"></div>');
+
+	let source = new Map();
+	source.set("first", 1);
+	source.set("second", 2);
+	source.set("third", 3);
+
+	let { html } = await component.compile({
+		data: {
+			source,
+		}
+	});
+
+	t.is(html.trim(), `<div>first,1</div>
+<div>second,2</div>
+<div>third,3</div>`);
+});

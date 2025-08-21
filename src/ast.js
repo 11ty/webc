@@ -1011,7 +1011,7 @@ class AstSerializer {
 				promises.push(this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
 			}
 		} else if(type === "Array") {
-			promises = loopContent.map(((loopValue, index) => {
+			promises = Array.from(loopContent).map(((loopValue, index) => {
 				options.injectedData = {
 					[keys.index]: index,
 					[keys.value]: loopValue
