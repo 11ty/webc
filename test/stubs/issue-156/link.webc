@@ -1,0 +1,1 @@
+<script webc:type="js" webc:root="override">export default `<link @attributes data-test>`;</script>
