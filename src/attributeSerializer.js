@@ -127,7 +127,10 @@ class AttributeSerializer {
 			// prop does nothing
 			// prop-name becomes propName
 			// @prop-name and :prop-name prefixes should already be removed
-			newData[AttributeSerializer.camelCaseAttributeName(name)] = value;
+			let transformedName = AttributeSerializer.camelCaseAttributeName(name);
+			newData[transformedName] = value;
+
+			AttributeSerializer.setOriginalPropertyName(newData, transformedName, name)
 
 			// Maintain privacy in new object
 			let privacy = attrs[`${name}___webc_privacy`];
@@ -146,7 +149,7 @@ class AttributeSerializer {
 			// Maintain privacy in new object
 			let privacy = attrs[`${name}___webc_privacy`];
 			if(privacy !== "private") {
-				newData[name] = attrs[name];
+				newData[attrs[`${name}___webc_original`] || name] = attrs[name];
 			}
 		}
 
@@ -233,9 +236,14 @@ class AttributeSerializer {
 		});
 	}
 
+	static setOriginalPropertyName(obj, newName, originalName) {
+		Object.defineProperty(obj, `${newName}___webc_original`, {
+			value: originalName
+		});
+	}
+
 	static getString(finalAttributesObject) {
 		let str = [];
-
 		for(let name in finalAttributesObject) {
 			let value = finalAttributesObject[name];
 
@@ -258,9 +266,10 @@ class AttributeSerializer {
 			}
 
 			if(value || value === "") {
-				str.push(` ${name}${value}`);
+				str.push(` ${finalAttributesObject[`${name}___webc_original`] || name}${value}`);
 			}
 		}
+
 		return str.join("");
 	}
 }
