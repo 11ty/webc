@@ -134,3 +134,11 @@ test.skip("lch() color, Issue #82", t => {
 
 	t.is(CssPrefixer.processWithoutTransformation(`div { color: lch(67.5345% 42.5 258.2); }`), `div { color: lch(67.5345% 42.5 258.2); }`);
 });
+
+test("@supports selector(*) issue #232", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.is(c.process(`@supports selector(*) {
+	div { color: red; }
+}`), `@supports selector(*){.my-prefix div{color:red}}`);
+});
