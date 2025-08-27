@@ -406,6 +406,10 @@ class AstSerializer {
 	getAttributes(node, component, options) {
 		let attrs = node.attrs.slice(0); // Create a new array
 
+		if(options.rawMode) {
+			return attrs;
+		}
+
 		// If this is a top level page-component, make sure we get the top level attributes here
 		if(!component && this.filePath === options.closestParentComponent && this.componentManager.has(this.filePath)) {
 			component = this.componentManager.get(this.filePath);
@@ -413,6 +417,18 @@ class AstSerializer {
 
 		if(component && Array.isArray(component.rootAttributes)) {
 			attrs.push(...component.rootAttributes);
+		}
+
+		let parentComponent = this.componentManager.get(options.closestParentComponent);
+		// webc:root="override" should use the style hash class name and host attributes since they won’t be added to the host component
+		if(parentComponent && parentComponent.ignoreRootTag && AstQuery.getRootNodeMode(node) === "override") {
+			if(parentComponent.scopedStyleHash) {
+				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
+			}
+
+			for(let hostAttr of options.hostComponentNode?.attrs || []) {
+				attrs.push(hostAttr);
+			}
 		}
 
 		return attrs;
@@ -454,17 +470,6 @@ class AstSerializer {
 		}
 
 		let attrs = this.getAttributes(node, component, options);
-		let parentComponent = this.componentManager.get(options.closestParentComponent);
-
-		// webc:root="override" should use the style hash class name and host attributes since they won’t be added to the host component
-		if(parentComponent && parentComponent.ignoreRootTag && AstQuery.getRootNodeMode(node) === "override") {
-			if(parentComponent.scopedStyleHash) {
-				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
-			}
-			for(let hostAttr of options.hostComponentNode?.attrs || []) {
-				attrs.push(hostAttr);
-			}
-		}
 
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
@@ -485,7 +490,12 @@ class AstSerializer {
 		}
 
 		if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
-			content += `<${tagName}${AttributeSerializer.getString(finalAttributesObject)}>`;
+			// if <template webc:raw> then only the *child content* is raw, not <template webc:raw>
+			if(!options.rawMode || tagName === "template" && AstQuery.hasAttribute(node, AstSerializer.attrs.RAW)) {
+				content += `<${tagName}${AttributeSerializer.getString(finalAttributesObject)}>`;
+			} else {
+				content += `<${tagName}${AttributeSerializer.getRawString(attrs)}>`;
+			}
 		}
 
 		return {

@@ -1,7 +1,7 @@
 import { escapeAttribute } from 'entities/escape';
 import { parseCode, walkCode, importFromString } from "import-module-string";
 
-class AttributeSerializer {
+export class AttributeSerializer {
 	static prefixes = {
 		prop: "@",
 		dynamic: ":",
@@ -51,7 +51,7 @@ class AttributeSerializer {
 			} else {
 				attrObject[name] = value;
 
-				AttributeSerializer.setKeyPrivacy(attrObject, name, privacy);
+				this.setKeyPrivacy(attrObject, name, privacy);
 			}
 		}
 
@@ -85,25 +85,25 @@ class AttributeSerializer {
 	}
 
 	static peekAttribute(name) {
-		if(name.startsWith(AttributeSerializer.prefixes.dynamicProp)) {
+		if(name.startsWith(this.prefixes.dynamicProp)) {
 			return {
-				name: name.slice(AttributeSerializer.prefixes.dynamicProp.length),
+				name: name.slice(this.prefixes.dynamicProp.length),
 				privacy: "private", // property
 				evaluation: "script",
 			};
 		}
 
-		if(name.startsWith(AttributeSerializer.prefixes.prop)) {
+		if(name.startsWith(this.prefixes.prop)) {
 			return {
-				name: name.slice(AttributeSerializer.prefixes.prop.length),
+				name: name.slice(this.prefixes.prop.length),
 				privacy: "private", // property
 				evaluation: false,
 			};
 		}
 
-		if(name.startsWith(AttributeSerializer.prefixes.dynamic)) {
+		if(name.startsWith(this.prefixes.dynamic)) {
 			return {
-				name: name.slice(AttributeSerializer.prefixes.dynamic.length),
+				name: name.slice(this.prefixes.dynamic.length),
 				privacy: "public",
 				evaluation: "script",
 			};
@@ -127,15 +127,15 @@ class AttributeSerializer {
 			// prop does nothing
 			// prop-name becomes propName
 			// @prop-name and :prop-name prefixes should already be removed
-			let transformedName = AttributeSerializer.camelCaseAttributeName(name);
+			let transformedName = this.camelCaseAttributeName(name);
 			newData[transformedName] = value;
 
-			AttributeSerializer.setOriginalPropertyName(newData, transformedName, name)
+			this.setOriginalPropertyName(newData, transformedName, name)
 
 			// Maintain privacy in new object
 			let privacy = attrs[`${name}___webc_privacy`];
 			if(privacy) {
-				AttributeSerializer.setKeyPrivacy(newData, name, privacy);
+				this.setKeyPrivacy(newData, name, privacy);
 			}
 		}
 
@@ -159,7 +159,7 @@ class AttributeSerializer {
 	static async evaluateAttribute(rawName, value, data, options = {}) {
 		let { forceEvaluate, filePath } = Object.assign({ forceEvaluate: false }, options);
 
-		let {name, evaluation, privacy} = AttributeSerializer.peekAttribute(rawName);
+		let {name, evaluation, privacy} = this.peekAttribute(rawName);
 		let evaluatedValue = value;
 
 		if(forceEvaluate || evaluation === "script") {
@@ -168,7 +168,7 @@ class AttributeSerializer {
 				let {used} = walkCode(parseCode(value));
 				varsInUse = used;
 			} catch(e) {
-				let errorString = `Error parsing dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.`;
+				let errorString = `Error parsing dynamic ${rawName.startsWith(this.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.`;
 
 				// Issue #45: very defensive error message here. We only throw this error when an error is thrown during compilation.
 				if(e.message.startsWith("Unexpected token ") && value.match(/\bclass\b/) && !value.match(/\bclass\b\s*\{/)) {
@@ -196,7 +196,7 @@ class AttributeSerializer {
 				// Context override
 				return fn.call(data, data);
 			}).catch(e => {
-				throw new Error(`Evaluating a dynamic ${rawName.startsWith(AttributeSerializer.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.\nOriginal error message: ${e.message}`, { cause: e })
+				throw new Error(`Evaluating a dynamic ${rawName.startsWith(this.prefixes.dynamicProp) ? 'prop' : 'attribute' } failed: \`${rawName}="${value}"\`.\nOriginal error message: ${e.message}`, { cause: e })
 			});
 		}
 
@@ -215,7 +215,7 @@ class AttributeSerializer {
 	static async evaluateAttributesArray(attributesArray, data) {
 		let evaluated = [];
 		for(let attr of attributesArray) {
-			evaluated.push(AttributeSerializer.evaluateAttribute(attr.name, attr.value, data).then((result) => {
+			evaluated.push(this.evaluateAttribute(attr.name, attr.value, data).then((result) => {
 				let { name, rawName, value, rawValue, evaluation, privacy } = result;
 				return {
 					rawName,
@@ -230,10 +230,18 @@ class AttributeSerializer {
 		return Promise.all(evaluated);
 	}
 
+	static getKeyPrivacy(obj, name) {
+		return obj[`${name}___webc_privacy`];
+	}
+
 	static setKeyPrivacy(obj, name, privacy) {
 		Object.defineProperty(obj, `${name}___webc_privacy`, {
 			value: privacy || "private"
 		});
+	}
+
+	static getOriginalPropertyName(obj, newName) {
+		return obj[`${newName}___webc_original`];
 	}
 
 	static setOriginalPropertyName(obj, newName, originalName) {
@@ -242,13 +250,29 @@ class AttributeSerializer {
 		});
 	}
 
+	static getRawString(rawAttributesObject) {
+		let str = [];
+		for(let {name, value} of rawAttributesObject) {
+			if(value || value === "") {
+				value = `${value}`;
+			}
+
+			if (value && value !== "") {
+				str.push(` ${name}="${value}"`);
+			}
+
+		}
+
+		return str.join("");
+	}
+
 	static getString(finalAttributesObject) {
 		let str = [];
 		for(let name in finalAttributesObject) {
 			let value = finalAttributesObject[name];
 
 			// Filter out private props (including webc:)
-			if(finalAttributesObject[`${name}___webc_privacy`] === "private") {
+			if(this.getKeyPrivacy(finalAttributesObject, name) === "private") {
 				continue;
 			}
 
@@ -266,12 +290,10 @@ class AttributeSerializer {
 			}
 
 			if(value || value === "") {
-				str.push(` ${finalAttributesObject[`${name}___webc_original`] || name}${value}`);
+				str.push(` ${this.getOriginalPropertyName(finalAttributesObject, name) || name}${value}`);
 			}
 		}
 
 		return str.join("");
 	}
 }
-
-export { AttributeSerializer };

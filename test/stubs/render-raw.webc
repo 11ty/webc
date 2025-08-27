@@ -1,8 +1,6 @@
 <div test2="2"></div>
 <div parentAttribute="test">
 <script webc:type="render" webc:is="template" webc:raw>
-export default function() {
-	return `<nested-child>This is sample content.</nested-child>`;
-}
+export default `<nested-child>This is sample content.</nested-child>`;
 </script>
 </div>
