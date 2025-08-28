@@ -14,17 +14,6 @@ class ComponentManager {
 		this.hashOverrides = {};
 	}
 
-	static getNewLineStartIndeces(content) {
-		let lineStarts = [];
-		let sum = 0;
-		let lineEnding = os.EOL;
-		for(let line of content.split(lineEnding)) {
-			lineStarts.push(sum);
-			sum += line.length + lineEnding.length;
-		}
-		return lineStarts;
-	}
-
 	async getSetupScriptValue(component, filePath, dataCascade) {
 		// <style webc:scoped> must be nested at the root
 		let setupScriptNode = AstQuery.getFirstTopLevelNode(component, false, AstSerializer.attrs.SETUP);
@@ -230,13 +219,6 @@ class ComponentManager {
 			filePath,
 			ast,
 			content,
-			get newLineStartIndeces() {
-				if(!this._lineStarts) {
-					this._lineStarts = ComponentManager.getNewLineStartIndeces(content);
-				}
-				return this._lineStarts;
-			},
-
 			mode,
 			isTopLevelComponent,
 			hasDeclarativeShadowDom,

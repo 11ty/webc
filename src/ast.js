@@ -525,6 +525,9 @@ class AstSerializer {
 		if(!transformTypes) {
 			transformTypes = [];
 		}
+		if(!transformTypes || transformTypes.length === 0) {
+			return content;
+		}
 
 		let slotsText = {}
 
@@ -680,10 +683,6 @@ class AstSerializer {
 
 			let { html } = await this.compileNode(fakeNode, slots, templateOptions, false);
 			rawContent = html;
-		}
-
-		if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
-			return rawContent;
 		}
 
 		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options); // streamEnabled
@@ -888,14 +887,18 @@ class AstSerializer {
 			throw new Error(`We encountered a parsing error. You may have unexpected HTML in your document (${options.authoredInComponent}) or more rarely this may be a WebC error that needs to be filed on our issue tracker: https://github.com/11ty/webc/issues/ (\`getPreparsedRawTextContent\` requires \`parse5->parse->sourceLocationInfo: true\`)`);
 		}
 
-		// if void element, fallback to the node’s sourceCodeLocation (issue #67)
-		let start = node.sourceCodeLocation.startTag || node.sourceCodeLocation;
-		let end = node.sourceCodeLocation.endTag || node.sourceCodeLocation;
+		let start = node.sourceCodeLocation.startTag;
+		let end = node.sourceCodeLocation.endTag;
+		
+		// void elements won’t have these but also won’t have content (issue #67)
+		if(!start || !end) {
+			return "";
+		}
 
 		// Skip out early if the component has no content (not even whitespace)
 		// TODO possible improvement to use `hasTextContent` to ignore whitespace only children
 		//      Would we ever want to use webc:raw to output just whitespace?
-		if(start.endLine === end.startLine && start.endCol === end.startCol) {
+		if(start.endOffset === end.startOffset) {
 			return "";
 		}
 
@@ -906,10 +909,9 @@ class AstSerializer {
 			component = this.getAuthoredInComponent(options);
 		}
 
-		let {newLineStartIndeces, content} = component;
-		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
-		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
-		let rawContent = content.slice(startIndex, endIndex);
+		let {content} = component;
+		// inner content, not outer content
+		let rawContent = content.slice(start.endOffset, end.startOffset);
 
 		if(os.EOL !== AstSerializer.EOL) {
 			return rawContent.replaceAll(os.EOL, AstSerializer.EOL);
