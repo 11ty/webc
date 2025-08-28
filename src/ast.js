@@ -536,10 +536,18 @@ class AstSerializer {
 			delete o.currentTransformTypes;
 			o.useHostComponentMarkup = true;
 
-			// v0.12.0: switched away from getPreparsedRawTextContent here to fix nested access to slots in `this.slots.text.default`
 			if(Array.isArray(slots.default?.childNodes)) {
-				o.rawMode = true;
-				slotsText.default = await this.getChildContent(slots.default, {}, o, streamEnabled).then(result => result.html);
+				let defaultSlotHasElementChildren = slots.default.childNodes.some(el => Boolean(el.tagName));
+				let hostIsTemplateNode = o.hostComponentNode.tagName === "template" && Array.isArray(o.hostComponentNode?.content?.childNodes);
+
+				if(hostIsTemplateNode || defaultSlotHasElementChildren) {
+					// Previous to v0.12.0
+					slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
+				} else {
+					// New to v0.12.0
+					o.rawMode = true;
+					slotsText.default = await this.getChildContent(slots.default, {}, o, streamEnabled).then(result => result.html);
+				}
 			}
 		}
 
