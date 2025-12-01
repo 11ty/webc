@@ -39,18 +39,18 @@
 		"@11ty/eleventy-utils": "^2.0.7",
 		"css-tree": "^3.1.0",
 		"dependency-graph": "^1.0.0",
-		"entities": "^6.0.1",
+		"entities": "^7.0.0",
 		"fast-glob": "^3.3.3",
 		"import-module-string": "^2.0.3",
 		"is-glob": "^4.0.3",
-		"nanoid": "^5.1.5",
+		"nanoid": "^5.1.6",
 		"parse5": "^8.0.0"
 	},
 	"devDependencies": {
 		"@11ty/eleventy-img": "^6.0.4",
 		"ava": "^6.4.1",
 		"markdown-it": "^14.1.0",
-		"typescript": "^5.9.2"
+		"typescript": "^5.9.3"
 	},
 	"repository": {
 		"type": "git",
