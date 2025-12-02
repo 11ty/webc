@@ -5,6 +5,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment: GitHub Publish
     permissions:
       contents: read
       id-token: write
