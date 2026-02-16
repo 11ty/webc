@@ -1,0 +1,4 @@
+<div webc:for="key of [{a:1,b:2}]">
+	<div @text="key.a" />
+	<div @text="key.b" />
+</div>
