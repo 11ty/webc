@@ -232,3 +232,13 @@ test("Test case from #175 nested webc:for", async t => {
 </tbody>
 </table>`);
 });
+
+test("Basic webc:for with bad syntax", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/bad-syntax.webc");
+
+	await t.throwsAsync(async () => component.compile(), {
+		message:/attribute value: bad syntax/
+	});
+});
