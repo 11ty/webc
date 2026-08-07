@@ -12,6 +12,12 @@ export { ComponentManager } from "./src/componentManager.js";
 
 const localAstCache = new AstCache();
 
+// VFS support
+export const customLoader = {
+	"load": (path) => fs.readFile(path, {encoding: "utf8"}),
+	"resolve": path.resolve,
+}
+
 export class WebC {
 	constructor(options = {}) {
 		let { file, input } = options;
@@ -59,24 +65,21 @@ export class WebC {
 		return "page";
 	}
 
-	_getRawContent() {
+	async _getRawContent() {
 		if(this.rawInput || this.rawInput === "") {
 			return this.rawInput;
 		} else if(this.filePath) {
 			if(!this._cachedContent) {
-				this._cachedContent = fs.readFileSync(this.filePath, {
-					encoding: "utf8"
-				});
+				this._cachedContent = await customLoader.load(this.filePath);
 			}
-
 			return this._cachedContent;
 		} else {
 			throw new Error("Missing a setInput or setInputPath method call to set the input.");
 		}
 	}
 
-	getContent() {
-		let content = this._getRawContent();
+	async getContent() {
+		let content = await this._getRawContent();
 		let mode = this.getRenderingMode(content.trimStart());
 
 		// prepend for no-quirks mode on components or implicit page rendering modes (starts with <html>)
@@ -94,7 +97,7 @@ export class WebC {
 		let wc = new WebC({
 			input: string
 		});
-		let { content } = wc.getContent();
+		let { content } = await wc.getContent();
 		return wc.getAST(content);
 	}
 
@@ -103,7 +106,7 @@ export class WebC {
 		let wc = new WebC({
 			file: filePath
 		});
-		let { content } = wc.getContent();
+		let { content } = await wc.getContent();
 		return wc.getAST(content);
 	}
 
@@ -111,7 +114,7 @@ export class WebC {
 		let wc = new WebC({
 			file: filePath
 		});
-		let { content, mode } = wc.getContent();
+		let { content, mode } = await wc.getContent();
 
 		return {
 			content,
@@ -219,7 +222,7 @@ export class WebC {
 	}
 
 	async setup(options = {}) {
-		let { content, mode } = this.getContent();
+		let { content, mode } = await this.getContent();
 		let rawAst = this.getAST(content);
 
 		let ast = new AstSerializer(this.astOptions);

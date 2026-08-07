@@ -1341,7 +1341,7 @@ class AstSerializer {
 						let childContent;
 						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
 							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
-							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
+							let fileContent = await this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
 							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options, streamEnabled);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
