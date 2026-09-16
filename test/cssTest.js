@@ -129,10 +129,10 @@ test("@media (min-width)", t => {
 });
 
 test.skip("lch() color, Issue #82", t => {
-	// let c = new CssPrefixer("my-prefix");
-	// t.is(c.process(`div { color: lch(97% 44.2 240); }`), `.my-prefix div{color:lch(97% 44.2 240)}`);
+	let c = new CssPrefixer("my-prefix");
+	t.is(c.process(`div { color: lch(97% 44.2 240); }`), `.my-prefix div{color:lch(97% 44.2 240)}`);
 
-	t.is(CssPrefixer.processWithoutTransformation(`div { color: lch(67.5345% 42.5 258.2); }`), `div { color: lch(67.5345% 42.5 258.2); }`);
+	t.is(CssPrefixer.processWithoutTransformation(`div { color: lch(67.5345% 42.5 258.2); }`), `div{color:lch(67.5345% 42.5 258.2)}`);
 });
 
 test("@supports selector(*) issue #232", t => {
