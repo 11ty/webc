@@ -78,19 +78,10 @@ class ComponentManager {
 		return true;
 	}
 
-	// Support for `base64url` needs gating e.g. is not available on Stackblitz on Node 16
-	// https://github.com/nodejs/node/issues/26512
 	getDigest(hash) {
 		let prefix = "w";
 		let hashLength = 8;
-		let digest;
-		if(Buffer.isEncoding('base64url')) {
-			digest = hash.digest("base64url");
-		} else {
-			// https://github.com/11ty/eleventy-img/blob/e51ad8e1da4a7e6528f3cc8f4b682972ba402a67/img.js#L343
-			digest = hash.digest('base64').replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
-		}
-		return prefix + digest.toLowerCase().slice(0, hashLength);
+		return prefix + hash.digest("base64url").toLowerCase().slice(0, hashLength);
 	}
 
 	getScopedStyleHash(component, filePath) {
@@ -131,7 +122,6 @@ class ComponentManager {
 		}
 
 		if(styleNodes.length) { // don’t return a hash if empty
-			// `base64url` is not available on StackBlitz
 			return this.getDigest(hash);
 		}
 	}
