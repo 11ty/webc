@@ -1,6 +1,6 @@
 import test from "ava";
 import MarkdownIt from "markdown-it";
-import typescript from "typescript";
+import { stripTypeScriptTypes } from "node:module";
 
 import { WebC } from "../webc.js";
 
@@ -1396,16 +1396,13 @@ test("<script webc:type> with Typescript", async t => {
 	component.setInputPath("./test/stubs/script-type.webc");
 	component.setTransform("ts", async (content) => {
 		t.is(content.trim(), `let x: string = "string";`);
-		let ret = typescript.transpileModule(content, {
-			compilerOptions: {}
-		});
-		return ret.outputText;
+		return stripTypeScriptTypes(content);
 	});
 	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js.join("").trim(), `var x = "string";`);
+	t.deepEqual(js.join("").trim(), `let x         = "string";`);
 	t.deepEqual(css, []);
 	t.deepEqual(components, [
 		"./test/stubs/script-type.webc",
@@ -1556,7 +1553,7 @@ test("Scripted render function with a require", async t => {
 	]);
 
 	t.is(html, `<div test2="2"></div>
-<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 });
 
 test("Scripted render function with an import", async t => {
@@ -1569,7 +1566,7 @@ test("Scripted render function with an import", async t => {
 	]);
 
 	t.is(html, `<div test2="2"></div>
-<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
 
@@ -1585,7 +1582,7 @@ test("Scripted js function with an import", async t => {
 	]);
 
 	t.is(html, `<div test2="2"></div>
-<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
 
@@ -1600,7 +1597,7 @@ test("Scripted webc:setup function with an import #225", async t => {
 		"./test/stubs/render-setup-import.webc",
 	]);
 
-	t.is(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+	t.is(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
 
