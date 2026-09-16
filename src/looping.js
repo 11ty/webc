@@ -1,3 +1,5 @@
+import { AstSerializer } from "./ast.js";
+
 class Looping {
 	static parseKey(content, type) {
 		content = content.trim();
