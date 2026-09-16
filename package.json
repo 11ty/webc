@@ -49,8 +49,7 @@
 	"devDependencies": {
 		"@11ty/eleventy-img": "^6.0.4",
 		"ava": "^8.0.1",
-		"markdown-it": "^14.1.0",
-		"typescript": "^5.9.3"
+		"markdown-it": "^14.1.0"
 	},
 	"repository": {
 		"type": "git",

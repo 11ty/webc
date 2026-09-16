@@ -1,6 +1,6 @@
 import test from "ava";
 import MarkdownIt from "markdown-it";
-import typescript from "typescript";
+import { stripTypeScriptTypes } from "node:module";
 
 import { WebC } from "../webc.js";
 
@@ -1396,16 +1396,13 @@ test("<script webc:type> with Typescript", async t => {
 	component.setInputPath("./test/stubs/script-type.webc");
 	component.setTransform("ts", async (content) => {
 		t.is(content.trim(), `let x: string = "string";`);
-		let ret = typescript.transpileModule(content, {
-			compilerOptions: {}
-		});
-		return ret.outputText;
+		return stripTypeScriptTypes(content);
 	});
 	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js.join("").trim(), `var x = "string";`);
+	t.deepEqual(js.join("").trim(), `let x         = "string";`);
 	t.deepEqual(css, []);
 	t.deepEqual(components, [
 		"./test/stubs/script-type.webc",
