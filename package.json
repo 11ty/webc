@@ -43,7 +43,7 @@
 		"fast-glob": "^3.3.3",
 		"import-module-string": "^2.0.3",
 		"is-glob": "^4.0.3",
-		"nanoid": "^5.1.6",
+		"nanoid": "^6.0.1",
 		"parse5": "^8.0.0"
 	},
 	"devDependencies": {
