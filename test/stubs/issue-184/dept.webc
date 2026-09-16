@@ -1,0 +1,1 @@
+<li class="dept"><span @text="name"></span><dept-list webc:if="depts" :@depts="depts"></dept-list></li>

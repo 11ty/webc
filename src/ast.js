@@ -53,6 +53,9 @@ class AstSerializer {
 		// controls whether the assets are aggregated
 		this.bundlerMode = false;
 
+		// guards against recursive components without an end condition
+		this.maxComponentDepth = 512;
+
 		// for error messaging
 		this.filePath = Path.normalizePath(filePath);
 
@@ -184,6 +187,24 @@ class AstSerializer {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
+	}
+
+	setMaxComponentDepth(depth) {
+		this.maxComponentDepth = depth;
+	}
+
+	getComponentChainError(componentChain) {
+		let tagNames = [];
+		let entry = componentChain;
+		while(entry && tagNames.length < 10) {
+			tagNames.unshift(`<${entry.tagName}>`);
+			entry = entry.parent;
+		}
+		if(entry) {
+			tagNames.unshift("…");
+		}
+
+		return new Error(`Maximum component depth (${this.maxComponentDepth}) exceeded. Does a recursive component have an end condition? Component chain: ${tagNames.join(" → ")}`);
 	}
 
 	setAliases(aliases = {}) {
@@ -758,16 +779,9 @@ class AstSerializer {
 	}
 
 	isCircularDependency(componentFilePath, options) {
-		if(options.closestParentComponent) {
-			// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
-			// <web-component><child/></web-component>
-			if(!options.isSlottableContent) {
-				if(options.closestParentComponent === componentFilePath || options.components.dependantsOf(options.closestParentComponent).find(entry => entry === componentFilePath) !== undefined) {
-					return true;
-				}
-			}
-		}
-		return false;
+		// A component using its own tag renders a plain element; indirect recursion is allowed
+		// Slotted content is not counted for circular dependency checks (semantically it is an argument, not a core dependency)
+		return !options.isSlottableContent && options.closestParentComponent === componentFilePath;
 	}
 
 	addComponentDependency(component, tagName, options) {
@@ -1235,6 +1249,15 @@ class AstSerializer {
 		// Component content (foreshadow dom)
 		if(!options.rawMode && component) {
 			this.addComponentDependency(component, tagName, options);
+
+			options.componentChain = {
+				tagName,
+				depth: (options.componentChain?.depth || 0) + 1,
+				parent: options.componentChain,
+			};
+			if(options.componentChain.depth > this.maxComponentDepth) {
+				throw this.getComponentChainError(options.componentChain);
+			}
 
 			// for attribute sharing (from renderStartTag)
 			options.hostComponentNode = node;

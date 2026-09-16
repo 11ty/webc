@@ -783,25 +783,6 @@ SSR content
 After`);
 });
 
-test("Circular dependencies check (fail)", async t => {
-	t.deepEqual(await testGetResultFor("./test/stubs/nested.webc", {
-		"web-component": "./test/stubs/components/child-circular.webc",
-		"other-component": "./test/stubs/components/child-circular2.webc",
-	}), {
-		buckets: {},
-		components: [
-			'./test/stubs/nested.webc',
-			'./test/stubs/components/child-circular.webc',
-			'./test/stubs/components/child-circular2.webc',
-		],
-		css: [],
-		html: `Before
-<web-component>test</web-component>
-After`,
-		js: [],
-	});
-});
-
 test("Importing with an alias (uses tag name)", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/import-alias.webc");

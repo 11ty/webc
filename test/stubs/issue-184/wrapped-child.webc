@@ -1,0 +1,1 @@
+<i><wrapped-node :@name="name" :@child="child"></wrapped-node></i>

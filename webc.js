@@ -22,6 +22,7 @@ export class WebC {
 		this.globalComponents = {};
 		this.astOptions = {};
 		this.bundlerMode = false;
+		this.maxComponentDepth = 512;
 		this.ignores = options.ignores || [];
 
 		if(input || input === "") {
@@ -224,6 +225,7 @@ export class WebC {
 		let ast = new AstSerializer(this.astOptions);
 		ast.setComponentManager(this.globalComponentManager);
 		ast.setBundlerMode(this.bundlerMode);
+		ast.setMaxComponentDepth(this.maxComponentDepth);
 		ast.setMode(mode);
 		ast.setContent(content);
 		ast.setData(options.data);
@@ -264,6 +266,11 @@ export class WebC {
 
 	setBundlerMode(mode) {
 		this.bundlerMode = !!mode;
+	}
+
+	// Use Infinity to disable
+	setMaxComponentDepth(depth) {
+		this.maxComponentDepth = depth;
 	}
 
 	async stream(options = {}) {

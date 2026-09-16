@@ -1,0 +1,1 @@
+<ul class="dept-list"><dept webc:for="d of depts" :@name="d.name" :@depts="d.contains"></dept></ul>

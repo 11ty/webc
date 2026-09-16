@@ -1,0 +1,1 @@
+<li @text="name"></li><ul webc:if="children"><tree-node webc:for="child of children" :@name="child.name" :@children="child.children"></tree-node></ul>

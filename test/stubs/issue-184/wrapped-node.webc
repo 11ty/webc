@@ -1,0 +1,1 @@
+<b @text="name"></b><div webc:if="child"><wrapped-child :@name="child.name" :@child="child.child"></wrapped-child></div>
