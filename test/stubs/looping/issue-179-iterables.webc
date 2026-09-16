@@ -1,0 +1,24 @@
+<script webc:setup>
+const MapData = new Map([
+    ['one', 1],
+    ['two', 2],
+    ['three', 3],
+])
+
+const SetData = new Set([
+    'one',
+    'two',
+    'three',
+])
+</script>
+<dl>
+    <template webc:for="(key, val) of MapData" webc:nokeep>
+        <dt @text="key"></dt>
+        <dd @text="val"></dd>
+    </template>
+</dl>
+<ul>
+    <template webc:for="val of SetData" webc:nokeep>
+        <li @text="val"></li>
+    </template>
+</ul>
