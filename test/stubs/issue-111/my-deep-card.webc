@@ -1,0 +1,1 @@
+<section><my-forwarded-card><slot name="h" slot="heading"></slot><slot></slot></my-forwarded-card></section>

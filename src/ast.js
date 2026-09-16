@@ -35,6 +35,9 @@ import { ComponentManager } from "./componentManager.js";
  * @property {Array<"render" | "css:scoped">} [currentTransformTypes]
  */
 
+// Slots of the component that authored slotted content
+const PARENT_SLOTS = Symbol("parentSlots");
+
 class AstSerializer {
 	constructor(options = {}) {
 		let { filePath } = Object.assign({
@@ -384,8 +387,10 @@ class AstSerializer {
 		};
 	}
 
-	getSlottedContentNodes(node, defaultSlot = []) {
-		let slots = {};
+	getSlottedContentNodes(node, defaultSlot = [], parentSlots = {}) {
+		let slots = {
+			[PARENT_SLOTS]: parentSlots,
+		};
 
 		// Slot definitions must be top level (this matches browser-based Web Components behavior)
 		for(let child of node.childNodes) {
@@ -639,7 +644,8 @@ class AstSerializer {
 				delete options.authoredInParentComponent;
 			}
 
-			let { html: slotHtml } = await this.compileNode(slotAst, slots, options, true);
+			// <slot> elements in slotted content resolve against the slots of the component that authored them
+			let { html: slotHtml } = await this.compileNode(slotAst, slots[PARENT_SLOTS] || {}, options, true);
 			return slotHtml;
 		}
 
@@ -1234,13 +1240,13 @@ class AstSerializer {
 			options.hostComponentNode = node;
 			options.hostComponentData = attrs;
 
-			let slots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp);
+			let componentSlots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp, slots);
 
 			// none of the shadow dom in here should inherit slottable info
 			options.isSlottableContent = false;
 			options.authoredInParentComponent = options.authoredInComponent;
 
-			let { html: foreshadowDom } = await this.compileNode(component.ast, slots, options, streamEnabled);
+			let { html: foreshadowDom } = await this.compileNode(component.ast, componentSlots, options, streamEnabled);
 			componentDefinitionHasContent = foreshadowDom.trim().length > 0;
 
 			content += foreshadowDom;

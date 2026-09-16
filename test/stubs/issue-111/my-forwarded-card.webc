@@ -1,0 +1,1 @@
+<my-card><slot name="heading" slot="title"></slot><slot>Forwarded fallback</slot></my-card>
