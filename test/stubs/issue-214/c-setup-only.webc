@@ -1,0 +1,1 @@
+<script webc:setup>export const label = "Setup";</script><c-card><b @text="label"></b></c-card>

@@ -1,0 +1,1 @@
+<section><h1 @text="title"></h1><slot></slot></section>

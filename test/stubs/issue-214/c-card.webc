@@ -1,0 +1,1 @@
+<article><header><slot name="header"></slot></header><slot></slot></article>

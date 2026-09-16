@@ -1,0 +1,1 @@
+<ul><li webc:for="item of ['host']"><slot></slot></li></ul>

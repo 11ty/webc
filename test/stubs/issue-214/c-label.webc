@@ -1,0 +1,1 @@
+<c-card @label="Host"><b @text="label"></b></c-card>

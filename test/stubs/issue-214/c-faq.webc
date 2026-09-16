@@ -1,0 +1,1 @@
+<c-section :@title="title"><details webc:for="question of questions"><summary @text="question.question"></summary><p @text="question.answer"></p></details></c-section>

@@ -38,6 +38,9 @@ import { ComponentManager } from "./componentManager.js";
 // Slots of the component that authored slotted content
 const PARENT_SLOTS = Symbol("parentSlots");
 
+// Data of the component that authored slotted content
+const PARENT_DATA = Symbol("parentData");
+
 class AstSerializer {
 	constructor(options = {}) {
 		let { filePath } = Object.assign({
@@ -470,13 +473,17 @@ class AstSerializer {
 
 	// This will be the parent component in component definition files, and the host component in slotted content
 	getAuthoredInComponent(options) {
+		return this.componentManager.get(this.getAuthoredInComponentFilePath(options));
+	}
+
+	getAuthoredInComponentFilePath(options) {
 		// slottable content in the host, not in the component definition.
 		// https://github.com/11ty/webc/issues/152
 		if(options.isSlottableContent && options.authoredInComponent) {
-			return this.componentManager.get(options.authoredInComponent);
+			return options.authoredInComponent;
 		}
 
-		return this.componentManager.get(options.closestParentComponent);
+		return options.closestParentComponent;
 	}
 
 	useGlobalDataAtTopLevel(ancestorComponent) {
@@ -499,7 +506,7 @@ class AstSerializer {
 
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
-		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
+		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData, options.slotFallbackData );
 		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
@@ -586,7 +593,7 @@ class AstSerializer {
 				text: slotsText,
 			},
 			helpers: this.dataCascade.getHelpers(),
-		});
+		}, options.slotFallbackData);
 
 		for(let type of transformTypes) {
 			content = await this.transforms[type].call({
@@ -663,6 +670,16 @@ class AstSerializer {
 			if(options.authoredInParentComponent) {
 				options.authoredInComponent = options.authoredInParentComponent;
 				delete options.authoredInParentComponent;
+			}
+
+			// Slotted content uses the data of the component that authored it, falling back to the data of the component rendering the slot
+			let parentData = slots[PARENT_DATA];
+			if(parentData) {
+				options.authoredInComponent = parentData.authoredInComponent;
+				options.slotFallbackData = Object.assign({}, parentData.slotFallbackData, options.injectedData, options.hostComponentData, options.componentProps);
+				options.componentProps = parentData.componentProps;
+				options.hostComponentData = parentData.hostComponentData;
+				options.injectedData = parentData.injectedData;
 			}
 
 			// <slot> elements in slotted content resolve against the slots of the component that authored them
@@ -851,7 +868,7 @@ class AstSerializer {
 	async evaluateAttribute(name, attrContent, options) {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
-		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
+		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData, options.slotFallbackData);
 
 		return AttributeSerializer.evaluateAttribute(name, attrContent, data, {
 			forceEvaluate: true,
@@ -1035,7 +1052,7 @@ class AstSerializer {
 
 		// if falsy, skip
 		if(!loopContent) {
-			return { html: "" };
+			return "";
 		}
 
 		let results = [];
@@ -1205,7 +1222,16 @@ class AstSerializer {
 		let { content: startTagContent, attrs, nodeData } = await this.renderStartTag(node, tagName, component, renderingMode, options);
 		content += this.outputHtml(startTagContent, streamEnabled);
 
+		let parentData;
 		if(component) {
+			parentData = {
+				authoredInComponent: this.getAuthoredInComponentFilePath(options),
+				componentProps: options.componentProps,
+				hostComponentData: options.hostComponentData,
+				injectedData: options.injectedData,
+				slotFallbackData: options.slotFallbackData,
+			};
+
 			options.componentProps = await AttributeSerializer.normalizeAttributesForData(attrs, nodeData);
 			AstSerializer.setUid(options.componentProps, options.closestParentUid);
 			options.currentTagAttributes = {};
@@ -1264,6 +1290,10 @@ class AstSerializer {
 			options.hostComponentData = attrs;
 
 			let componentSlots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp, slots);
+			componentSlots[PARENT_DATA] = parentData;
+
+			// the component definition does not inherit fallback data from slotted content
+			delete options.slotFallbackData;
 
 			// none of the shadow dom in here should inherit slottable info
 			options.isSlottableContent = false;

@@ -1,0 +1,1 @@
+<c-host-loop webc:for="item of items"><b @text="item"></b></c-host-loop>
