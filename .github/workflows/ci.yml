@@ -17,18 +17,11 @@ jobs:
         node: ["18", "20", "22", "24"]
     name: Node.js ${{ matrix.node }} on ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # 7.0.1
       - name: Setup node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # 7.0.0
         with:
           node-version: ${{ matrix.node }}
-      - name: Cache node_modules
-        uses: actions/cache@v3
-        id: cache
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-node_modules-${{ hashFiles('**/package.json') }}
-
       - run: npm install
 
       - run: npm test
