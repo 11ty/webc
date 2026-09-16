@@ -47,7 +47,7 @@
 		"parse5": "^8.0.0"
 	},
 	"devDependencies": {
-		"@11ty/eleventy-img": "^6.0.4",
+		"@11ty/eleventy-img": "^7.0.0",
 		"ava": "^6.4.1",
 		"markdown-it": "^14.1.0",
 		"typescript": "^5.9.3"
