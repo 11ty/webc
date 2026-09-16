@@ -1,4 +1,4 @@
 <script webc:setup>
-const items = [1,2,3];
+export const items = [1,2,3];
 </script>
 <b webc:for="item of items" @text="item"></b>

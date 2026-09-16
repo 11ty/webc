@@ -1,6 +1,6 @@
 <template webc:is="style" webc:root="override">
 	<script webc:type="render">
-	function() {
+	export default function() {
 		return `/* ${this.license} */`;
 	}
 	</script>

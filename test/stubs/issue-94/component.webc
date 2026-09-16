@@ -1,3 +1,8 @@
 <script webc:type="js" webc:root="override">
-`${typeof numeric}`;
+/*export default function({numeric}) {
+	return `${typeof numeric}`
+};*/
+export default function() {
+	return `${typeof this.numeric}`
+};
 </script>

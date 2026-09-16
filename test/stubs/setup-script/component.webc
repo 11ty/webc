@@ -1,8 +1,8 @@
 <div @html="key"></div>
 <script webc:setup>
-const key = 2;
+export const key = 2;
 
-function alwaysBlue() {
+export function alwaysBlue() {
 	return globalFunction("red"); // gotcha
 }
 </script>

@@ -148,5 +148,120 @@ test("nesting webc:for over component hierarchy", async t => {
 	t.true(html.indexOf(`<div style="border-color:violet">`) > -1)
 	t.true(html.indexOf(`<div>Chandler</div>`) > -1)
 	t.true(html.indexOf(`border: 1px solid green;`) > -1)
+});
 
-})
+test("script webc:for over a Set", async t => {
+	let component = new WebC();
+	component.setContent('<div webc:for="value of $data.source" @text="value"></div>');
+
+	let { html } = await component.compile({
+		data: {
+			source: new Set([1,2,3]),
+			// source: [1,2,3],
+		}
+	});
+
+	t.is(html.trim(), `<div>1</div>
+<div>2</div>
+<div>3</div>`);
+});
+
+test("script webc:for over a Map", async t => {
+	let component = new WebC();
+	component.setContent('<div webc:for="(value) of $data.source" @text="value"></div>');
+
+	let source = new Map();
+	source.set("first", 1);
+	source.set("second", 2);
+	source.set("third", 3);
+
+	let { html } = await component.compile({
+		data: {
+			source,
+		}
+	});
+
+	t.is(html.trim(), `<div>first,1</div>
+<div>second,2</div>
+<div>third,3</div>`);
+});
+
+test("Nested script webc:for #175", async t => {
+	let component = new WebC();
+	component.setContent('<div webc:for="(value, index) of $data.source">outer:<b @text="`${value}`"></b><i webc:for="inner of value"><span @text="`${typeof inner} ${inner}`"></span></i></div>');
+
+	let source = [["1"], ["2a", "2b"], "3"];
+
+	let { html } = await component.compile({
+		data: {
+			source,
+		}
+	});
+
+	t.is(html.trim(), `<div>outer:<b>1</b><i><span>string 1</span></i></div>
+<div>outer:<b>2a,2b</b><i><span>string 2a</span></i>
+<i><span>string 2b</span></i></div>
+<div>outer:<b>3</b><i><span>string 3</span></i></div>`);
+});
+
+test("Test case from #175 nested webc:for", async t => {
+	let component = new WebC();
+	component.setContent('<c-data-table :@columns="columns" :@items="users"></c-data-table>');
+	component.defineComponents("./test/stubs/issue-175/c-data-table.webc");
+
+	let source = {
+		users: [
+			{
+				id: 1,
+				name: 'Alex',
+				email: 'alex@example.com'
+			},
+			{
+				id: 2,
+				name: 'Bob',
+				email: 'bob@example.com'
+			},
+			{
+				id: 3,
+				name: 'Steave',
+				email: 'steave@example.com'
+			}
+		],
+
+		columns: ['id', 'name', 'email']
+	};
+
+	let { html } = await component.compile({
+		data: source,
+	});
+
+	t.is(html.trim(), `<table>
+<tbody>
+<tr>
+<td>1</td>
+<td>Alex</td>
+<td>alex@example.com</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Bob</td>
+<td>bob@example.com</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Steave</td>
+<td>steave@example.com</td>
+</tr>
+</tbody>
+</table>`);
+});
+
+test("Basic webc:for with bad syntax", async t => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/bad-syntax.webc");
+
+	await t.throwsAsync(async () => component.compile(), {
+		message:/attribute value: bad syntax/
+	});
+});

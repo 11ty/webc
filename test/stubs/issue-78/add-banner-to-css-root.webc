@@ -1,4 +1,6 @@
 <template webc:root="override" webc:is="style">
-<script webc:type="js">`/* ${license} */`</script>
+<script webc:type="js">export default function({ license }) {
+	return `/* ${license} */`;
+}</script>
 <slot></slot>
 </template>

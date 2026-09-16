@@ -1,0 +1,7 @@
+<table>
+<tbody>
+<tr webc:for="item of items">
+<td webc:for="column of columns" @text="item[column]"></td>
+</tr>
+</tbody>
+</table>

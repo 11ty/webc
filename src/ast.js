@@ -1,6 +1,7 @@
-import path from "path";
-import os from "os";
+import path from "node:path";
+import os from "node:os";
 import { DepGraph } from "dependency-graph";
+import { importFromString } from "import-module-string";
 
 import { WebC } from "../webc.js";
 import { Path } from "./path.js";
@@ -9,15 +10,13 @@ import { AssetManager } from "./assetManager.js";
 import { CssPrefixer } from "./css.js";
 import { Looping } from "./looping.js";
 import { AttributeSerializer } from "./attributeSerializer.js";
-import { ModuleScript } from "./moduleScript.cjs";
 import { Streams } from "./streams.js";
-import { escapeText, escapeAttribute } from "entities/lib/escape.js";
+import { escapeText, escapeAttribute } from "entities/escape";
 import { nanoid } from "nanoid";
 import { ModuleResolution } from "./moduleResolution.js";
 import { FileSystemCache } from "./fsCache.js";
 import { DataCascade } from "./dataCascade.js";
 import { ComponentManager } from "./componentManager.js";
-import { Util } from "./util.js";
 
 /** @typedef {import('parse5/dist/tree-adapters/default').Node} Node */
 /** @typedef {import('parse5/dist/tree-adapters/default').Template} Template */
@@ -71,16 +70,30 @@ class AstSerializer {
 			return prefixer.process(content);
 		});
 
-		this.setTransform(AstSerializer.transformTypes.RENDER, async function(content) {
-			let fn = ModuleScript.getModule(content, this.filePath);
-			return fn.call(this);
-		});
+		async function transformJavaScriptNode(content) {
+			return importFromString(content, {
+				// These need to be POSIX paths
+				filePath: AstSerializer.resolveAbsoluteFilePath(this.filePath),
+				addRequire: true,
+				implicitExports: false,
+				// data is not exposed as globals in this (see componentManager for serializeData approach)
+			}).then(mod => {
+				let defaultExport = mod.default;
+				if(!defaultExport) {
+					throw new Error(`Expected an \`export default\` from the [webc:type="${this.type}"] element in ${this.filePath}.`);
+				}
+				if(typeof defaultExport === "function") {
+					// Context override
+					return defaultExport.call(this, this);
+				}
+				return defaultExport;
+			}, e => {
+				throw new Error(`Check the webc:type="${this.type}" element in ${this.filePath}\nOriginal error message: ${e.message}`, { cause: e })
+			});
+		}
 
-		this.setTransform(AstSerializer.transformTypes.JS, async function(content) {
-			// returns promise
-			let { returns } = await ModuleScript.evaluateScript(content, this, `Check the webc:type="js" element in ${this.filePath}.`);
-			return returns;
-		});
+		this.setTransform(AstSerializer.transformTypes.RENDER, transformJavaScriptNode);
+		this.setTransform(AstSerializer.transformTypes.JS, transformJavaScriptNode);
 
 		// Component cache
 		this.componentMapNameToFilePath = {};
@@ -123,6 +136,13 @@ class AstSerializer {
 
 	get filePath() {
 		return this._filePath || AstSerializer.FAKE_FS_PATH;
+	}
+
+	static resolveAbsoluteFilePath(filePath) {
+		if(!filePath || filePath === AstSerializer.FAKE_FS_PATH) {
+			return;
+		}
+		return path.posix.resolve(filePath);
 	}
 
 	static FAKE_FS_PATH = "_webc_raw_input_string";
@@ -349,8 +369,13 @@ class AstSerializer {
 			let { html: nodeHtml, currentNodeMetadata: meta } = await this.compileNode(child, slots, options, streamEnabled, { previousSiblingFlowControl });
 			previousSiblingFlowControl.type = meta.flowControlType;
 			// any success should be carried forward
-			previousSiblingFlowControl.success = previousSiblingFlowControl.success || meta.flowControlResult;
-
+			if(meta.flowControlType === AstSerializer.attrs.IF) {
+				previousSiblingFlowControl.success = meta.flowControlResult;
+			} else if(meta.flowControlType === AstSerializer.attrs.ELSE) {
+				// do nothing
+			} else {
+				previousSiblingFlowControl.success = previousSiblingFlowControl.success || meta.flowControlResult;
+			}
 			html.push(nodeHtml);
 		}
 
@@ -381,6 +406,10 @@ class AstSerializer {
 	getAttributes(node, component, options) {
 		let attrs = node.attrs.slice(0); // Create a new array
 
+		if(options.rawMode) {
+			return attrs;
+		}
+
 		// If this is a top level page-component, make sure we get the top level attributes here
 		if(!component && this.filePath === options.closestParentComponent && this.componentManager.has(this.filePath)) {
 			component = this.componentManager.get(this.filePath);
@@ -388,6 +417,18 @@ class AstSerializer {
 
 		if(component && Array.isArray(component.rootAttributes)) {
 			attrs.push(...component.rootAttributes);
+		}
+
+		let parentComponent = this.componentManager.get(options.closestParentComponent);
+		// webc:root="override" should use the style hash class name and host attributes since they won’t be added to the host component
+		if(parentComponent && parentComponent.ignoreRootTag && AstQuery.getRootNodeMode(node) === "override") {
+			if(parentComponent.scopedStyleHash) {
+				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
+			}
+
+			for(let hostAttr of options.hostComponentNode?.attrs || []) {
+				attrs.push(hostAttr);
+			}
 		}
 
 		return attrs;
@@ -429,22 +470,11 @@ class AstSerializer {
 		}
 
 		let attrs = this.getAttributes(node, component, options);
-		let parentComponent = this.componentManager.get(options.closestParentComponent);
-
-		// webc:root="override" should use the style hash class name and host attributes since they won’t be added to the host component
-		if(parentComponent && parentComponent.ignoreRootTag && AstQuery.getRootNodeMode(node) === "override") {
-			if(parentComponent.scopedStyleHash) {
-				attrs.push({ name: "class", value: parentComponent.scopedStyleHash });
-			}
-			for(let hostAttr of options.hostComponentNode?.attrs || []) {
-				attrs.push(hostAttr);
-			}
-		}
 
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let nodeData = this.dataCascade.getData( useGlobalData, options.componentProps, options.hostComponentData, ancestorComponent?.setupScript, options.injectedData );
-		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData, options.closestParentComponent);
+		let evaluatedAttributes = await AttributeSerializer.evaluateAttributesArray(attrs, nodeData);
 		let finalAttributesObject = AttributeSerializer.mergeAttributes(evaluatedAttributes);
 
 		// @attributes
@@ -460,7 +490,12 @@ class AstSerializer {
 		}
 
 		if(this.showInRawMode(node, options) || !this.isTagIgnored(node, component, renderingMode, options)) {
-			content += `<${tagName}${AttributeSerializer.getString(finalAttributesObject)}>`;
+			// if <template webc:raw> then only the *child content* is raw, not <template webc:raw>
+			if(!options.rawMode || tagName === "template" && AstQuery.hasAttribute(node, AstSerializer.attrs.RAW)) {
+				content += `<${tagName}${AttributeSerializer.getString(finalAttributesObject)}>`;
+			} else {
+				content += `<${tagName}${AttributeSerializer.getRawString(attrs)}>`;
+			}
 		}
 
 		return {
@@ -486,18 +521,34 @@ class AstSerializer {
 		return content;
 	}
 
-	async transformContent(content, transformTypes, node, slots, options) {
+	async transformContent(content, transformTypes, node, slots, options, streamEnabled = false) {
 		if(!transformTypes) {
 			transformTypes = [];
 		}
+		if(!transformTypes || transformTypes.length === 0) {
+			return content;
+		}
 
 		let slotsText = {}
+
 		if(slots && slots.default) {
 			let o = Object.assign({}, options);
 			delete o.currentTransformTypes;
 			o.useHostComponentMarkup = true;
 
-			slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
+			if(Array.isArray(slots.default?.childNodes)) {
+				let defaultSlotHasElementChildren = slots.default.childNodes.some(el => Boolean(el.tagName));
+				let hostIsTemplateNode = o.hostComponentNode.tagName === "template" && Array.isArray(o.hostComponentNode?.content?.childNodes);
+
+				if(hostIsTemplateNode || defaultSlotHasElementChildren) {
+					// Previous to v0.12.0
+					slotsText.default = this.getPreparsedRawTextContent(o.hostComponentNode, o);
+				} else {
+					// New to v0.12.0
+					o.rawMode = true;
+					slotsText.default = await this.getChildContent(slots.default, {}, o, streamEnabled).then(result => result.html);
+				}
+			}
 		}
 
 		let ancestorComponent = this.getAuthoredInComponent(options);
@@ -560,6 +611,7 @@ class AstSerializer {
 		slotName = slotName || "default";
 
 		let slotAst = slots[slotName];
+		// must have slots OR slot name not be default
 		if(
 			(typeof slotAst === "object" && slotAst.childNodes?.length > 0) || // might be a childNodes: []
 			(typeof slotAst !== "object" && slotAst) || // might be a string
@@ -641,11 +693,7 @@ class AstSerializer {
 			rawContent = html;
 		}
 
-		if(!options.currentTransformTypes || options.currentTransformTypes.length === 0) {
-			return rawContent;
-		}
-
-		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options);
+		return this.transformContent(rawContent, options.currentTransformTypes, node, slots, options); // streamEnabled
 	}
 
 	/**
@@ -784,9 +832,11 @@ class AstSerializer {
 		let ancestorComponent = this.getAuthoredInComponent(options);
 		let useGlobalData = this.useGlobalDataAtTopLevel(ancestorComponent);
 		let data = this.dataCascade.getData(useGlobalData, options.componentProps, ancestorComponent?.setupScript, options.injectedData);
-		let { returns } = await ModuleScript.evaluateScriptInline(attrContent, data, `Check the dynamic attribute: \`${name}="${attrContent}"\`.`, options.closestParentComponent);
 
-		return returns;
+		return AttributeSerializer.evaluateAttribute(name, attrContent, data, {
+			forceEvaluate: true,
+			filePath: this.filePath,
+		}).then(result => result.value);
 	}
 
 	// @html or @text or @raw
@@ -845,14 +895,18 @@ class AstSerializer {
 			throw new Error(`We encountered a parsing error. You may have unexpected HTML in your document (${options.authoredInComponent}) or more rarely this may be a WebC error that needs to be filed on our issue tracker: https://github.com/11ty/webc/issues/ (\`getPreparsedRawTextContent\` requires \`parse5->parse->sourceLocationInfo: true\`)`);
 		}
 
-		// if void element, fallback to the node’s sourceCodeLocation (issue #67)
-		let start = node.sourceCodeLocation.startTag || node.sourceCodeLocation;
-		let end = node.sourceCodeLocation.endTag || node.sourceCodeLocation;
+		let start = node.sourceCodeLocation.startTag;
+		let end = node.sourceCodeLocation.endTag;
+		
+		// void elements won’t have these but also won’t have content (issue #67)
+		if(!start || !end) {
+			return "";
+		}
 
 		// Skip out early if the component has no content (not even whitespace)
 		// TODO possible improvement to use `hasTextContent` to ignore whitespace only children
 		//      Would we ever want to use webc:raw to output just whitespace?
-		if(start.endLine === end.startLine && start.endCol === end.startCol) {
+		if(start.endOffset === end.startOffset) {
 			return "";
 		}
 
@@ -863,15 +917,12 @@ class AstSerializer {
 			component = this.getAuthoredInComponent(options);
 		}
 
-		let {newLineStartIndeces, content} = component;
-		let startIndex = newLineStartIndeces[start.endLine - 1] + start.endCol - 1;
-		let endIndex = newLineStartIndeces[end.startLine - 1] + end.startCol - 1;
-
-		let rawContent = content.slice(startIndex, endIndex);
+		let {content} = component;
+		// inner content, not outer content
+		let rawContent = content.slice(start.endOffset, end.startOffset);
 
 		if(os.EOL !== AstSerializer.EOL) {
-			// Use replaceAll(os.EOL) when we drop support for Node 14 (see node.green)
-			return rawContent.replace(/\r\n/g, AstSerializer.EOL);
+			return rawContent.replaceAll(os.EOL, AstSerializer.EOL);
 		}
 
 		return rawContent;
@@ -967,31 +1018,32 @@ class AstSerializer {
 			return { html: "" };
 		}
 
-		let promises = [];
-
+		let results = [];
+		// Changed to depth-first not breadth-first in v0.12
 		if(type === "Object") {
 			let index = 0;
 			for(let loopKey in loopContent) {
-				options.injectedData = {
+				options.injectedData = Object.assign({}, options.injectedData, {
 					[keys.key]: loopKey,
 					[keys.value]: loopContent[loopKey],
 					[keys.index]: index++,
-				};
-				promises.push(this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
+				});
+				results.push(await this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
 			}
 		} else if(type === "Array") {
-			promises = loopContent.map(((loopValue, index) => {
-				options.injectedData = {
-					[keys.index]: index,
+			let index = 0;
+			for(let loopValue of Array.from(loopContent)) {
+				options.injectedData = Object.assign({}, options.injectedData, {
+					...(keys.index ? { [keys.index]: index } : {}), // keys.index may not be specified
 					[keys.value]: loopValue
-				};
-
-				return this.compileNode(node, slots, options, streamEnabled, { loopingActive: true });
-			}));
+				});
+				results.push(await this.compileNode(node, slots, options, streamEnabled, { loopingActive: true }));
+				index++;
+			}
 		}
 
 		// TODO whitespace
-		return (await Promise.all(promises)).map(entry => entry.html).filter(entry => entry).join("\n");
+		return results.map(entry => entry.html).filter(entry => Boolean(entry)).join("\n");
 	}
 
 	async compileNode(node, slots = {}, options = {}, streamEnabled = true, metadata = {}) {
@@ -1018,7 +1070,7 @@ class AstSerializer {
 		let content = "";
 
 		let transformTypes = this.getTransformTypes(node);
-		if(transformTypes.length) {
+		if(transformTypes.length && !options.rawMode) {
 			options.currentTransformTypes = transformTypes;
 		}
 
@@ -1034,14 +1086,14 @@ class AstSerializer {
 			let c = node.value;
 
 			// persist flow control info past whitespace only text nodes
-			if(metadata.previousSiblingFlowControl?.type && c.trim().length === 0) {
+			if(metadata.previousSiblingFlowControl?.type) {
 				currentNodeMetadata.flowControlType = metadata.previousSiblingFlowControl?.type;
 				currentNodeMetadata.flowControlResult = metadata.previousSiblingFlowControl?.success;
 			}
 
 			// Run transforms
 			if(options.currentTransformTypes && options.currentTransformTypes.length > 0) {
-				c = await this.transformContent(node.value, options.currentTransformTypes, node, slots, options);
+				c = await this.transformContent(node.value, options.currentTransformTypes, node, slots, options, streamEnabled);
 
 				// only reprocess text nodes in a <* webc:is="template" webc:type>
 				if(!node._webCProcessed && node.parentNode && AstQuery.getTagName(node.parentNode) === "template") {
@@ -1058,7 +1110,8 @@ class AstSerializer {
 			} else {
 				// via https://github.com/inikulin/parse5/blob/159ef28fb287665b118c71e1c5c65aba58979e40/packages/parse5-html-rewriting-stream/lib/index.ts
 				return {
-					html: escapeText(unescaped),
+					// if already processed, it’s already escaped
+					html: node._webCProcessed ? unescaped : escapeText(unescaped),
 					currentNodeMetadata
 				};
 			}
@@ -1230,7 +1283,7 @@ class AstSerializer {
 						if(externalSource) { // fetch file contents, note that child content of the node is ignored here
 							// We could check to make sure this isn’t already in the asset aggregation bucket *before* we read but that could result in out-of-date content
 							let fileContent = this.fileCache.read(externalSource, options.closestParentComponent || this.filePath);
-							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options);
+							childContent = await this.transformContent(fileContent, options.currentTransformTypes, node, slots, options, streamEnabled);
 						} else {
 							let { html } = await this.getChildContent(node, slots, options, false);
 							childContent = html;

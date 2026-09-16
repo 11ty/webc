@@ -1,4 +1,6 @@
 <script webc:root="override" webc:type="js" webc:is="style" webc:keep>
-`/* ${license} */
-${slots.text.default}`
+export default function({license, slots}) {
+	return `/* ${license} */
+${slots.text.default}`;
+}
 </script>

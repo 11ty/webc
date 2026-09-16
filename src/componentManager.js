@@ -1,28 +1,17 @@
-import { createHash } from "crypto";
+import { createHash } from "node:crypto";
+import os from "node:os";
 
 import { WebC } from "../webc.js";
 import { AstQuery } from "./astQuery.js";
 import { AstModify } from "./astModify.js";
 import { AstSerializer } from "./ast.js";
-import { ModuleScript } from "./moduleScript.cjs";
+import { wrapAndExecute } from "./dynamicScript.js";
 
 class ComponentManager {
 	constructor() {
 		this.parsingPromises = {};
 		this.components = {};
 		this.hashOverrides = {};
-	}
-
-	static getNewLineStartIndeces(content) {
-		let lineStarts = [];
-		let sum = 0;
-		let lineEnding = "\n";
-		// this should work okay with \r\n too, \r will just be treated as another character
-		for(let line of content.split(lineEnding)) {
-			lineStarts.push(sum);
-			sum += line.length + lineEnding.length;
-		}
-		return lineStarts;
 	}
 
 	async getSetupScriptValue(component, filePath, dataCascade) {
@@ -32,11 +21,11 @@ class ComponentManager {
 		if(setupScriptNode) {
 			let content = AstQuery.getTextContent(setupScriptNode).toString();
 
-			// importantly for caching: this has no attributes or context sensitive things, only global helpers and global data
-			let data = dataCascade.getData(true);
-
 			// async-friendly
-			return ModuleScript.evaluateScriptAndReturnAllGlobals(content, filePath, data);
+			return wrapAndExecute(content, {
+				context: dataCascade.getSetupScriptData(),
+				filePath,
+			});
 		}
 	}
 
@@ -230,13 +219,6 @@ class ComponentManager {
 			filePath,
 			ast,
 			content,
-			get newLineStartIndeces() {
-				if(!this._lineStarts) {
-					this._lineStarts = ComponentManager.getNewLineStartIndeces(content);
-				}
-				return this._lineStarts;
-			},
-
 			mode,
 			isTopLevelComponent,
 			hasDeclarativeShadowDom,

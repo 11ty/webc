@@ -2,7 +2,7 @@
 <script webc:type="render" webc:is="template">
 const Image = require("@11ty/eleventy-img");
 
-module.exports = function() {
+export default function() {
 	return Image.generateHTML({
 		webp: [
 			{

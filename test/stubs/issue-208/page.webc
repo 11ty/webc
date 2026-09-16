@@ -1,0 +1,6 @@
+<script webc:setup>
+export const cssString = "article > h1 { background: red; }";
+</script>
+<style webc:keep @text="cssString"></style>
+<style webc:keep @raw="cssString"></style>
+<style webc:keep @html="cssString"></style>

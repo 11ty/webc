@@ -1,6 +1,6 @@
 {
 	"name": "@11ty/webc",
-	"version": "0.11.4",
+	"version": "0.12.0-beta.2",
 	"description": "Single File Web Components",
 	"main": "webc.js",
 	"type": "module",
@@ -12,7 +12,7 @@
 	},
 	"license": "MIT",
 	"engines": {
-		"node": ">=14.18"
+		"node": ">=22"
 	},
 	"funding": {
 		"type": "opencollective",
@@ -36,20 +36,27 @@
 		]
 	},
 	"dependencies": {
-		"@11ty/eleventy-utils": "^1.0.1",
-		"css-tree": "^2.3.1",
-		"dependency-graph": "^0.11.0",
-		"entities": "^4.4.0",
-		"fast-glob": "^3.2.12",
+		"@11ty/eleventy-utils": "^2.0.7",
+		"css-tree": "^3.2.1",
+		"dependency-graph": "^1.0.0",
+		"entities": "^8.1.0",
+		"fast-glob": "^3.3.3",
+		"import-module-string": "^2.0.3",
 		"is-glob": "^4.0.3",
-		"nanoid": "^4.0.1",
-		"node-retrieve-globals": "^2.0.7",
-		"parse5": "^7.1.2"
+		"nanoid": "^6.0.1",
+		"parse5": "^8.0.1"
 	},
 	"devDependencies": {
-		"@11ty/eleventy-img": "^3.0.0",
-		"ava": "^5.2.0",
-		"markdown-it": "^13.0.1",
-		"typescript": "^5.0.2"
-	}
+		"@11ty/eleventy-img": "^7.0.0",
+		"ava": "^8.0.1",
+		"markdown-it": "^15.0.2"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/11ty/webc"
+	},
+	"bugs": {
+		"url": "https://github.com/11ty/webc/issues"
+	},
+	"homepage": "https://github.com/11ty/webc"
 }

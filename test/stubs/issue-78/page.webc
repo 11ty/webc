@@ -3,10 +3,10 @@
 
 <p>js</p>
 <script webc:type="js">
-`<p>hi</p>`;
+export default `<p>hi</p>`;
 </script>
 
 <p>js with component</p>
 <script webc:type="js" webc:is="template">
-`<a-component></a-component>`;
+export default `<a-component></a-component>`;
 </script>

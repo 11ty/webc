@@ -1,6 +1,6 @@
 import test from "ava";
 import MarkdownIt from "markdown-it";
-import typescript from "typescript";
+import { stripTypeScriptTypes } from "node:module";
 
 import { WebC } from "../webc.js";
 
@@ -841,6 +841,30 @@ After`);
 });
 
 
+test("Nested slots default", async t => {
+	let component = new WebC();
+	component.setInputPath("./test/stubs/import-alias-nested.webc");
+	component.defineComponents("./test/stubs/import-alias-nested-quickstart.webc");
+	// aliases are from project root
+	component.setAlias("npm", "./test/stubs/fake_node_modules/");
+
+	let { html, css, js, components } = await component.compile();
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/import-alias-nested.webc",
+		"./test/stubs/import-alias-nested-quickstart.webc",
+		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc",
+	]);
+	t.is(html, `Before
+Before
+<pre language="html">This is a paragraph—we still cool?</pre>
+After
+After`);
+});
+
+
 test("Using a web component (class attribute merging)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/class-mixins.webc", {
 		"web-component": "./test/stubs/components/child-root.webc"
@@ -1372,16 +1396,13 @@ test("<script webc:type> with Typescript", async t => {
 	component.setInputPath("./test/stubs/script-type.webc");
 	component.setTransform("ts", async (content) => {
 		t.is(content.trim(), `let x: string = "string";`);
-		let ret = typescript.transpileModule(content, {
-			compilerOptions: {}
-		});
-		return ret.outputText;
+		return stripTypeScriptTypes(content);
 	});
 	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js.join("").trim(), `var x = "string";`);
+	t.deepEqual(js.join("").trim(), `let x         = "string";`);
 	t.deepEqual(css, []);
 	t.deepEqual(components, [
 		"./test/stubs/script-type.webc",
@@ -1532,9 +1553,54 @@ test("Scripted render function with a require", async t => {
 	]);
 
 	t.is(html, `<div test2="2"></div>
-<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp 300w"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+});
+
+test("Scripted render function with an import", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-import.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
+
+// If this test is failing and you’re using a locally installed import-module-string, e.g. file:import-module-string
+// double check that @11ty/eleventy-img is an installed dependency relative to import-module-string
+test("Scripted js function with an import", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-js-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-js-import.webc",
+	]);
+
+	t.is(html, `<div test2="2"></div>
+<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
+// If this test is failing and you’re using a locally installed import-module-string, e.g. file:import-module-string
+// double check that @11ty/eleventy-img is an installed dependency relative to import-module-string
+test("Scripted webc:setup function with an import #225", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-setup-import.webc");
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, [
+		"./test/stubs/render-setup-import.webc",
+	]);
+
+	t.is(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+
+});
+
 
 test("Scripted render function with access to slots", async t => {
 	let component = new WebC();
@@ -1659,20 +1725,20 @@ test("Using scripted render function to generate CSS (webc:root)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wzlbemqff .selector{}`]);
+	t.deepEqual(css, [`.wkiuqaeds .selector{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css-root.webc",
 		"./test/stubs/components/render-css-root.webc",
 	]);
 
-	t.is(html, `<some-css class="wzlbemqff"></some-css>`);
+	t.is(html, `<some-css class="wkiuqaeds"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS (webc:root=override)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root-override.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.waltwzk-v .selector{}`]);
+	t.deepEqual(css, [`.wneppuwzd .selector{}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css-root-override.webc",
 		"./test/stubs/components/render-css-root-override.webc",
@@ -1685,13 +1751,13 @@ test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
 	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wjmnc5heg .selector{color:red}`]);
+	t.deepEqual(css, [`.wly5roxxz .selector{color:red}`]);
 	t.deepEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, `<some-css class="wjmnc5heg"></some-css>`);
+	t.is(html, `<some-css class="wly5roxxz"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {
@@ -2357,4 +2423,151 @@ test("Bucket is not inherited", async t => {
 		"./test/stubs/bucket-noinherit/index.webc",
 		"./test/stubs/bucket-noinherit/component.webc",
 	]);
+});
+
+test("webc:if should short circuit dynamic attribute evaluation #191 (throws)", async t => {
+	let component = new WebC();
+	component.setContent(`<div webc:if="true" :test="Promise.reject(new Error('This should not evaluate'))"></div>`);
+
+	let error = await t.throwsAsync(async () => {
+		await component.compile({
+			data: {}
+		});
+	});
+	t.is(error.message, `Evaluating a dynamic attribute failed: \`:test="Promise.reject(new Error('This should not evaluate'))"\`.
+Original error message: This should not evaluate`);
+});
+
+test("webc:if should short circuit dynamic attribute evaluation #191", async t => {
+	let component = new WebC();
+	component.setContent(`<div webc:if="false" :test="Promise.reject(new Error('This should not evaluate'))"></div>`);
+
+	let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, ``);
+});
+
+test("webc:if with void elements (if) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="true" alt="first"><img webc:elseif="true" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="first">`);
+});
+
+test("webc:if with void elements (elseif) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first"><img webc:elseif="true" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="second">`);
+});
+
+test("webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first"><img webc:elseif="false" alt="second"><img webc:else alt="third">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="third">`);
+});
+
+test("two webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<img webc:if="false" alt="first-a"><img webc:else alt="first-b"><img webc:if="true" alt="second-a"><img webc:else alt="second-b">`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<img alt="first-b"><img alt="second-a">`);
+});
+
+test("more complex webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<meta webc:if="true" name="test1" content="this should be returned">
+<meta webc:if="false" name="test2" content="this should not be returned">
+<meta webc:else name="test2" content="this should be returned">
+`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<meta name="test1" content="this should be returned">
+
+<meta name="test2" content="this should be returned">
+`);
+});
+
+test("super complex webc:if with void elements (else) #217", async t => {
+	let component = new WebC();
+	component.setContent(`<meta webc:if="true" name="test1" content="this should be returned">
+<meta webc:else name="test1" content="this should not be returned">
+<!-- should return with test1 -->
+<meta webc:if="false" name="test2" content="this should not be returned">
+<meta webc:else name="test2" content="this should be returned">
+<!-- if is false, should return else -->
+<meta webc:if="false" name="test3" content="this should not be returned">
+<meta webc:else name="test3" content="this should be returned">
+<!-- if is false, should return else -->
+<meta webc:if="false" name="test4" content="this not should be returned">
+<meta webc:elseif="true" name="test4" content="this should be returned">
+<meta webc:else name="test4" content="this should not be returned">
+<!-- elseif is true, should return elseif -->
+<meta webc:if="true" name="test5" content="this should be returned">
+<meta webc:else name="test5" content="this should not be returned">
+<!-- if is true, should return elseif -->`);
+
+		let { html, css, js, components } = await component.compile({
+		data: {}
+	});
+
+	t.deepEqual(js, []);
+	t.deepEqual(css, []);
+	t.deepEqual(components, []);
+	t.is(html, `<meta name="test1" content="this should be returned">
+
+<!-- should return with test1 -->
+
+<meta name="test2" content="this should be returned">
+<!-- if is false, should return else -->
+
+<meta name="test3" content="this should be returned">
+<!-- if is false, should return else -->
+
+<meta name="test4" content="this should be returned">
+
+<!-- elseif is true, should return elseif -->
+<meta name="test5" content="this should be returned">
+
+<!-- if is true, should return elseif -->`);
 });

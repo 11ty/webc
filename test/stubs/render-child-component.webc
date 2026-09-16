@@ -1,5 +1,5 @@
 <script webc:type="render" webc:is="template">
-function() {
+export default function() {
 	return `<h3>Title</h3>
 <text-link @href="/project">Link text</text-link>`;
 }

@@ -2,5 +2,7 @@
 const attrs = webc.renderAttributes(webc.attributes);
 </script>
 <script webc:type="js" webc:root="override">
-`<img ${attrs}>`
+export default function({ attrs }) {
+	return `<img ${attrs}>`
+};
 </script>

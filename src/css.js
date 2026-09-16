@@ -101,20 +101,23 @@ class CssPrefixer {
 						}
 					}
 				} else {
-					// Prepand the prefix class in front of all selectors
-					// which don't include :host or :host-context
-					node.children.prepend(
-						list.createItem({
-							type: "Combinator",
-							name: " ",
-						})
-					);
-					node.children.prepend(
-						list.createItem({
-							type: "ClassSelector",
-							name: this.prefix,
-						})
-					);
+					// list won’t exist for `@supports selector(*)` (but we don’t want to prefix that anyway)
+					if(list) {
+						// Prepand the prefix class in front of all selectors
+						// which don't include :host or :host-context
+						node.children.prepend(
+							list.createItem({
+								type: "Combinator",
+								name: " ",
+							})
+						);
+						node.children.prepend(
+							list.createItem({
+								type: "ClassSelector",
+								name: this.prefix,
+							})
+						);
+					}
 				}
 
 				node.children.forEach((node, item, list) => {

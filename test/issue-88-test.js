@@ -9,7 +9,9 @@ test("webc:type=js #88", async t => {
 	});
 
 	component.setContent(`<script webc:type="js">
-alwaysBlue(\`hello\`);
+export default function({ alwaysBlue }) {
+	return alwaysBlue(\`hello\`);
+}
 </script>`);
 
 	let { html } = await component.compile();
@@ -25,7 +27,9 @@ test("webc:type=js #88 (with `this`)", async t => {
 	});
 
 	component.setContent(`<script webc:type="js">
-this.alwaysBlue(\`hello\`);
+export default function() {
+	return this.alwaysBlue(\`hello\`);
+}
 </script>`);
 
 	let { html } = await component.compile();
@@ -42,7 +46,7 @@ test("webc:type=render #88", async t => {
 	});
 
 	component.setContent(`<script webc:type="render">
-function() {
+export default function() {
 	return this.alwaysBlue(\`hello\`);
 }
 </script>`);

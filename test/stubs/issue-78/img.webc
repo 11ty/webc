@@ -1,6 +1,8 @@
 <script webc:type="js" webc:root="override" webc:raw>
-if(!alt) {
-	throw new Error("oh no you didn’t");
+export default function({src, alt}) {
+	if(!alt) {
+		throw new Error("oh no you didn’t");
+	}
+	return `<img src="${src}" alt="${alt}" extra-attribute>`;
 }
-`<img src="${src}" alt="${alt}" extra-attribute>`;
 </script>

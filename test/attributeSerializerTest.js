@@ -18,6 +18,7 @@ test("Normalize attribute name", async t => {
 	t.is(AttributeSerializer.camelCaseAttributeName("-my-other-test"), "MyOtherTest");
 	t.is(AttributeSerializer.camelCaseAttributeName("my-other-test-"), "myOtherTest");
 	t.is(AttributeSerializer.camelCaseAttributeName("my-other-test------"), "myOtherTest");
+	t.is(AttributeSerializer.camelCaseAttributeName("m-y-other-test"), "mYOtherTest");
 });
 
 test("Normalize attributes for data", async t => {
