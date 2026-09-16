@@ -233,6 +233,22 @@ test("Test case from #175 nested webc:for", async t => {
 </table>`);
 });
 
+test("webc:for with multiple sub-elements", async (t) => {
+	let component = new WebC();
+
+	component.setInputPath("./test/stubs/looping/array-multiple-sub.webc");
+
+	let { html } = await component.compile();
+
+	t.is(
+		html.trim(),
+		`<div>
+	<div>1</div>
+	<div>2</div>
+</div>`,
+	);
+});
+
 test("Basic webc:for with bad syntax", async t => {
 	let component = new WebC();
 
@@ -242,3 +258,4 @@ test("Basic webc:for with bad syntax", async t => {
 		message:/attribute value: bad syntax/
 	});
 });
+
