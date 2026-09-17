@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import fs from "node:fs/promises";
 import fastglob from "fast-glob";
 import isGlob from "is-glob";
 import path from "node:path";
