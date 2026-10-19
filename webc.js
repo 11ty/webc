@@ -1,5 +1,6 @@
-import fs from "node:fs/promises";
-import fastglob from "fast-glob";
+import fs from "node:fs";
+import { globSync } from "tinyglobby";
+
 import isGlob from "is-glob";
 import path from "node:path";
 
@@ -14,7 +15,7 @@ const localAstCache = new AstCache();
 
 // VFS support
 export const customLoader = {
-	"load": (path) => fs.readFile(path, {encoding: "utf8"}),
+	"load": (path) => fs.readFileSync(path, {encoding: "utf8"}),
 	"resolve": path.resolve,
 }
 
@@ -162,11 +163,20 @@ export class WebC {
 	}
 
 	static findGlob(glob, ignores = []) {
-		return fastglob.sync(glob, {
+		let files = globSync(glob, {
 			ignore: ignores,
 			caseSensitiveMatch: false,
 			dot: false,
+			expandDirectories: false,
+			// Absolute patterns return absolute results, like fast-glob did
+			absolute: path.isAbsolute(glob),
 		});
+
+		// Preserve a leading `./` like fast-glob did
+		if(glob.startsWith("./")) {
+			return files.map(file => `./${file}`);
+		}
+		return files;
 	}
 
 	static getComponentsMap(globOrObject, ignores) {

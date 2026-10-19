@@ -25,7 +25,6 @@
 	],
 	"author": {
 		"name": "Zach Leatherman",
-		"email": "zachleatherman@gmail.com",
 		"url": "https://zachleat.com/"
 	},
 	"ava": {
@@ -36,20 +35,20 @@
 		]
 	},
 	"dependencies": {
-		"@11ty/eleventy-utils": "^2.0.7",
+		"@11ty/eleventy-utils": "^3.0.1",
 		"css-tree": "^3.2.1",
 		"dependency-graph": "^1.0.0",
 		"entities": "^8.1.0",
-		"fast-glob": "^3.3.3",
-		"import-module-string": "^2.0.3",
+		"import-module-string": "^3.0.0",
 		"is-glob": "^4.0.3",
-		"nanoid": "^6.0.1",
-		"parse5": "^8.0.1"
+		"nanoid": "^6.0.2",
+		"parse5": "^8.0.1",
+		"tinyglobby": "^0.2.17"
 	},
 	"devDependencies": {
 		"@11ty/eleventy-img": "^7.0.0",
-		"ava": "^8.0.1",
-		"markdown-it": "^15.0.2"
+		"ava": "^8.1.0",
+		"markdown-it": "^15.0.3"
 	},
 	"repository": {
 		"type": "git",
