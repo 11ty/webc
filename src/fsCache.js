@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { customLoader } from "../webc.js";
 
 class FileSystemCache {
 	constructor() {
@@ -24,12 +25,12 @@ class FileSystemCache {
 	}
 
 	isFileInProjectDirectory(filePath) {
-		let workingDir = path.resolve();
-		let absoluteFile = path.resolve(filePath);
+		let workingDir = customLoader.resolve();
+		let absoluteFile = customLoader.resolve(filePath);
 		return absoluteFile.startsWith(workingDir);
 	}
 
-	read(filePath, relativeTo) {
+	async read(filePath, relativeTo) {
 		if(this.isFullUrl(filePath)) {
 			throw new Error(`Full URLs in <script> and <link rel="stylesheet"> are not yet supported without webc:keep.`);
 		}
@@ -41,11 +42,8 @@ class FileSystemCache {
 		}
 
 		if(!this.contents[filePath]) {
-			this.contents[filePath] = fs.readFileSync(filePath, {
-				encoding: "utf8"
-			});
+			this.contents[filePath] = await customLoader.load(filePath);
 		}
-
 		return this.contents[filePath];
 	}
 }
