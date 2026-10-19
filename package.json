@@ -25,7 +25,6 @@
 	],
 	"author": {
 		"name": "Zach Leatherman",
-		"email": "zachleatherman@gmail.com",
 		"url": "https://zachleat.com/"
 	},
 	"ava": {
@@ -36,7 +35,7 @@
 		]
 	},
 	"dependencies": {
-		"@11ty/eleventy-utils": "^2.0.7",
+		"@11ty/eleventy-utils": "^3.0.1",
 		"css-tree": "^3.2.1",
 		"dependency-graph": "^1.0.0",
 		"entities": "^8.1.0",
