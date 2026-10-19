@@ -12,7 +12,7 @@
 	},
 	"license": "MIT",
 	"engines": {
-		"node": ">=22"
+		"node": ">=22.18"
 	},
 	"funding": {
 		"type": "opencollective",
