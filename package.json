@@ -40,7 +40,7 @@
 		"css-tree": "^3.2.1",
 		"dependency-graph": "^1.0.0",
 		"entities": "^8.1.0",
-		"import-module-string": "^2.0.3",
+		"import-module-string": "^3.0.0",
 		"is-glob": "^4.0.3",
 		"nanoid": "^6.0.2",
 		"parse5": "^8.0.1",
