@@ -1,4 +1,5 @@
 import test from "ava";
+import path from "node:path";
 
 import { WebC } from "../webc.js";
 
@@ -74,4 +75,11 @@ p { color: blue; }
 test("Naming collision errors", async t => {
 	let component = new WebC();
 	t.throws(() => component.defineComponents("./test/stubs/global-components/**"));
+});
+
+test("findGlob keeps the pattern prefix in results", t => {
+	let abs = path.resolve("test/stubs/global-components").split(path.sep).join("/");
+	t.deepEqual(WebC.findGlob(`${abs}/my-*.webc`), [`${abs}/my-custom-element.webc`]);
+	t.deepEqual(WebC.findGlob("./test/stubs/global-components/my-*.webc"), ["./test/stubs/global-components/my-custom-element.webc"]);
+	t.deepEqual(WebC.findGlob("test/stubs/global-components/my-*.webc"), ["test/stubs/global-components/my-custom-element.webc"]);
 });

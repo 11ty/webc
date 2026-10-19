@@ -164,6 +164,8 @@ export class WebC {
 			caseSensitiveMatch: false,
 			dot: false,
 			expandDirectories: false,
+			// Absolute patterns return absolute results, like fast-glob did
+			absolute: path.isAbsolute(glob),
 		});
 
 		// Preserve a leading `./` like fast-glob did
