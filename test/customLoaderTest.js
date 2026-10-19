@@ -16,6 +16,8 @@ test.serial("customLoader replaces file reads", async t => {
 	let resolved = [];
 
 	customLoader.load = async (filePath) => {
+		// Normalize Windows separators from path.join
+		filePath = filePath.split(path.sep).join("/");
 		if(!(filePath in files)) {
 			throw new Error(`Missing virtual file: ${filePath}`);
 		}
