@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Style scoping bug #154", async t => {
@@ -11,8 +11,8 @@ test("Style scoping bug #154", async t => {
 
 	let { html, css } = await component.compile();
 
-	t.deepEqual(css.sort(), [ `.wla6sc-lx{background-color:blue}`, `.wwcxvoco3{background-color:red}` ]);
-	t.is(html.trim(), `<div class="wwcxvoco3">Hi I am red</div>
+	t.assert.deepStrictEqual(css.sort(), [ `.wla6sc-lx{background-color:blue}`, `.wwcxvoco3{background-color:red}` ]);
+	t.assert.strictEqual(html.trim(), `<div class="wwcxvoco3">Hi I am red</div>
 
 
 <div class="wla6sc-lx">Hi I am blue</div>

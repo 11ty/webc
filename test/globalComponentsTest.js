@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import path from "node:path";
 
 import { WebC } from "../webc.js";
@@ -10,11 +10,11 @@ test("Uses a global component (register by glob)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `This is a global component.`);
+	t.assert.strictEqual(html, `This is a global component.`);
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
 });
 
 test("Uses a global component (registered explicitly with object)", async t => {
@@ -27,11 +27,11 @@ test("Uses a global component (registered explicitly with object)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `This is a global component.`);
+	t.assert.strictEqual(html, `This is a global component.`);
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
 });
 
 test("Uses a global component (registered explicitly with Array)", async t => {
@@ -42,11 +42,11 @@ test("Uses a global component (registered explicitly with Array)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `This is a global component.`);
+	t.assert.strictEqual(html, `This is a global component.`);
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/global-components/my-custom-element.webc"]);
 });
 
 
@@ -59,27 +59,27 @@ test("Uses a global component with CSS and JS", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `<other-custom-element><p>This is another global component.</p>
+	t.assert.strictEqual(html, `<other-custom-element><p>This is another global component.</p>
 
 </other-custom-element>`);
 
-	t.deepEqual(js, [`
+	t.assert.deepStrictEqual(js, [`
 alert("hi");
 `]);
-	t.deepEqual(css, [`
+	t.assert.deepStrictEqual(css, [`
 p { color: blue; }
 `]);
-	t.deepEqual(components, ["./test/stubs/global-components/other-custom-element.webc"]);
+	t.assert.deepStrictEqual(components, ["./test/stubs/global-components/other-custom-element.webc"]);
 });
 
 test("Naming collision errors", async t => {
 	let component = new WebC();
-	t.throws(() => component.defineComponents("./test/stubs/global-components/**"));
+	t.assert.throws(() => component.defineComponents("./test/stubs/global-components/**"));
 });
 
 test("findGlob keeps the pattern prefix in results", t => {
 	let abs = path.resolve("test/stubs/global-components").split(path.sep).join("/");
-	t.deepEqual(WebC.findGlob(`${abs}/my-*.webc`), [`${abs}/my-custom-element.webc`]);
-	t.deepEqual(WebC.findGlob("./test/stubs/global-components/my-*.webc"), ["./test/stubs/global-components/my-custom-element.webc"]);
-	t.deepEqual(WebC.findGlob("test/stubs/global-components/my-*.webc"), ["test/stubs/global-components/my-custom-element.webc"]);
+	t.assert.deepStrictEqual(WebC.findGlob(`${abs}/my-*.webc`), [`${abs}/my-custom-element.webc`]);
+	t.assert.deepStrictEqual(WebC.findGlob("./test/stubs/global-components/my-*.webc"), ["./test/stubs/global-components/my-custom-element.webc"]);
+	t.assert.deepStrictEqual(WebC.findGlob("test/stubs/global-components/my-*.webc"), ["test/stubs/global-components/my-custom-element.webc"]);
 });

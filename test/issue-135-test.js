@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("script render function implied template should still be HTML-only #135", async t => {
@@ -9,5 +9,5 @@ test("script render function implied template should still be HTML-only #135", a
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<p>hello</p>`);
+	t.assert.strictEqual(html.trim(), `<p>hello</p>`);
 });

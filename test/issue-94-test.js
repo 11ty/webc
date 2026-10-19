@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("non-string props #94", async t => {
@@ -10,5 +10,5 @@ test("non-string props #94", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `number|number`);
+	t.assert.strictEqual(html.trim(), `number|number`);
 });

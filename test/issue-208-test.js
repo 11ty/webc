@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("HTML entities in <style> tags are being encoded #208", async t => {
@@ -12,10 +12,10 @@ export const cssString = "article > h1 { background: red; }";
 
 		let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html.trim(), `<style>article &gt; h1 { background: red; }</style>
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html.trim(), `<style>article &gt; h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>`);
 });
@@ -32,10 +32,10 @@ export const cssString = "article > h1 { background: red; }";
 
 		let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html.trim(), `<style>article &gt; h1 { background: red; }</style>
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html.trim(), `<style>article &gt; h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>`);
 });
@@ -48,8 +48,8 @@ test("Escaping in <style> bug (file component, bundler mode) #208", async t => {
 
 	let { html, css } = await component.compile();
 
-	t.deepEqual(css, []);
-	t.is(html.trim(), `<style>article &gt; h1 { background: red; }</style>
+	t.assert.deepStrictEqual(css, []);
+	t.assert.strictEqual(html.trim(), `<style>article &gt; h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>
 <style>article > h1 { background: red; }</style>`);
 });

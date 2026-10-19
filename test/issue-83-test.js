@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 // This doesn’t technically test console.log output but it’s close enough for now 😅
@@ -18,11 +18,11 @@ export default function({ console }) {
 		data: {
 			console: {
 				log: function(message) {
-					t.is(message, 2);
+					t.assert.strictEqual(message, 2);
 				}
 			}
 		}
 	});
 
-	t.is(html, `hello 2`);
+	t.assert.strictEqual(html, `hello 2`);
 });

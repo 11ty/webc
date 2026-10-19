@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("HTML entities in <style> tags are being encoded #208", async t => {
@@ -10,10 +10,10 @@ test("HTML entities in <style> tags are being encoded #208", async t => {
 
 		let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/issue-156/link.webc"]);
-	t.is(html.trim(), `<link data-test rel="icon" type="image/svg+xml" href="/images/favicon.svg">
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/issue-156/link.webc"]);
+	t.assert.strictEqual(html.trim(), `<link data-test rel="icon" type="image/svg+xml" href="/images/favicon.svg">
 <link data-test rel="mask-icon" href="/images/safari-mask-icon.svg" color="#888888">
 <link data-test rel="apple-touch-icon" href="/images/apple-touch-icon.png">`);
 });

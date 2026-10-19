@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Dynamic attributes in components (attribute -> dynamic -> dynamic) #80", async t => {
@@ -10,7 +10,7 @@ test("Dynamic attributes in components (attribute -> dynamic -> dynamic) #80", a
 
 	let { html } = await component.compile();
 
-	t.is(html, `<div foo="xyz">
+	t.assert.strictEqual(html, `<div foo="xyz">
   <img src="xyz">
 </div>`);
 });
@@ -24,7 +24,7 @@ test("Dynamic attributes in components (dynamic -> dynamic -> dynamic) #80", asy
 
 	let { html } = await component.compile();
 
-	t.is(html, `<div foo="xyz">
+	t.assert.strictEqual(html, `<div foo="xyz">
   <img src="xyz">
 </div>`);
 });

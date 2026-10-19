@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Using this.class in an attribute #45", async (t) => {
@@ -11,7 +11,7 @@ test("Using this.class in an attribute #45", async (t) => {
 			class: "test-class"
 		}
 	});
-	t.is(html, `<div class="test-class"></div>`);
+	t.assert.strictEqual(html, `<div class="test-class"></div>`);
 });
 
 test("Throw a better error message when attempting to use `class` in dynamic attributes without this #45", async (t) => {
@@ -19,7 +19,7 @@ test("Throw a better error message when attempting to use `class` in dynamic att
 	component.setContent(`<div :class="class"></div>`);
 	component.setInputPath("./test/stubs/component-script-html.webc");
 
-	await t.throwsAsync(component.compile({
+	await t.assert.rejects(component.compile({
 		data: {
 			class: "test-class"
 		}
@@ -38,7 +38,7 @@ test("Real class in dynamic attributes #45", async (t) => {
 			class: "test-class"
 		}
 	});
-	t.is(html, `<div class="static value"></div>`);
+	t.assert.strictEqual(html, `<div class="static value"></div>`);
 });
 
 test("Using Math!", async (t) => {
@@ -46,11 +46,11 @@ test("Using Math!", async (t) => {
 	component.setContent(`<div :class="Math.random()"></div>`);
 
 	let { html } = await component.compile();
-	t.true(html.startsWith(`<div class="`));
-	t.true(html.endsWith(`"></div>`));
+	t.assert.ok(html.startsWith(`<div class="`));
+	t.assert.ok(html.endsWith(`"></div>`));
 
 	let num = parseFloat(html.slice(`<div class="`.length, -1 * `"></div>`.length), 10);
-	t.is(typeof NaN, "number");
-	t.is(typeof num, "number");
-	t.true(!isNaN(num));
+	t.assert.strictEqual(typeof NaN, "number");
+	t.assert.strictEqual(typeof num, "number");
+	t.assert.ok(!isNaN(num));
 });

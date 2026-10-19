@@ -1,5 +1,5 @@
 import path from "node:path";
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../../../webc.js";
 
 test("webc:setup #87", async t => {
@@ -17,7 +17,7 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>1</div>
+	t.assert.strictEqual(html.trim(), `<div>1</div>
 
 <div>blue</div>`);
 });
@@ -36,7 +36,7 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>yellow</div>`);
+	t.assert.strictEqual(html.trim(), `<div>yellow</div>`);
 });
 
 test("webc:setup with global data #87", async t => {
@@ -57,7 +57,7 @@ export function alwaysBlue() {
 		}
 	});
 
-	t.is(html.trim(), `<div>hello</div>`);
+	t.assert.strictEqual(html.trim(), `<div>hello</div>`);
 });
 
 
@@ -80,7 +80,7 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>1</div>
+	t.assert.strictEqual(html.trim(), `<div>1</div>
 
 <div>2</div>
 
@@ -99,7 +99,7 @@ const key = 1;
 	let { html } = await component.compile();
 
 	// should be empty (no export)
-	t.is(html.trim(), `<div></div>`);
+	t.assert.strictEqual(html.trim(), `<div></div>`);
 });
 
 test("webc:setup with export", async t => {
@@ -112,7 +112,7 @@ export const key = 1;
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>1</div>`);
+	t.assert.strictEqual(html.trim(), `<div>1</div>`);
 });
 
 test("webc:setup with function (no export)", async t => {
@@ -125,8 +125,9 @@ function alwaysBlue() {
 </script>
 <div @html="alwaysBlue()"></div>`);
 
-	let e = await t.throwsAsync(() => component.compile());
-	t.true(e.message.startsWith(`Evaluating a dynamic attribute failed: \`@html="alwaysBlue()"\``));
+	await t.assert.rejects(() => component.compile(), {
+		message: /^Evaluating a dynamic attribute failed: `@html="alwaysBlue\(\)"`/
+	});
 });
 
 test("webc:setup with function (export)", async t => {
@@ -141,7 +142,7 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>blue</div>`);
+	t.assert.strictEqual(html.trim(), `<div>blue</div>`);
 });
 
 test("webc:setup with import and export", async t => {
@@ -159,7 +160,7 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>This is imported!</div>`);
+	t.assert.strictEqual(html.trim(), `<div>This is imported!</div>`);
 });
 
 // TODO swap `export` to `import`
@@ -176,7 +177,7 @@ export { default as alwaysBlue } from "./import-target.js";
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>This is imported!</div>`);
+	t.assert.strictEqual(html.trim(), `<div>This is imported!</div>`);
 });
 
 test("webc:setup with encodeURIComponent", async t => {
@@ -191,5 +192,5 @@ export function alwaysBlue() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>this%20is%20a%20test</div>`);
+	t.assert.strictEqual(html.trim(), `<div>this%20is%20a%20test</div>`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Using webc:if=undefined", async t => {
@@ -13,11 +13,11 @@ test("Using webc:if=undefined", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 </body>
@@ -38,11 +38,11 @@ test("Using webc:if=false", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 </body>
@@ -63,11 +63,11 @@ test("Using webc:if=true", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body><div>Hi</div>
 </body>
@@ -94,11 +94,11 @@ test("Using webc:if with a promise (resolves true)", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body><div>Hi</div>
 </body>
@@ -125,11 +125,11 @@ test("Using webc:if with a promise (resolves false)", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 </body>
@@ -144,11 +144,11 @@ test("Using webc:if=false on a style", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `Test`);
+	t.assert.strictEqual(html, `Test`);
 });
 
 test("Using webc:if=true on a style", async t => {
@@ -159,11 +159,11 @@ test("Using webc:if=true on a style", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`* { color: red }`]);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`* { color: red }`]);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `Test`);
+	t.assert.strictEqual(html, `Test`);
 });
 
 test("Using webc:if on a style based on host component attribute (true)", async t => {
@@ -175,10 +175,10 @@ test("Using webc:if on a style based on host component attribute (true)", async 
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`* { color: red }`]);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`* { color: red }`]);
 
-	t.is(html, `<if-component-style>Test</if-component-style>`);
+	t.assert.strictEqual(html, `<if-component-style>Test</if-component-style>`);
 });
 
 test("Using webc:if on a style based on host component attribute (false)", async t => {
@@ -190,10 +190,10 @@ test("Using webc:if on a style based on host component attribute (false)", async
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
 
-	t.is(html, `<if-component-style>Test</if-component-style>`);
+	t.assert.strictEqual(html, `<if-component-style>Test</if-component-style>`);
 });
 
 test("Using webc:if=false web:else", async t => {
@@ -211,11 +211,11 @@ test("Using webc:if=false web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		
@@ -240,11 +240,11 @@ test("Using webc:if=true web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		<div>Hi</div>
@@ -270,11 +270,11 @@ test("Using webc:if=true webc:elseif=false web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		<div>Hi</div>
@@ -301,11 +301,11 @@ test("Using webc:if=false webc:elseif=true web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		
@@ -332,11 +332,11 @@ test("Using webc:if=false webc:elseif=false web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		
@@ -363,11 +363,11 @@ test("Using webc:if=true webc:elseif=true web:else", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		<div>Hi</div>
@@ -390,7 +390,7 @@ test("Solo webc:else throws an error", async t => {
 	</body>
 </html>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `webc:else expected an webc:if or webc:elseif on the previous sibling!`
 	});
 });
@@ -407,7 +407,7 @@ test("Solo webc:elseif throws an error", async t => {
 	</body>
 </html>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `webc:elseif expected an webc:if or webc:elseif on the previous sibling!`
 	});
 });
@@ -428,11 +428,11 @@ test("Flow control works fine with comments in the middle", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 		

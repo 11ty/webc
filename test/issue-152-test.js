@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Slotted global data access #152", async t => {
@@ -14,7 +14,7 @@ test("Slotted global data access #152", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<h1>Hello I am in the default slot.<span>Hello</span></h1>`);
+	t.assert.strictEqual(html.trim(), `<h1>Hello I am in the default slot.<span>Hello</span></h1>`);
 });
 
 test("Slotted global data access nested #152", async t => {
@@ -31,7 +31,7 @@ test("Slotted global data access nested #152", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<h1><h2><span>Hello</span></h2></h1>`);
+	t.assert.strictEqual(html.trim(), `<h1><h2><span>Hello</span></h2></h1>`);
 });
 
 test("Slotted global data access even more nested #152", async t => {
@@ -48,7 +48,7 @@ test("Slotted global data access even more nested #152", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<h1><h2><h2><span>Hello</span></h2></h2></h1>`);
+	t.assert.strictEqual(html.trim(), `<h1><h2><h2><span>Hello</span></h2></h2></h1>`);
 });
 
 test("Slotted global data access parent without slot #152", async t => {
@@ -65,7 +65,7 @@ test("Slotted global data access parent without slot #152", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<h2><span>Hello</span></h2>`);
+	t.assert.strictEqual(html.trim(), `<h2><span>Hello</span></h2>`);
 });
 
 test("Slotted global data access parent without slot even nestier #152", async t => {
@@ -82,5 +82,5 @@ test("Slotted global data access parent without slot even nestier #152", async t
 		}
 	});
 
-	t.is(html.trim(), `<h2><h2><span>Hello</span></h2></h2>`);
+	t.assert.strictEqual(html.trim(), `<h2><h2><span>Hello</span></h2></h2>`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Basic webc:for (complex key) over Array", async t => {
@@ -8,7 +8,7 @@ test("Basic webc:for (complex key) over Array", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>2-1</div>
+	t.assert.strictEqual(html.trim(), `<div>2-1</div>
 <div>3-2</div>
 <div>4-3</div>`);
 });
@@ -20,7 +20,7 @@ test("Basic webc:for (simple key) over Array", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>2-undefined</div>
+	t.assert.strictEqual(html.trim(), `<div>2-undefined</div>
 <div>3-undefined</div>
 <div>4-undefined</div>`);
 });
@@ -32,7 +32,7 @@ test("webc:for over Array has injected data available on child nodes", async t =
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div><div>1-0</div></div>
+	t.assert.strictEqual(html.trim(), `<div><div>1-0</div></div>
 <div><div>2-1</div></div>
 <div><div>3-2</div></div>
 <div><div>4-3</div></div>`);
@@ -46,7 +46,7 @@ test("Basic webc:for (complex key) over Object", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>a-1-0</div>
+	t.assert.strictEqual(html.trim(), `<div>a-1-0</div>
 <div>c-4-2</div>`);
 });
 
@@ -57,7 +57,7 @@ test("Basic webc:for (simple key) over Object", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>a-undefined</div>
+	t.assert.strictEqual(html.trim(), `<div>a-undefined</div>
 <div>c-undefined</div>`);
 });
 
@@ -68,7 +68,7 @@ test("webc:for using Object.keys to convert to Array", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>a</div>
+	t.assert.strictEqual(html.trim(), `<div>a</div>
 <div>c</div>`);
 });
 
@@ -79,7 +79,7 @@ test("webc:for using Object.values to convert to Array", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>1</div>
+	t.assert.strictEqual(html.trim(), `<div>1</div>
 <div>4</div>`);
 });
 
@@ -91,7 +91,7 @@ test("webc:for issue #139", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<b>1</b>
+	t.assert.strictEqual(html.trim(), `<b>1</b>
 <b>2</b>
 <b>3</b>
 <b>1</b>
@@ -106,7 +106,7 @@ test("script webc:setup feeds data for looping", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<b>1</b>
+	t.assert.strictEqual(html.trim(), `<b>1</b>
 <b>2</b>
 <b>3</b>`);
 });
@@ -120,11 +120,11 @@ test("nesting webc:for over component hierarchy", async t => {
 
 	let { html } = await component.compile({data:{contacts}});
 	
-	t.true(html.indexOf(`<button onclick="alert('Hello Monica')">Say hello</button>`) > -1)
-	t.true(html.indexOf(`<li>Ross - 1</li>`) > -1)
-	t.true(html.indexOf(`<div style="border-color:violet">`) > -1)
-	t.true(html.indexOf(`<div>Chandler</div>`) > -1)
-	t.true(html.indexOf(`border: 1px solid green;`) > -1)
+	t.assert.ok(html.indexOf(`<button onclick="alert('Hello Monica')">Say hello</button>`) > -1)
+	t.assert.ok(html.indexOf(`<li>Ross - 1</li>`) > -1)
+	t.assert.ok(html.indexOf(`<div style="border-color:violet">`) > -1)
+	t.assert.ok(html.indexOf(`<div>Chandler</div>`) > -1)
+	t.assert.ok(html.indexOf(`border: 1px solid green;`) > -1)
 });
 
 test("script webc:for over a Set", async t => {
@@ -138,7 +138,7 @@ test("script webc:for over a Set", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<div>1</div>
+	t.assert.strictEqual(html.trim(), `<div>1</div>
 <div>2</div>
 <div>3</div>`);
 });
@@ -158,7 +158,7 @@ test("script webc:for over a Map", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<div>first,1</div>
+	t.assert.strictEqual(html.trim(), `<div>first,1</div>
 <div>second,2</div>
 <div>third,3</div>`);
 });
@@ -175,7 +175,7 @@ test("Nested script webc:for #175", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<div>outer:<b>1</b><i><span>string 1</span></i></div>
+	t.assert.strictEqual(html.trim(), `<div>outer:<b>1</b><i><span>string 1</span></i></div>
 <div>outer:<b>2a,2b</b><i><span>string 2a</span></i>
 <i><span>string 2b</span></i></div>
 <div>outer:<b>3</b><i><span>string 3</span></i></div>`);
@@ -212,7 +212,7 @@ test("Test case from #175 nested webc:for", async t => {
 		data: source,
 	});
 
-	t.is(html.trim(), `<table>
+	t.assert.strictEqual(html.trim(), `<table>
 <tbody>
 <tr>
 <td>1</td>
@@ -238,7 +238,7 @@ test("Basic webc:for with bad syntax", async t => {
 
 	component.setInputPath("./test/stubs/looping/bad-syntax.webc");
 
-	await t.throwsAsync(async () => component.compile(), {
+	await t.assert.rejects(async () => component.compile(), {
 		message:/attribute value: bad syntax/
 	});
 });

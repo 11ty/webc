@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../../../webc.js";
 
 test("Template content issue #105", async t => {
@@ -10,5 +10,5 @@ test("Template content issue #105", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<template><p>I am an HTML-only component</p></template>`);
+	t.assert.strictEqual(html.trim(), `<template><p>I am an HTML-only component</p></template>`);
 });

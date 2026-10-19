@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import path from "node:path";
 
 import { WebC, customLoader } from "../webc.js";
@@ -11,7 +11,7 @@ const files = {
 	"virtual/script.js": `/* virtual js */`,
 };
 
-test.serial("customLoader replaces file reads", async t => {
+test("customLoader replaces file reads", async t => {
 	let { load, resolve } = customLoader;
 	let resolved = [];
 
@@ -28,7 +28,7 @@ test.serial("customLoader replaces file reads", async t => {
 		return path.resolve(...args);
 	};
 
-	t.teardown(() => {
+	t.after(() => {
 		customLoader.load = load;
 		customLoader.resolve = resolve;
 	});
@@ -39,8 +39,8 @@ test.serial("customLoader replaces file reads", async t => {
 
 	let { html, css, js } = await component.compile();
 
-	t.is(html.trim(), `<p>Virtual page</p>`);
-	t.deepEqual(css, [`/* virtual css */`]);
-	t.deepEqual(js, [`/* virtual js */`]);
-	t.true(resolved.length > 0);
+	t.assert.strictEqual(html.trim(), `<p>Virtual page</p>`);
+	t.assert.deepStrictEqual(css, [`/* virtual css */`]);
+	t.assert.deepStrictEqual(js, [`/* virtual js */`]);
+	t.assert.ok(resolved.length > 0);
 });

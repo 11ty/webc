@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Circular dep error #138", async t => {
@@ -9,5 +9,5 @@ test("Circular dep error #138", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" lol">`);
+	t.assert.strictEqual(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" lol">`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("webc:scoped with webc:type=js", async t => {
@@ -10,8 +10,8 @@ export default \`div { color: red; }\`;
 
 	let { html, css } = await component.compile();
 
-	t.is(html.trim(), "");
-	t.deepEqual(css, [".wnqfewpis div{color:red}"]);
+	t.assert.strictEqual(html.trim(), "");
+	t.assert.deepStrictEqual(css, [".wnqfewpis div{color:red}"]);
 });
 
 
@@ -24,8 +24,8 @@ export default \`div { color: red; }\`;
 
 	let { html, css } = await component.compile();
 
-	t.is(html.trim(), `<style class="wnqfewpis">.wnqfewpis div{color:red}</style>`);
-	t.deepEqual(css, []);
+	t.assert.strictEqual(html.trim(), `<style class="wnqfewpis">.wnqfewpis div{color:red}</style>`);
+	t.assert.deepStrictEqual(css, []);
 });
 
 test("webc:scoped webc:keep with webc:type=js with wrapper element", async t => {
@@ -37,7 +37,7 @@ export default \`div { color: red; }\`;
 </script>
 </div>`);
 
-	await t.throwsAsync(async () => component.compile(), {
+	await t.assert.rejects(async () => component.compile(), {
 		message: "Could not find any top level <style webc:scoped> in component: _webc_raw_input_string"
 	});
 });
@@ -51,8 +51,8 @@ export default \`<style>div { color: red; }</style>\`;
 
 	let { html, css } = await component.compile();
 
-	t.is(html.trim(), ``);
-	t.deepEqual(css, ["div { color: red; }"]);
+	t.assert.strictEqual(html.trim(), ``);
+	t.assert.deepStrictEqual(css, ["div { color: red; }"]);
 });
 
 test("nested content, style webc:scoped from a webc:type=js", async t => {
@@ -62,7 +62,7 @@ test("nested content, style webc:scoped from a webc:type=js", async t => {
 export default \`<style webc:scoped>div { color: red; }</style>\`;
 </script>`);
 
-	await t.throwsAsync(async () => component.compile(), {
+	await t.assert.rejects(async () => component.compile(), {
 		message: "Could not find any top level <style webc:scoped> in component: _webc_raw_input_string"
 	});
 });
@@ -72,7 +72,7 @@ test("throwing an Error works as expected, issue #99 #100", async t => {
 	component.setBundlerMode(true);
 	component.setContent(`<script webc:type="js">throw new Error('Custom error message');</script>`);
 
-	await t.throwsAsync(async () => component.compile(), {
+	await t.assert.rejects(async () => component.compile(), {
 		message: `Check the webc:type="js" element in _webc_raw_input_string
 Original error message: Custom error message`
 	});
@@ -85,5 +85,5 @@ test("JavaScript built-ins, issue #99 #100", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `10`);
+	t.assert.strictEqual(html.trim(), `10`);
 });

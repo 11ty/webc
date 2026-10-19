@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Props versus @text", async t => {
@@ -12,5 +12,5 @@ test("Props versus @text", async t => {
 		}
 	});
 
-	t.is(html.trim(), `<noscript><a href="hello"><span>hello</span></a></noscript>`);
+	t.assert.strictEqual(html.trim(), `<noscript><a href="hello"><span>hello</span></a></noscript>`);
 });

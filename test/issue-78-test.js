@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("webc:import in Components should be relative to component file #78", async t => {
@@ -9,7 +9,7 @@ test("webc:import in Components should be relative to component file #78", async
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<p>normal component</p>
+	t.assert.strictEqual(html.trim(), `<p>normal component</p>
 woah i am component. i do things.
 
 <p>js</p>
@@ -28,7 +28,7 @@ export default \`hello\`;
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `hello`);
+	t.assert.strictEqual(html.trim(), `hello`);
 });
 
 test("stock webc:type=js with template #78", async t => {
@@ -40,7 +40,7 @@ export default \`hello\`;
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `hello`);
+	t.assert.strictEqual(html.trim(), `hello`);
 });
 
 test("stock webc:type=js with template/keep #78", async t => {
@@ -52,7 +52,7 @@ export default \`hello\`;
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<template>hello</template>`);
+	t.assert.strictEqual(html.trim(), `<template>hello</template>`);
 });
 
 test("stock webc:type=js with webc:is #78", async t => {
@@ -64,7 +64,7 @@ export default \`<ul><li>test</li></ul>\`;
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<ul><li>test</li></ul>`);
+	t.assert.strictEqual(html.trim(), `<ul><li>test</li></ul>`);
 });
 
 test("Docs image example #78", async t => {
@@ -75,7 +75,7 @@ test("Docs image example #78", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" extra-attribute>`);
+	t.assert.strictEqual(html.trim(), `<img src="my-image.jpeg" alt="An excited Zach is trying to finish this documentation" extra-attribute>`);
 });
 
 test("Docs css example #78", async t => {
@@ -88,7 +88,7 @@ p { color: rebeccapurple; }
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<style>/* MIT licensed */
+	t.assert.strictEqual(html.trim(), `<style>/* MIT licensed */
 
 p { color: rebeccapurple; }
 </style>`);
@@ -104,7 +104,7 @@ p { color: rebeccapurple; }
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<style>
+	t.assert.strictEqual(html.trim(), `<style>
 /* MIT licensed */
 
 p { color: rebeccapurple; }
@@ -122,7 +122,7 @@ p { color: rebeccapurple; }
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<style>
+	t.assert.strictEqual(html.trim(), `<style>
 	/* MIT licensed */
 	
 p { color: rebeccapurple; }

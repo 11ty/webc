@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import MarkdownIt from "markdown-it";
 import { stripTypeScriptTypes } from "node:module";
 
@@ -23,10 +23,10 @@ test("Raw Input", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<div class="red"></div>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<div class="red"></div>`);
 });
 
 test("Escaped content (<code>)", async t => {
@@ -35,7 +35,7 @@ test("Escaped content (<code>)", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<code>&lt;style&gt;</code>`);
+	t.assert.strictEqual(html, `<code>&lt;style&gt;</code>`);
 });
 
 test("Escaped content (<pre>)", async t => {
@@ -44,7 +44,7 @@ test("Escaped content (<pre>)", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<pre>&lt;style&gt;</pre>`);
+	t.assert.strictEqual(html, `<pre>&lt;style&gt;</pre>`);
 });
 
 test("Escaped content (<iframe>)", async t => {
@@ -53,7 +53,7 @@ test("Escaped content (<iframe>)", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<iframe>test &gt; hi</iframe>`);
+	t.assert.strictEqual(html, `<iframe>test &gt; hi</iframe>`);
 });
 
 test("Not escaped content (template, script, style, noscript)", async t => {
@@ -63,7 +63,7 @@ test("Not escaped content (template, script, style, noscript)", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
+	t.assert.strictEqual(html, `<style>* > * {}</style><script>if(1>2) {}</script><template>></template><noscript><a href=""></a></noscript>`);
 });
 
 test("Not escaped content bundler mode (template, script, style, noscript)", async t => {
@@ -75,9 +75,9 @@ console.log('test');
 
 	let { html, css, js } = await component.compile();
 
-	t.is(html, `<template>></template><noscript><a href=""></a></noscript>`);
-	t.deepEqual(css, [`* > * {}`]);
-	t.deepEqual(js, [`if(1>2) {}`, `
+	t.assert.strictEqual(html, `<template>></template><noscript><a href=""></a></noscript>`);
+	t.assert.deepStrictEqual(css, [`* > * {}`]);
+	t.assert.deepStrictEqual(js, [`if(1>2) {}`, `
 console.log('test');
 `]);
 });
@@ -89,7 +89,7 @@ test("No Quirks mode default (HTML file without doctype)", async t => {
 	let {content} = await component.getContent();
 	let ast = await component.getAST(content);
 
-	t.is("no-quirks", ast.mode);
+	t.assert.strictEqual("no-quirks", ast.mode);
 });
 
 test("No Quirks mode default", async t => {
@@ -99,7 +99,7 @@ test("No Quirks mode default", async t => {
 	let {content} = await component.getContent();
 	let ast = await component.getAST(content);
 
-	t.is("no-quirks", ast.mode);
+	t.assert.strictEqual("no-quirks", ast.mode);
 });
 
 test("Throw an error if quirks mode", async t => {
@@ -107,7 +107,7 @@ test("Throw an error if quirks mode", async t => {
 	component.setContent(`<!doctype alksdjfasdf><p></p>`);
 
 	// await component.compile();
-	await t.throwsAsync(component.compile());
+	await t.assert.rejects(component.compile());
 });
 
 const fileInputStubs = {
@@ -153,11 +153,11 @@ for(let filename in fileInputStubs) {
 
 		let { html, css, js, components } = await component.compile();
 
-		t.deepEqual(js, []);
-		t.deepEqual(css, []);
-		t.deepEqual(components, [filename]);
+		t.assert.deepStrictEqual(js, []);
+		t.assert.deepStrictEqual(css, []);
+		t.assert.deepStrictEqual(components, [filename]);
 
-		t.is(html.trim(), stub.content);
+		t.assert.strictEqual(html.trim(), stub.content);
 	});
 }
 
@@ -168,10 +168,10 @@ test("Using a top level <template>", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/template.webc"]);
-	t.is(html.trim(), `<template>
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/template.webc"]);
+	t.assert.strictEqual(html.trim(), `<template>
 	<div class="test"></div>
 </template>`);
 });
@@ -181,10 +181,10 @@ test("Using a custom <template webc:type> (empty) gets rid of parent <template>"
 	component.setInputPath("./test/stubs/template-custom-notype.webc");
 
 	let { html, css, js, components } = await component.compile();
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/template-custom-notype.webc"]);
-	t.is(html, `
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/template-custom-notype.webc"]);
+	t.assert.strictEqual(html, `
 No <code>content</code>.
 `);
 });
@@ -200,10 +200,10 @@ test("Using a custom <template> type", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/template-custom.webc"]);
-	t.is(html.trim(), `<h1>Header</h1>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/template-custom.webc"]);
+	t.assert.strictEqual(html.trim(), `<h1>Header</h1>`);
 });
 
 test("Using a custom <template> type (<template><div>)", async t => {
@@ -217,10 +217,10 @@ test("Using a custom <template> type (<template><div>)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/template-custom-nested.webc"]);
-	t.is(html.trim(), `<div># Header</div>
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/template-custom-nested.webc"]);
+	t.assert.strictEqual(html.trim(), `<div># Header</div>
 <h1>Header <code>Test</code></h1>`);
 });
 
@@ -235,10 +235,10 @@ test("Using a custom <template> type with webc:keep", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/template-custom-keep.webc"]);
-	t.is(html.trim(), `<template><h1>Header</h1>
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/template-custom-keep.webc"]);
+	t.assert.strictEqual(html.trim(), `<template><h1>Header</h1>
 </template>`);
 });
 
@@ -257,12 +257,12 @@ test("Using a async custom <template> type with webc:keep", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/template-custom-keep.webc"
 	]);
-	t.is(html.trim(), `<template><h1>Header</h1>
+	t.assert.strictEqual(html.trim(), `<template><h1>Header</h1>
 </template>`);
 });
 
@@ -274,14 +274,14 @@ test("Two components using identical <style>", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.is(css.length, 1); // dedupes these: only one CSS entry
-	t.deepEqual(css, [`p { color: red; }`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.strictEqual(css.length, 1); // dedupes these: only one CSS entry
+	t.assert.deepStrictEqual(css, [`p { color: red; }`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/two-style.webc",
 		"./test/stubs/components/nested-child-style.webc",
 	]);
-	t.is(html.trim(), `<web-component>SSR content</web-component>
+	t.assert.strictEqual(html.trim(), `<web-component>SSR content</web-component>
 <web-component>SSR content</web-component>`);
 });
 
@@ -293,13 +293,13 @@ test("<style webc:scoped> bundler mode enabled", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.whukf8ig4 div{color:purple}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.whukf8ig4 div{color:purple}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/scoped.webc",
 		"./test/stubs/components/scoped-style.webc",
 	]);
-	t.is(html.trim(), `<web-component class="whukf8ig4">
+	t.assert.strictEqual(html.trim(), `<web-component class="whukf8ig4">
 Light dom content</web-component>`);
 });
 
@@ -311,13 +311,13 @@ test("<style webc:scoped> bundler mode disabled", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/scoped.webc",
 		"./test/stubs/components/scoped-style.webc",
 	]);
-	t.is(html.trim(), `<web-component class="whukf8ig4"><style>.whukf8ig4 div{color:purple}</style>
+	t.assert.strictEqual(html.trim(), `<web-component class="whukf8ig4"><style>.whukf8ig4 div{color:purple}</style>
 Light dom content</web-component>`);
 });
 
@@ -329,12 +329,12 @@ test("<style webc:scoped> selector tests", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`@font-face{src:url(test.woff)}.w4yaok8y2 div{}.w4yaok8y2 #test{}.w4yaok8y2 :after{}.w4yaok8y2 div:before{}.w4yaok8y2 .class1{}.w4yaok8y2 .class1.class2{}.w4yaok8y2 .class1.class2:after{}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`@font-face{src:url(test.woff)}.w4yaok8y2 div{}.w4yaok8y2 #test{}.w4yaok8y2 :after{}.w4yaok8y2 div:before{}.w4yaok8y2 .class1{}.w4yaok8y2 .class1.class2{}.w4yaok8y2 .class1.class2:after{}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/scoped-top.webc",
 	]);
-	t.is(html.trim(), `<div class="w4yaok8y2">Testing testing</div>`);
+	t.assert.strictEqual(html.trim(), `<div class="w4yaok8y2">Testing testing</div>`);
 });
 
 test("<style webc:type> instead of webc:scoped", async t => {
@@ -342,7 +342,7 @@ test("<style webc:type> instead of webc:scoped", async t => {
 
 	component.setInputPath("./test/stubs/style-override.webc");
 	component.setTransform("override", (content) => {
-		t.is(content, `
+		t.assert.strictEqual(content, `
 @font-face {
 	src: url("test.woff");
 }
@@ -361,12 +361,12 @@ div:before {}
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`/* This is an override */`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`/* This is an override */`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/style-override.webc",
 	]);
-	t.is(html.trim(), `<div>Testing testing</div>`);
+	t.assert.strictEqual(html.trim(), `<div>Testing testing</div>`);
 });
 
 test("<style webc:scoped=\"hashOverride\">", async t => {
@@ -376,13 +376,13 @@ test("<style webc:scoped=\"hashOverride\">", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.hashOverride div{color:purple}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.hashOverride div{color:purple}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/scoped-override.webc",
 		"./test/stubs/components/scoped-override.webc",
 	]);
-	t.is(html.trim(), `<web-component class="hashOverride">
+	t.assert.strictEqual(html.trim(), `<web-component class="hashOverride">
 Light dom content</web-component>`);
 });
 
@@ -390,7 +390,7 @@ test("<style webc:scoped=\"hashOverride\"> with collisions", async t => {
 	let component = new WebC();
 	component.setInputPath("./test/stubs/scoped-override-collisions.webc");
 
-	await t.throwsAsync(async () => {
+	await t.assert.rejects(async () => {
 		await component.compile()
 	})
 });
@@ -488,10 +488,10 @@ for(let filename in slotsStubs) {
 			slots: stub.slots
 		});
 
-		t.deepEqual(js, []);
-		t.deepEqual(css, []);
-		t.deepEqual(components, [ filename ]);
-		t.is(html, stub.content);
+		t.assert.deepStrictEqual(js, []);
+		t.assert.deepStrictEqual(css, []);
+		t.assert.deepStrictEqual(components, [ filename ]);
+		t.assert.strictEqual(html, stub.content);
 	});
 }
 
@@ -506,7 +506,7 @@ test("Component falling back to default slot content (Issue #37)", async t => {
 		},
 	});
 
-	t.is(html, `<div>Fallback content</div>`);
+	t.assert.strictEqual(html, `<div>Fallback content</div>`);
 });
 
 test("<slot webc:raw>", async t => {
@@ -521,10 +521,10 @@ test("<slot webc:raw>", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [ "./test/stubs/slot-raw.webc" ]);
-	t.is(html, `<div><slot name="name1">Fallback content</slot></div>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [ "./test/stubs/slot-raw.webc" ]);
+	t.assert.strictEqual(html, `<div><slot name="name1">Fallback content</slot></div>`);
 });
 
 test("<slot webc:keep>", async t => {
@@ -539,10 +539,10 @@ test("<slot webc:keep>", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [ "./test/stubs/slot-keep.webc" ]);
-	t.is(html, `<div><slot name="name1">Hello</slot></div>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [ "./test/stubs/slot-keep.webc" ]);
+	t.assert.strictEqual(html, `<div><slot name="name1">Hello</slot></div>`);
 });
 
 // Note that parse5 returns an extra \n at the end of the <body> element
@@ -552,12 +552,12 @@ test("Full page", async t => {
 
 	let { html, css, js, components } = await page.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/page.webc"
 	]);
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -578,12 +578,12 @@ test("Full page (with uppercase doctype) Issue #24", async t => {
 
 	let { html, css, js, components } = await page.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/page-capital-doctype-issue-24.webc"
 	]);
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html lang="en">
 <head>
 	<meta charset="utf-8">
@@ -605,25 +605,25 @@ test("Component in page mode (error case)", async t => {
 
 	let { html, css, js, components } = await page.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/component-in-page-mode.webc"
 	]);
-	t.is(html, `<div>Test</div>`);
+	t.assert.strictEqual(html, `<div>Test</div>`);
 });
 
 test("Using a web component without it being declared", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc"
 	]);
 
 	// Same output as `webc:raw`
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component></web-component>
 After`);
 });
@@ -633,13 +633,13 @@ test("Using a web component (skip parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -649,13 +649,13 @@ test("Using a web component (use webc:keep to force keep parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-webc-keep.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
@@ -665,12 +665,12 @@ test("Using a web component (use webc:raw to keep parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-webc-raw.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component></web-component>
 After`);
 });
@@ -680,13 +680,13 @@ test("Using a web component (alias using `webc:is` attribute)", async t => {
 		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-alias.webc",
 		"./test/stubs/components/nested-child.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -694,13 +694,13 @@ After`);
 test("Using a web component (use a <p> with `webc:import`)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/alias-paragraph.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/alias-paragraph.webc",
 		"./test/stubs/components/child-root.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <p class="class-a class-b class1 class2">
 	SSR content
 </p>
@@ -710,13 +710,13 @@ After`);
 test("Using a web component (reference via `webc:import` attribute)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-reference.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-reference.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -724,13 +724,13 @@ After`);
 test("Two identical `webc:import` attributes", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/import-twice.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/import-twice.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 SSR content
 After`);
@@ -739,13 +739,13 @@ After`);
 test("Using a web component (reference via `webc:import` and use webc:keep to force keep parent)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/import-keep.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/import-keep.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
@@ -753,13 +753,13 @@ After`);
 test("Using a web component (reference via `webc:import` attribute, aliased using `webc:is` attribute)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested-alias-reference.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-alias-reference.webc",
 		"./test/stubs/components/nested-child.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -771,14 +771,14 @@ test("Circular dependencies check (pass)", async t => {
 		"other-component": "./test/stubs/components/nested-child.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/child-circular.webc",
 		"./test/stubs/components/nested-child.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -791,13 +791,13 @@ test("Importing with an alias (uses tag name)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/import-alias.webc",
 		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <pre language="html">This is a paragraph—we still cool?</pre>
 After`);
 });
@@ -810,13 +810,13 @@ test("Importing with an alias that already has a suffix", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/import-alias-suffix.webc",
 		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <pre language="html">This is a paragraph—we still cool?</pre>
 After`);
 });
@@ -831,14 +831,14 @@ test("Nested slots default", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/import-alias-nested.webc",
 		"./test/stubs/import-alias-nested-quickstart.webc",
 		"./test/stubs/fake_node_modules/@11ty/test/syntax-highlighter.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 Before
 <pre language="html">This is a paragraph—we still cool?</pre>
 After
@@ -851,13 +851,13 @@ test("Using a web component (class attribute merging)", async t => {
 		"web-component": "./test/stubs/components/child-root.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/class-mixins.webc",
 		"./test/stubs/components/child-root.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component class="class-a class-b class1 class2">
 	SSR content
 </web-component>
@@ -867,12 +867,12 @@ After`);
 test("Using different attribute delimiters and nested potential delimiters", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/attribute-quotes.webc",);
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/attribute-quotes.webc",
 	]);
-	t.is(html, `<div>
+	t.assert.strictEqual(html, `<div>
 	<div data-foo="no-nested-quotes"></div>
 	<div data-foo="using-single-quotes-without-nested-quotes"></div>
 	<div data-foo="still-valid-technically"></div>
@@ -887,13 +887,13 @@ test("Using a web component (class attribute merging, empty classes)", async t =
 		"web-component": "./test/stubs/components/child-root-empty-class.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/empty-class.webc",
 		"./test/stubs/components/child-root-empty-class.webc",
 	]);
-	t.is(html, `<web-component>Light dom</web-component>`);
+	t.assert.strictEqual(html, `<web-component>Light dom</web-component>`);
 });
 
 test("Using a web component to override the parent component tag", async t => {
@@ -901,13 +901,13 @@ test("Using a web component to override the parent component tag", async t => {
 		"web-component": "./test/stubs/components/override-parent.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`/* Hi */`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`/* Hi */`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-content-with-attr.webc",
 		"./test/stubs/components/override-parent.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <button type="submit" data-attr="1" attr="1" other="2">SSR content</button>
 
 After`);
@@ -918,13 +918,13 @@ test("Using a web component to override the parent component tag with scoped CSS
 		"web-component": "./test/stubs/components/override-parent-scoped.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wb_lq-fmb{font-weight:bold}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wb_lq-fmb{font-weight:bold}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-content-with-attr.webc",
 		"./test/stubs/components/override-parent-scoped.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <button type="submit" data-attr="1" attr="1" other="2" class="wb_lq-fmb">SSR content</button>
 
 After`);
@@ -935,13 +935,13 @@ test("Using a web component (style attribute merging)", async t => {
 		"web-component": "./test/stubs/components/root-style.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/style-merge.webc",
 		"./test/stubs/components/root-style.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component style="font-weight: normal; font-weight: bold; font-style: italic">
 	SSR content
 </web-component>
@@ -953,13 +953,13 @@ test("Using a web component (skip parent for empty style and empty script)", asy
 		"web-component": "./test/stubs/components/nested-child-style-script-both-empty.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-style-script-both-empty.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 
 After`);
 });
@@ -969,13 +969,13 @@ test("Using a web component (keep parent: style)", async t => {
 		"web-component": "./test/stubs/components/nested-child-style.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-style.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
@@ -985,13 +985,13 @@ test("Using a web component with <style webc:keep>", async t => {
 		"web-component": "./test/stubs/components/nested-child-style-keep.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-style-keep.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content<style>p { color: red; }</style></web-component>
 After`);
 });
@@ -1007,13 +1007,13 @@ test("Using a web component with <style> and `bundlerMode: false`", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-style.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content<style>p { color: red; }</style></web-component>
 After`);
 });
@@ -1029,13 +1029,13 @@ test("Using a web component with <style webc:keep> and `bundlerMode: false`", as
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-style-keep.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content<style>p { color: red; }</style></web-component>
 After`);
 });
@@ -1045,13 +1045,13 @@ test("Using a web component (keep parent: script)", async t => {
 		"web-component": "./test/stubs/components/nested-child-script.webc"
 	});
 
-	t.deepEqual(js, [`alert("test");`]);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, [`alert("test");`]);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/nested-child-script.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
@@ -1061,13 +1061,13 @@ test("Using a web component with a slot (skip parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child-slot.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-content.webc",
 		"./test/stubs/components/nested-child-slot.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR contentChild contentAfter slot content
 After`);
 });
@@ -1077,13 +1077,13 @@ test("Using a web component with a slot (keep parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child-slot-style.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-content.webc",
 		"./test/stubs/components/nested-child-slot-style.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR contentChild contentAfter slot content</web-component>
 After`);
 });
@@ -1093,13 +1093,13 @@ test("Using a web component with a default slot (skip parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-twice.webc",
 		"./test/stubs/components/nested-child.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content
 After`);
 });
@@ -1109,13 +1109,13 @@ test("Using a web component with a default slot (keep parent)", async t => {
 		"web-component": "./test/stubs/components/nested-child-style.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-twice.webc",
 		"./test/stubs/components/nested-child-style.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>SSR content</web-component>
 After`);
 });
@@ -1125,13 +1125,13 @@ test("Using a web component without any shadow dom/foreshadowing (skip parent)",
 		"web-component-no-foreshadowing": "./test/stubs/components/nested-child-empty.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-no-shadowdom.webc",
 		"./test/stubs/components/nested-child-empty.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 
 	Child content
 	
@@ -1144,13 +1144,13 @@ test("Using a web component without any shadow dom/foreshadowing (keep parent)",
 		"web-component-no-foreshadowing": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-no-shadowdom.webc",
 		"./test/stubs/components/nested-child-style-only.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component-no-foreshadowing>
 	Child content
 	<web-component-no-foreshadowing></web-component-no-foreshadowing>
@@ -1163,13 +1163,13 @@ test("Using a web component with two slots but child has no shadow dom (skip par
 		"web-component": "./test/stubs/components/nested-child-empty.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots.webc",
 		"./test/stubs/components/nested-child-empty.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 
 	<p>Before slot content!</p>
 	<div slot="slot1"><p>Slot 1 content</p></div>
@@ -1187,13 +1187,13 @@ test("Using a web component with two slots but child has no shadow dom (keep par
 		"web-component": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots.webc",
 		"./test/stubs/components/nested-child-style-only.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
 	<div slot="slot1"><p>Slot 1 content</p></div>
@@ -1211,13 +1211,13 @@ test("Using a web component with two slots and default content (skip parent)", a
 		"web-component": "./test/stubs/components/nested-child-namedslot.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots.webc",
 		"./test/stubs/components/nested-child-namedslot.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
@@ -1232,13 +1232,13 @@ test("Using a web component with two slots and default content (keep parent)", a
 		"web-component": "./test/stubs/components/nested-child-namedslot-style.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots.webc",
 		"./test/stubs/components/nested-child-namedslot-style.webc",
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component name="World">SSR content<div><p>Slot 1 content</p></div>After slot content
 	<p>Before slot content!</p>
 	
@@ -1253,15 +1253,15 @@ test("Using a web component with webc:raw to allow client component slots (skip 
 		"web-component": "./test/stubs/components/nested-child-empty.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots-raw.webc",
 		"./test/stubs/components/nested-child-empty.webc"
 	]);
 	// TODO should this automatically opt-in to keeping the <web-component> parent around?
 	// Note the slots are using webc:raw
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 
 	<p>Before slot content!</p>
 	<div slot="slot1"><p>Slot 1 content</p></div>
@@ -1279,13 +1279,13 @@ test("Using a web component with webc:raw to allow client component slots (keep 
 		"web-component": "./test/stubs/components/nested-child-style-only.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, ["p { color: red; }"]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, ["p { color: red; }"]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested-multiple-slots-raw.webc",
 		"./test/stubs/components/nested-child-style-only.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component name="World">
 	<p>Before slot content!</p>
 	<div slot="slot1"><p>Slot 1 content</p></div>
@@ -1308,13 +1308,13 @@ test("Components dependency graph ordering", async t => {
 		"my-sibling": "./test/stubs/components/nested-child-slot-before-after.webc",
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/components-order.webc",
 		"./test/stubs/components/nested-child-slot-before-after.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 	Before
 		Before
 			BeforeCHILD CONTENTAfter
@@ -1335,7 +1335,7 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 		"my-sibling": "./test/stubs/components/child-css-js-d.webc",
 	});
 
-	t.deepEqual(js, [
+	t.assert.deepStrictEqual(js, [
 		"/* component-f js */",
 		"/* component-e js */",
 		"/* component-d js */",
@@ -1343,7 +1343,7 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 		"/* component-b js */",
 		"/* component-a js */",
 	]);
-	t.deepEqual(css, [
+	t.assert.deepStrictEqual(css, [
 		"/* component-f css */",
 		"/* component-e css */",
 		"/* component-d css */",
@@ -1351,7 +1351,7 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 		"/* component-b css */",
 		"/* component-a css */",
 	]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/components-order.webc",
 		"./test/stubs/components/child-css-js-a.webc",
 		"./test/stubs/components/child-css-js-b.webc",
@@ -1360,7 +1360,7 @@ test("Components dependency graph ordering (with CSS/JS)", async t => {
 		"./test/stubs/components/child-css-js-e.webc",
 		"./test/stubs/components/child-css-js-f.webc",
 	]);
-	t.is(html, `<my-grandparent>Before
+	t.assert.strictEqual(html, `<my-grandparent>Before
 	<my-parent>Before
 		<my-me>Before
 			<my-child>BeforeCHILD CONTENTAfter</my-child>
@@ -1376,45 +1376,45 @@ test("<script webc:type> with Typescript", async t => {
 
 	component.setInputPath("./test/stubs/script-type.webc");
 	component.setTransform("ts", async (content) => {
-		t.is(content.trim(), `let x: string = "string";`);
+		t.assert.strictEqual(content.trim(), `let x: string = "string";`);
 		return stripTypeScriptTypes(content);
 	});
 	component.setBundlerMode(true);
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js.join("").trim(), `let x         = "string";`);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js.join("").trim(), `let x         = "string";`);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/script-type.webc",
 	]);
-	t.is(html.trim(), ``);
+	t.assert.strictEqual(html.trim(), ``);
 });
 
 test("Scoped styles with :host and :defined", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/defined-style.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/defined-style.webc",
 	]);
 	// Scoped class is added to top level node (if one exists)
-	t.is(html.trim(), `<div class="wkkjq9gk1">This will be green at first and then switch to red when JS has registered the component.</div>`);
+	t.assert.strictEqual(html.trim(), `<div class="wkkjq9gk1">This will be green at first and then switch to red when JS has registered the component.</div>`);
 });
 
 // TODO this should throw an error or warning
 test.skip("Scoped styles with :host and :defined (no root element)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/defined-style-noroot.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/defined-style-noroot.webc",
 	]);
 
 	// No scoped class is added here!
-	t.is(html, `
+	t.assert.strictEqual(html, `
 This will be green at first and then switch to red when JS has registered the component.`);
 });
 
@@ -1423,15 +1423,15 @@ test("Scoped styles with :host and :defined (child component)", async t => {
 		"web-component": "./test/stubs/defined-style.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wkkjq9gk1{color:green}.wkkjq9gk1:defined{color:red}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/defined-style.webc",
 	]);
 
 	// Scoped class is added to host element
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component class="wkkjq9gk1">
 <div>This will be green at first and then switch to red when JS has registered the component.</div></web-component>
 After`);
@@ -1442,15 +1442,15 @@ test("Client-side JS on child component", async t => {
 		"web-component": "./test/stubs/components/clientside.webc"
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/clientside.webc",
 	]);
 
 	// Note the <script> here is using webc:keep to stay on the client without aggregating back up to the JS
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component>This is the web component content.
 <script>
 customElements.define('web-component', class extends HTMLElement {
@@ -1465,19 +1465,19 @@ After`);
 test("Using a component attribute inside the component", async t => {
 	let { html } = await testGetResultFor("./test/stubs/global-data.webc");
 
-	t.is(html, `<div key="attrValue"></div>`);
+	t.assert.strictEqual(html, `<div key="attrValue"></div>`);
 });
 
 test("Scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 This is sample content.
 </div>`);
@@ -1491,13 +1491,13 @@ test("Scripted render function with a webc:raw", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-raw.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 <template><nested-child>This is sample content.</nested-child></template>
 </div>`);
@@ -1511,13 +1511,13 @@ test("Scripted render function with a webc:raw webc:nokeep", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-raw-nokeep.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 <nested-child>This is sample content.</nested-child>
 </div>`);
@@ -1527,26 +1527,26 @@ test("Scripted render function with a webc:raw webc:nokeep", async t => {
 test("Scripted render function with a require", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-require.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-require.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 });
 
 test("Scripted render function with an import", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-import.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-import.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
@@ -1556,13 +1556,13 @@ test("Scripted render function with an import", async t => {
 test("Scripted js function with an import", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-js-import.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-js-import.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
@@ -1572,13 +1572,13 @@ test("Scripted js function with an import", async t => {
 test("Scripted webc:setup function with an import #225", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-setup-import.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-setup-import.webc",
 	]);
 
-	t.is(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
+	t.assert.strictEqual(html.trim(), `<picture><source type="image/webp" srcset="/img/6dfd7ac6-300.webp"><img alt="Hi" src="/img/6dfd7ac6-300.jpeg" width="300" height="300"></picture>`);
 
 });
 
@@ -1592,15 +1592,15 @@ test("Scripted render function with access to slots", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-slots-parent.webc",
 		"./test/stubs/components/render-slots.webc",
 		"./test/stubs/components/nested-child.webc",
 	]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>STARTThis is content SSR content that I want to be raw in JSEND</body>
 </html>`);
@@ -1614,14 +1614,14 @@ test("Scripted render function with access to slots raw template", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-slots-parent.webc",
 		"./test/stubs/components/render-slots-raw.webc",
 	]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>STARTThis is content <nested-child></nested-child> that I want to be raw in JSEND</body>
 </html>`);
@@ -1632,13 +1632,13 @@ test("Scripted render function with access to slots raw template", async t => {
 test("Scripted render function whitespace variation", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render2.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render2.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 This is sample content.
 </div>`);
@@ -1647,13 +1647,13 @@ This is sample content.
 test("Scripted named render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render3.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render3.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 This is sample content.
 </div>`);
@@ -1662,13 +1662,13 @@ This is sample content.
 test("Async scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-async.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-async.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 This is sample content.
 </div>`);
@@ -1677,13 +1677,13 @@ This is sample content.
 test("Async scripted render function whitespace variation", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/render-async2.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/render-async2.webc",
 	]);
 
-	t.is(html, `<div test2="2"></div>
+	t.assert.strictEqual(html, `<div test2="2"></div>
 <div parentattribute="test">
 This is sample content.
 </div>`);
@@ -1692,92 +1692,92 @@ This is sample content.
 test("Using image scripted render function", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-img.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-img.webc",
 		"./test/stubs/components/img.webc",
 	]);
 
-	t.is(html, `<img src="my-src.png">`);
+	t.assert.strictEqual(html, `<img src="my-src.png">`);
 });
 
 test("Using scripted render function to generate CSS (webc:root)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wkiuqaeds .selector{}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wkiuqaeds .selector{}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-css-root.webc",
 		"./test/stubs/components/render-css-root.webc",
 	]);
 
-	t.is(html, `<some-css class="wkiuqaeds"></some-css>`);
+	t.assert.strictEqual(html, `<some-css class="wkiuqaeds"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS (webc:root=override)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-root-override.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wneppuwzd .selector{}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wneppuwzd .selector{}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-css-root-override.webc",
 		"./test/stubs/components/render-css-root-override.webc",
 	]);
 
-	t.is(html, ``);
+	t.assert.strictEqual(html, ``);
 });
 
 test("Using scripted render function to generate CSS", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wly5roxxz .selector{color:red}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wly5roxxz .selector{color:red}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-css.webc",
 		"./test/stubs/components/render-css.webc",
 	]);
 
-	t.is(html, `<some-css class="wly5roxxz"></some-css>`);
+	t.assert.strictEqual(html, `<some-css class="wly5roxxz"></some-css>`);
 });
 
 test("Using scripted render function to generate CSS with webc:keep", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-css-keep.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-css-keep.webc",
 		"./test/stubs/components/render-css-keep.webc",
 	]);
 
-	t.is(html, `<style>/* CSS */</style>`);
+	t.assert.strictEqual(html, `<style>/* CSS */</style>`);
 });
 
 test("Using image component plain", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/using-img-plain.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-img-plain.webc",
 		"./test/stubs/components/img-plain.webc",
 	]);
 
-	t.is(html, `<img src="my-src.png">`);
+	t.assert.strictEqual(html, `<img src="my-src.png">`);
 });
 
 test("Using img as root mapped to img", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/img-to-img.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/img-to-img.webc",
 		"./test/stubs/components/img-as-root.webc",
 	]);
 
-	t.is(html, `<img src="my-src.png" child-attr class="class1">`);
+	t.assert.strictEqual(html, `<img src="my-src.png" child-attr class="class1">`);
 });
 
 test("Using props", async t => {
@@ -1786,14 +1786,14 @@ test("Using props", async t => {
 
 	let { html, css, js, components } = await component.compile({});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/props.webc",
 		"./test/stubs/components/img-props.webc",
 	]);
 
-	t.is(html, `<img src="my-src.png" data-src="my-other-src.png">`);
+	t.assert.strictEqual(html, `<img src="my-src.png" data-src="my-other-src.png">`);
 });
 
 test("Using props without “this”", async t => {
@@ -1821,13 +1821,13 @@ test("Using props without “this”", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/props-no-this.webc",
 	]);
 
-	t.is(html, `<p key="tailwind-lol"></p>
+	t.assert.strictEqual(html, `<p key="tailwind-lol"></p>
 <p key="value"></p>
 <p key="value"></p>
 <p key="value"></p>
@@ -1850,7 +1850,7 @@ test("Use a falsy property in a dynamic attribute", async (t) => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<template></template>`);
+	t.assert.strictEqual(html, `<template></template>`);
 });
 
 test("Use a missing property in a dynamic attribute", async (t) => {
@@ -1859,7 +1859,7 @@ test("Use a missing property in a dynamic attribute", async (t) => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<template></template>`);
+	t.assert.strictEqual(html, `<template></template>`);
 });
 
 test("Use a missing property in a dynamic attribute (without this)", async (t) => {
@@ -1868,14 +1868,14 @@ test("Use a missing property in a dynamic attribute (without this)", async (t) =
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `<template></template>`);
+	t.assert.strictEqual(html, `<template></template>`);
 });
 
 test("Try to use a missing helper function in a dynamic attribute (without this)", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template :key="helper()"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Evaluating a dynamic attribute failed: \`:key="helper()"\`.
 Original error message: helper is not a function`
 	});
@@ -1885,7 +1885,7 @@ test("Try to use a missing helper function in a dynamic prop (without this)", as
 	let component = new WebC();
 	component.setContent(`<template :@key="helper()"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Evaluating a dynamic prop failed: \`:@key="helper()"\`.
 Original error message: helper is not a function`
 	});
@@ -1900,14 +1900,14 @@ test("Issue #3 slot inconsistency", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/issue-3/page.webc",
 		"./test/stubs/issue-3/my-article.webc",
 	]);
 
-	t.is(html, `<article>
+	t.assert.strictEqual(html, `<article>
 	<hgroup>
 		<h2>Article Title</h2>
 		<p>Subtitle</p>
@@ -1924,13 +1924,13 @@ test("Issue #3 slot inconsistency", async t => {
 test("External script src and stylesheet", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals.webc");
 
-	t.deepEqual(js, [`/* This is the external script */`]);
-	t.deepEqual(css, [`/* This is some CSS */`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, [`/* This is the external script */`]);
+	t.assert.deepStrictEqual(css, [`/* This is some CSS */`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/externals/externals.webc",
 	]);
 
-	t.is(html, `<p>This is another global component.</p>
+	t.assert.strictEqual(html, `<p>This is another global component.</p>
 
 `);
 });
@@ -1938,13 +1938,13 @@ test("External script src and stylesheet", async t => {
 test.skip("External script src and stylesheet via dynamic attribute, issue #65", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-dynamic.webc");
 
-	t.deepEqual(js, [`/* This is the external script */`]);
-	t.deepEqual(css, [`/* This is some CSS */`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, [`/* This is the external script */`]);
+	t.assert.deepStrictEqual(css, [`/* This is some CSS */`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/externals/externals-dynamic.webc",
 	]);
 
-	t.is(html, `<p>This is another global component.</p>
+	t.assert.strictEqual(html, `<p>This is another global component.</p>
 
 `);
 });
@@ -1953,32 +1953,32 @@ test.skip("External script src and stylesheet via dynamic attribute, issue #65",
 test("External scoped stylesheet", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-scoped.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, [`.wqwornefz{color:red}`]);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wqwornefz{color:red}`]);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/externals/externals-scoped.webc",
 	]);
 
-	t.is(html, `<p class="wqwornefz">This is another global component.</p>
+	t.assert.strictEqual(html, `<p class="wqwornefz">This is another global component.</p>
 `);
 });
 
 test("External script src and stylesheet webc:keep", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-keep.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/externals/externals-keep.webc",
 	]);
 
-	t.is(html, `<p>This is another global component.</p>
+	t.assert.strictEqual(html, `<p>This is another global component.</p>
 <link rel="stylesheet" href="my-style.css">
 <script src="my-script.js">/* hi */</script>`);
 });
 
 test("External full url script src and stylesheet without webc:keep", async t => {
-	await t.throwsAsync(testGetResultFor("./test/stubs/externals/externals-urls.webc"), {
+	await t.assert.rejects(testGetResultFor("./test/stubs/externals/externals-urls.webc"), {
 		message: "Full URLs in <script> and <link rel=\"stylesheet\"> are not yet supported without webc:keep."
 	});
 });
@@ -1986,13 +1986,13 @@ test("External full url script src and stylesheet without webc:keep", async t =>
 test("External full url script src and stylesheet webc:keep", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-urls-keep.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/externals/externals-urls-keep.webc",
 	]);
 
-	t.is(html, `<p>This is another global component.</p>
+	t.assert.strictEqual(html, `<p>This is another global component.</p>
 <link rel="stylesheet" href="https://www.11ty.dev/css/async.css">
 <script src="https://www.11ty.dev/js/eleventy.js">/* hi */</script>`);
 });
@@ -2000,14 +2000,14 @@ test("External full url script src and stylesheet webc:keep", async t => {
 test("<head> Components", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/head/head.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/head/head.webc",
 		"./test/stubs/head/meta.webc",
 	]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8">
@@ -2022,14 +2022,14 @@ test("<head> Components", async t => {
 test("<head> is a component", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/head/head-is-component.webc");
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/head/head-is-component.webc",
 		"./test/stubs/head/custom-head.webc",
 	]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head><!-- ha ha --><title>This is a title</title>
 <meta name="description" content="this is a head component">
@@ -2044,9 +2044,9 @@ test("<head> is a component", async t => {
 test("Using asset buckets", async t => {
 	let { html, css, js, components, buckets } = await testGetResultFor("./test/stubs/asset-buckets.webc");
 
-	t.deepEqual(js, [`/* Default bucket script */`]);
-	t.deepEqual(css, [`/* Default bucket style */`]);
-	t.deepEqual(buckets, {
+	t.assert.deepStrictEqual(js, [`/* Default bucket script */`]);
+	t.assert.deepStrictEqual(css, [`/* Default bucket style */`]);
+	t.assert.deepStrictEqual(buckets, {
 		css: {
 			defer: [`/* defer bucket style */`],
 		},
@@ -2054,10 +2054,10 @@ test("Using asset buckets", async t => {
 			defer: [`/* defer bucket script */`],
 		},
 	});
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/asset-buckets.webc",
 	]);
-	t.is(html, `<p>Hi</p>
+	t.assert.strictEqual(html, `<p>Hi</p>
 
 
 
@@ -2078,14 +2078,14 @@ test("Using component UID for accessibility", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-uid.webc",
 		"./test/stubs/components/with-uid.webc"
 	]);
 
-	t.is(html, `<div id="webc-1"><input aria-controls="webc-1"></div>
+	t.assert.strictEqual(html, `<div id="webc-1"><input aria-controls="webc-1"></div>
 <div id="webc-2"><input aria-controls="webc-2"></div>
 <div id="webc-3"><input aria-controls="webc-3"></div>`);
 });
@@ -2104,62 +2104,62 @@ test("Using component UID for accessibility (and webc:root)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/using-uid.webc",
 		"./test/stubs/components/with-uid-root.webc"
 	]);
 
-	t.is(html, `<my-component id="webc-1"><input aria-controls="webc-1"></my-component>
+	t.assert.strictEqual(html, `<my-component id="webc-1"><input aria-controls="webc-1"></my-component>
 <my-component id="webc-2"><input aria-controls="webc-2"></my-component>
 <my-component id="webc-3"><input aria-controls="webc-3"></my-component>`);
 });
 
-const componentWithSlotsMacro = test.macro(async (t, { content, slots, expectedHtml }) => {
+const componentWithSlotsMacro = ({ content, slots, expectedHtml }) => async t => {
 	let component = new WebC();
 	component.setContent(content);
 
 	let { html } = await component.compile({ slots });
 
-	t.is(html, expectedHtml);
-});
+	t.assert.strictEqual(html, expectedHtml);
+};
 
-test("Using <template> with default slot does process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template> with default slot does process slots (Issue #31)", componentWithSlotsMacro({
 	content: `<template><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: `<template>Overridden content</template>`,
-});
+}));
 
-test("Using <template webc:raw> with default slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template webc:raw> with default slot does *not* process slots (Issue #31)", componentWithSlotsMacro({
 	content: `<template webc:raw><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: `<template><slot>Default content</slot></template>`,
-});
+}));
 
-test("Using <template> with named slot does process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template> with named slot does process slots (Issue #31)", componentWithSlotsMacro({
 	content: `<template><slot name="test">Default content</slot></template>`,
 	slots: { test: "Overridden content" },
 	expectedHtml: `<template>Overridden content</template>`,
-});
+}));
 
-test("Using <template webc:raw> with named slot does *not* process slots (Issue #31)", componentWithSlotsMacro, {
+test("Using <template webc:raw> with named slot does *not* process slots (Issue #31)", componentWithSlotsMacro({
 	content: `<template webc:raw><slot name="test">Default content</slot></template>`,
 	slots: { test: "Overridden content" },
 	expectedHtml: `<template><slot name="test">Default content</slot></template>`,
-});
+}));
 
-test("Using <template webc:root> and slot does process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro, {
+test("Using <template webc:root> and slot does process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro({
 	content: `<template webc:root><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: "Overridden content",
-});
+}));
 
-test("Using <template webc:root webc:raw> and slot does *not* process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro, {
+test("Using <template webc:root webc:raw> and slot does *not* process slots (Issue #31) though webc:root is no longer required", componentWithSlotsMacro({
 	content: `<template webc:root webc:raw><slot>Default content</slot></template>`,
 	slots: { default: "Overridden content" },
 	expectedHtml: "<template><slot>Default content</slot></template>",
-});
+}));
 
 test("Render function result resolves components (reprocessing, issue #33)", async (t) => {
 	let component = new WebC();
@@ -2169,10 +2169,10 @@ test("Render function result resolves components (reprocessing, issue #33)", asy
 
 	let { html, css } = await component.compile();
 
-	t.is(html, `<h3>Title</h3>
+	t.assert.strictEqual(html, `<h3>Title</h3>
 <text-link><a href="/project">Link text</a>
 </text-link>`);
-	t.deepEqual(css, [`/* CSS */`]);
+	t.assert.deepStrictEqual(css, [`/* CSS */`]);
 });
 
 test("Transform result will resolves components (reprocessing, issue #33)", async (t) => {
@@ -2186,9 +2186,9 @@ test("Transform result will resolves components (reprocessing, issue #33)", asyn
 	component.defineComponents({ "text-link": "./test/stubs/components/text-link-slot.webc" });
 
 	let { html, css } = await component.compile();
-	t.is(html, `<text-link><a href="/project">Link text</a>
+	t.assert.strictEqual(html, `<text-link><a href="/project">Link text</a>
 </text-link>`);
-	t.deepEqual(css, [`/* CSS */`]);
+	t.assert.deepStrictEqual(css, [`/* CSS */`]);
 });
 
 test("Template should be unparsed raw content, issue #48", async t => {
@@ -2198,12 +2198,12 @@ test("Template should be unparsed raw content, issue #48", async t => {
 
 	component.setContent(`<template webc:type="custom"><foo id={this.uid}>test</test></template>`);
 	component.setTransform("custom", content => {
-		t.is(content, `<foo id={this.uid}>test</test>`);
+		t.assert.strictEqual(content, `<foo id={this.uid}>test</test>`);
 		return "hi";
 	})
 
 	let { html } = await component.compile();
-	t.is(html.trim(), `hi`);
+	t.assert.strictEqual(html.trim(), `hi`);
 });
 
 test("Template should input unparsed raw content and reprocess output, issue #48", async t => {
@@ -2216,12 +2216,12 @@ test("Template should input unparsed raw content and reprocess output, issue #48
 		"child": "./test/stubs/components/nested-child.webc",
 	});
 	component.setTransform("custom", content => {
-		t.is(content, `<foo id={this.uid}>test</test>`);
+		t.assert.strictEqual(content, `<foo id={this.uid}>test</test>`);
 		return "<child></child>";
 	})
 
 	let { html } = await component.compile();
-	t.is(html.trim(), `SSR content`);
+	t.assert.strictEqual(html.trim(), `SSR content`);
 });
 
 test("Access slot content as text on void elements #67 (regression from #61)", async t => {
@@ -2232,7 +2232,7 @@ test("Access slot content as text on void elements #67 (regression from #61)", a
 
 	let { html } = await component.compile();
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head>
 	<title></title>
@@ -2253,14 +2253,14 @@ test.skip("Dynamic attributes in host component data", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/dynamic-attributes-host-component-data/page.webc",
 		"./test/stubs/dynamic-attributes-host-component-data/lol.webc",
 	]);
 
-	t.is(html, `<lol attribute="hello" class="parent1 parent2 class1 class2"><div>Test</div><script>/* hi */</script></lol>`);
+	t.assert.strictEqual(html, `<lol attribute="hello" class="parent1 parent2 class1 class2"><div>Test</div><script>/* hi */</script></lol>`);
 });
 
 test("Deeply nested webc:root (per docs)", async t => {
@@ -2272,7 +2272,7 @@ test("Deeply nested webc:root (per docs)", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div><strong class="another-class two">Some component content</strong></div>`);
+	t.assert.strictEqual(html.trim(), `<div><strong class="another-class two">Some component content</strong></div>`);
 });
 
 test("Using dynamic asset buckets", async t => {
@@ -2284,13 +2284,13 @@ test("Using dynamic asset buckets", async t => {
 
 	let { html, css, js, buckets, components } = await component.compile();
 
-	t.is(html, `<component><p>Hi</p>
+	t.assert.strictEqual(html, `<component><p>Hi</p>
 
 </component>`);
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
 
-	t.deepEqual(buckets, {
+	t.assert.deepStrictEqual(buckets, {
 		css: {
 			defer: [`/* defer bucket style */`],
 		},
@@ -2298,7 +2298,7 @@ test("Using dynamic asset buckets", async t => {
 			defer: [`/* defer bucket script */`],
 		},
 	});
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/dynamic-bucket/index.webc",
 		"./test/stubs/dynamic-bucket/component.webc",
 	]);
@@ -2314,17 +2314,17 @@ test("Inherited bucket", async t => {
 
 	let { html, css, js, buckets, components } = await component.compile();
 
-	t.is(html, `<component><p>Hi</p>
+	t.assert.strictEqual(html, `<component><p>Hi</p>
 
 
 <child>
 </child>
 <child>
 </child></component>`);
-	t.deepEqual(js, [`/* inline override bucket script */`]);
-	t.deepEqual(css, [`/* inline override bucket style */`]);
+	t.assert.deepStrictEqual(js, [`/* inline override bucket script */`]);
+	t.assert.deepStrictEqual(css, [`/* inline override bucket style */`]);
 
-	t.deepEqual(buckets, {
+	t.assert.deepStrictEqual(buckets, {
 		css: {
 			// note that `<child webc:bucket="override">` was de-duped into the inherited bucket
 			inherited: [`/* child bucket style */`],
@@ -2335,7 +2335,7 @@ test("Inherited bucket", async t => {
 		},
 	});
 
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/bucket-inherit/index.webc",
 		"./test/stubs/bucket-inherit/component.webc",
 		"./test/stubs/bucket-inherit/child.webc",
@@ -2351,16 +2351,16 @@ test("Inherited bucket (using attrs)", async t => {
 
 	let { html, css, js, buckets, components } = await component.compile();
 
-	t.is(html, `<div>
+	t.assert.strictEqual(html, `<div>
 <component>
 </component>
 <component>
 </component>
 </div>`);
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
 
-	t.deepEqual(buckets, {
+	t.assert.deepStrictEqual(buckets, {
 		css: {
 			'inherited-bucket': [`/* inline bucket style */`],
 		},
@@ -2369,7 +2369,7 @@ test("Inherited bucket (using attrs)", async t => {
 		},
 	});
 
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/bucket-inherit-attrs/index.webc",
 		"./test/stubs/bucket-inherit-attrs/component.webc",
 	]);
@@ -2384,14 +2384,14 @@ test("Bucket is not inherited", async t => {
 
 	let { html, css, js, buckets, components } = await component.compile();
 
-	t.is(html, `<component>
+	t.assert.strictEqual(html, `<component>
 </component>
 <component>
 </component>`);
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
 
-	t.deepEqual(buckets, {
+	t.assert.deepStrictEqual(buckets, {
 		css: {
 			'my-bucket-override': [`/* inline bucket style */`],
 		},
@@ -2400,7 +2400,7 @@ test("Bucket is not inherited", async t => {
 		},
 	});
 
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/bucket-noinherit/index.webc",
 		"./test/stubs/bucket-noinherit/component.webc",
 	]);
@@ -2410,13 +2410,14 @@ test("webc:if should short circuit dynamic attribute evaluation #191 (throws)", 
 	let component = new WebC();
 	component.setContent(`<div webc:if="true" :test="Promise.reject(new Error('This should not evaluate'))"></div>`);
 
-	let error = await t.throwsAsync(async () => {
+	await t.assert.rejects(async () => {
 		await component.compile({
 			data: {}
 		});
+	}, {
+		message: `Evaluating a dynamic attribute failed: \`:test="Promise.reject(new Error('This should not evaluate'))"\`.
+Original error message: This should not evaluate`
 	});
-	t.is(error.message, `Evaluating a dynamic attribute failed: \`:test="Promise.reject(new Error('This should not evaluate'))"\`.
-Original error message: This should not evaluate`);
 });
 
 test("webc:if should short circuit dynamic attribute evaluation #191", async t => {
@@ -2427,10 +2428,10 @@ test("webc:if should short circuit dynamic attribute evaluation #191", async t =
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, ``);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, ``);
 });
 
 test("webc:if with void elements (if) #217", async t => {
@@ -2441,10 +2442,10 @@ test("webc:if with void elements (if) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<img alt="first">`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<img alt="first">`);
 });
 
 test("webc:if with void elements (elseif) #217", async t => {
@@ -2455,10 +2456,10 @@ test("webc:if with void elements (elseif) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<img alt="second">`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<img alt="second">`);
 });
 
 test("webc:if with void elements (else) #217", async t => {
@@ -2469,10 +2470,10 @@ test("webc:if with void elements (else) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<img alt="third">`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<img alt="third">`);
 });
 
 test("two webc:if with void elements (else) #217", async t => {
@@ -2483,10 +2484,10 @@ test("two webc:if with void elements (else) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<img alt="first-b"><img alt="second-a">`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<img alt="first-b"><img alt="second-a">`);
 });
 
 test("more complex webc:if with void elements (else) #217", async t => {
@@ -2500,10 +2501,10 @@ test("more complex webc:if with void elements (else) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<meta name="test1" content="this should be returned">
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<meta name="test1" content="this should be returned">
 
 <meta name="test2" content="this should be returned">
 `);
@@ -2532,10 +2533,10 @@ test("super complex webc:if with void elements (else) #217", async t => {
 		data: {}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
-	t.is(html, `<meta name="test1" content="this should be returned">
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
+	t.assert.strictEqual(html, `<meta name="test1" content="this should be returned">
 
 <!-- should return with test1 -->
 

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("@keyframes percentage webc:scoped #145", async t => {
@@ -13,7 +13,7 @@ test("@keyframes percentage webc:scoped #145", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<style class="w91flqtfm">@keyframes my-anim{0%{opacity:0}100%{opacity:1}}</style>`);
+	t.assert.strictEqual(html.trim(), `<style class="w91flqtfm">@keyframes my-anim{0%{opacity:0}100%{opacity:1}}</style>`);
 });
 
 test("@keyframes from/to webc:scoped #145", async t => {
@@ -28,5 +28,5 @@ test("@keyframes from/to webc:scoped #145", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<style class="whybzha-i">@keyframes my-anim{from{opacity:0}to{opacity:1}}</style>`);
+	t.assert.strictEqual(html.trim(), `<style class="whybzha-i">@keyframes my-anim{from{opacity:0}to{opacity:1}}</style>`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Using webc:type=js", async t => {
@@ -18,11 +18,11 @@ test("Using webc:type=js", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>1/2/3/4
 </body>
@@ -48,11 +48,11 @@ test("Using webc:type=js with require", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./component.webc"]);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./component.webc"]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 	Imported
@@ -76,11 +76,11 @@ test("Using webc:type=js and @html", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>1/2/3/4
 </body>
@@ -111,11 +111,11 @@ test("Using webc:type=js and promises", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 	1,2,3,4
@@ -152,11 +152,11 @@ test("Using webc:type=js and async function", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 	1,2,3,4
@@ -186,11 +186,11 @@ test("Using webc:type=js and if true", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 	true
@@ -219,11 +219,11 @@ test("Using webc:type=js and if false", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>
 	false

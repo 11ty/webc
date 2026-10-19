@@ -5,7 +5,7 @@
 	"main": "webc.js",
 	"type": "module",
 	"scripts": {
-		"test": "npx ava"
+		"test": "node --test \"test/*Test.js\" \"test/**/*test.js\""
 	},
 	"publishConfig": {
 		"access": "public"
@@ -27,13 +27,6 @@
 		"name": "Zach Leatherman",
 		"url": "https://zachleat.com/"
 	},
-	"ava": {
-		"failFast": false,
-		"files": [
-			"./test/*Test.js",
-			"./test/**/*test.js"
-		]
-	},
 	"dependencies": {
 		"@11ty/eleventy-utils": "^3.0.1",
 		"css-tree": "^3.2.1",
@@ -47,7 +40,6 @@
 	},
 	"devDependencies": {
 		"@11ty/eleventy-img": "^7.0.0",
-		"ava": "^8.1.0",
 		"markdown-it": "^15.0.3"
 	},
 	"repository": {

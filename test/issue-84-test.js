@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 // This doesn’t technically test console.log output but it’s close enough for now 😅
@@ -10,5 +10,5 @@ export default 1;
 
 	let { html } = await component.compile();
 
-	t.is(html, `1`);
+	t.assert.strictEqual(html, `1`);
 });

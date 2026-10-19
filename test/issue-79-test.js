@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("webc:import in Components should be relative to component file #79", async t => {
@@ -9,6 +9,6 @@ test("webc:import in Components should be relative to component file #79", async
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<any-tag-name><script>stub()</script></any-tag-name>`);
+	t.assert.strictEqual(html.trim(), `<any-tag-name><script>stub()</script></any-tag-name>`);
 });
 

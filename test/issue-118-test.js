@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Slottable webc:type transform #118", async t => {
@@ -8,11 +8,11 @@ test("Slottable webc:type transform #118", async t => {
 	component.setInputPath("./test/stubs/issue-118/page.webc");
 	component.defineComponents("./test/stubs/issue-118/oh-no.webc");
 	component.setTransform("override", (content) => {
-		t.truthy( content );
+		t.assert.ok( content );
 		return `This is an override`;
 	});
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div>This is an override</div>`);
+	t.assert.strictEqual(html.trim(), `<div>This is an override</div>`);
 });

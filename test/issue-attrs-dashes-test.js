@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("#216 dashes are stripped from webc.renderAttributes", async t => {
@@ -7,10 +7,10 @@ test("#216 dashes are stripped from webc.renderAttributes", async t => {
 	component.setContent(`<my-component data-image-width="100"></my-component>`);
 
 	let { html, css, js, components } = await component.compile();
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/attrs-dashes/my-component.webc"]);
-	t.is(html.trim(), `<div data-image-width="100"></div>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/attrs-dashes/my-component.webc"]);
+	t.assert.strictEqual(html.trim(), `<div data-image-width="100"></div>`);
 });
 
 test("#216 dashes are stripped from @attributes", async t => {
@@ -19,8 +19,8 @@ test("#216 dashes are stripped from @attributes", async t => {
 	component.setContent(`<component-attrs aria-label="A label"></component-attrs>`);
 
 	let { html, css, js, components } = await component.compile();
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, ["./test/stubs/attrs-dashes/component-attrs.webc"]);
-	t.is(html.trim(), `<div aria-label="A label"></div>`);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, ["./test/stubs/attrs-dashes/component-attrs.webc"]);
+	t.assert.strictEqual(html.trim(), `<div aria-label="A label"></div>`);
 });

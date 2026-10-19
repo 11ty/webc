@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 
@@ -13,13 +13,13 @@ test("Using @html", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/html.webc",
 	]);
 
-	t.is(html, `<p>Paragraph HTML</p>
+	t.assert.strictEqual(html, `<p>Paragraph HTML</p>
 <p>value1</p>
 <template>Template HTML</template>
 <template>Template HTML Keep</template>
@@ -41,11 +41,11 @@ test("Using @text", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, []);
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, []);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body>&lt;p&gt;This is text&lt;/p&gt;</body>
 </html>`);
@@ -60,7 +60,7 @@ test("Using a helper in dynamic attribute and @html", async(t) => {
 
 	let { html } = await component.compile();
 
-	t.is(html, `<template key="otherBlue">testBlue</template>`);
+	t.assert.strictEqual(html, `<template key="otherBlue">testBlue</template>`);
 });
 
 test("Using a helper (without this) in dynamic attribute and @html", async(t) => {
@@ -70,7 +70,7 @@ test("Using a helper (without this) in dynamic attribute and @html", async(t) =>
 
 	let { html } = await component.compile();
 
-	t.is(html, `<template key="otherBlue">testBlue</template>`);
+	t.assert.strictEqual(html, `<template key="otherBlue">testBlue</template>`);
 });
 
 
@@ -80,7 +80,7 @@ test("Use @html with undefined properties or helpers", async (t) => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `<span></span>
+	t.assert.strictEqual(html, `<span></span>
 `);
 });
 
@@ -90,7 +90,7 @@ test("Use @html with undefined properties or helpers (without this)", async (t) 
 
 	let { html, css, js, components } = await component.compile();
 
-	t.is(html, `<span></span>
+	t.assert.strictEqual(html, `<span></span>
 
 `);
 });
@@ -102,13 +102,13 @@ test("Setting @html and/or :attr to a number (non-string)", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/html-number.webc",
 	]);
 
-	t.is(html, `<span attr="2">2</span>`);
+	t.assert.strictEqual(html, `<span attr="2">2</span>`);
 });
 
 
@@ -122,12 +122,12 @@ test("Using a component with @html should still aggregate assets (issue #29)", a
 	});
 
 	let { html, css, js } = await component.compile();
-	t.is(html, `<my-component>HTML
+	t.assert.strictEqual(html, `<my-component>HTML
 <p>Test</p>
 
 </my-component>`);
-t.deepEqual(css, [`/* CSS */`]);
-t.deepEqual(js, [`/* JS */`]);
+t.assert.deepStrictEqual(css, [`/* CSS */`]);
+t.assert.deepStrictEqual(js, [`/* JS */`]);
 });
 
 test("Returning component markup from @html should resolve components (via issue #29)", async (t) => {
@@ -144,9 +144,9 @@ test("Returning component markup from @html should resolve components (via issue
 			sampleChildMarkup: "<child></child>"
 		}
 	});
-	t.is(html, `<p>SSR content</p>`);
-t.deepEqual(css, []);
-t.deepEqual(js, []);
+	t.assert.strictEqual(html, `<p>SSR content</p>`);
+t.assert.deepStrictEqual(css, []);
+t.assert.deepStrictEqual(js, []);
 });
 
 test("script @html should bundle (issue #16, maybe via issue #29)", async (t) => {
@@ -162,9 +162,9 @@ test("script @html should bundle (issue #16, maybe via issue #29)", async (t) =>
 			sampleScript: "alert('hi');"
 		}
 	});
-	t.is(html, ``);
-t.deepEqual(css, []);
-t.deepEqual(js, [`alert('hi');`]);
+	t.assert.strictEqual(html, ``);
+t.assert.deepStrictEqual(css, []);
+t.assert.deepStrictEqual(js, [`alert('hi');`]);
 });
 
 test("raw template with nokeep and @html", async t => {
@@ -179,13 +179,13 @@ test("raw template with nokeep and @html", async t => {
 		}
 	});
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/webc-raw-html-prop.webc",
 	]);
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body><nested-child></nested-child></body>
 </html>`);
@@ -203,14 +203,14 @@ test("No reprocessing when using @raw, #70 (related to issue #33)", async (t) =>
 		}
 	});
 
-	t.is(html, `<!doctype html>
+	t.assert.strictEqual(html, `<!doctype html>
 <html>
 <head></head><body><nested-child @prop="test"></nested-child></body>
 </html>`);
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/webc-raw-prop.webc",
 	]);
 });
@@ -219,7 +219,7 @@ test("@html and @text", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template @html="'Test'" @text="'Test'"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Node template cannot have more than one of: @html="'Test'", @text="'Test'", or @raw. Pick one!`
 	});
 });
@@ -228,7 +228,7 @@ test("@raw and @text", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template @raw="'Test'" @text="'Test'"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Node template cannot have more than one of: @html, @text="'Test'", or @raw="'Test'". Pick one!`
 	});
 });
@@ -237,7 +237,7 @@ test("@html and @raw", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template @html="'Test'" @raw="'Test'"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Node template cannot have more than one of: @html="'Test'", @text, or @raw="'Test'". Pick one!`
 	});
 });
@@ -246,7 +246,7 @@ test("@html and @text and @raw", async (t) => {
 	let component = new WebC();
 	component.setContent(`<template @html="'Test'" @text="'Test'" @raw="'Test'"></template>`);
 
-	await t.throwsAsync(component.compile(), {
+	await t.assert.rejects(component.compile(), {
 		message: `Node template cannot have more than one of: @html="'Test'", @text="'Test'", or @raw="'Test'". Pick one!`
 	});
 });

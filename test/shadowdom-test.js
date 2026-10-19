@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 
 import { WebC } from "../webc.js";
 
@@ -21,13 +21,13 @@ test("Using a web component with a declarative shadow root", async t => {
 		"web-component": "./test/stubs/components/shadowroot.webc"
 	}, {}, { globalData: "World" });
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/shadowroot.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component><template shadowroot="open">
 	<style>
 		b { color: red; }
@@ -42,13 +42,13 @@ test("Using a web component with a declarative shadow root using shadowrootmode"
 		"web-component": "./test/stubs/components/shadowrootmode.webc"
 	}, {}, { globalData: "World" });
 
-	t.deepEqual(js, []);
-	t.deepEqual(css, []);
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, []);
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/nested.webc",
 		"./test/stubs/components/shadowrootmode.webc"
 	]);
-	t.is(html, `Before
+	t.assert.strictEqual(html, `Before
 <web-component><template shadowrootmode="open">
 	<style>
 		b { color: red; }

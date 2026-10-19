@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("webc:type=js #88", async t => {
@@ -16,7 +16,7 @@ export default function({ alwaysBlue }) {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `I'm blue, da ba dee da ba di`);
+	t.assert.strictEqual(html.trim(), `I'm blue, da ba dee da ba di`);
 });
 
 test("webc:type=js #88 (with `this`)", async t => {
@@ -34,7 +34,7 @@ export default function() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `I'm blue, da ba dee da ba di`);
+	t.assert.strictEqual(html.trim(), `I'm blue, da ba dee da ba di`);
 });
 
 
@@ -53,5 +53,5 @@ export default function() {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `I'm blue, da ba dee da ba di`);
+	t.assert.strictEqual(html.trim(), `I'm blue, da ba dee da ba di`);
 });

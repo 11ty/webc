@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Easy way to render all public attributes in script #104", async t => {
@@ -10,7 +10,7 @@ test("Easy way to render all public attributes in script #104", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img attr1="1" attr2="2">`);
+	t.assert.strictEqual(html.trim(), `<img attr1="1" attr2="2">`);
 });
 
 test("Easy way to render all public attributes in script (using `this`) #104", async t => {
@@ -22,7 +22,7 @@ test("Easy way to render all public attributes in script (using `this`) #104", a
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img attr1="1" attr2="2">`);
+	t.assert.strictEqual(html.trim(), `<img attr1="1" attr2="2">`);
 });
 
 test("@attributes with object #114", async t => {
@@ -34,7 +34,7 @@ test("@attributes with object #114", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img myKey="1">`);
+	t.assert.strictEqual(html.trim(), `<img myKey="1">`);
 });
 
 test("Easy way to render all public attributes with webc:root #104", async t => {
@@ -46,7 +46,7 @@ test("Easy way to render all public attributes with webc:root #104", async t => 
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img attr1="1" attr2="2" class="two">`);
+	t.assert.strictEqual(html.trim(), `<img attr1="1" attr2="2" class="two">`);
 });
 
 test("Easy way to render all public attributes with @attributes without webc:root #104", async t => {
@@ -58,7 +58,7 @@ test("Easy way to render all public attributes with @attributes without webc:roo
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<div><img attr1="1" attr2="2"></div>`);
+	t.assert.strictEqual(html.trim(), `<div><img attr1="1" attr2="2"></div>`);
 });
 
 test("Easy way to render all public attributes with @attributes with webc:root #104", async t => {
@@ -70,7 +70,7 @@ test("Easy way to render all public attributes with @attributes with webc:root #
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<root-attrs-component attr1="1" attr2="2"></root-attrs-component>`);
+	t.assert.strictEqual(html.trim(), `<root-attrs-component attr1="1" attr2="2"></root-attrs-component>`);
 });
 
 test("Easy way to render all public attributes with @attributes with webc:root=override #104", async t => {
@@ -82,7 +82,7 @@ test("Easy way to render all public attributes with @attributes with webc:root=o
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img attr1="1" attr2="2">`);
+	t.assert.strictEqual(html.trim(), `<img attr1="1" attr2="2">`);
 });
 
 
@@ -96,5 +96,5 @@ test.skip("Easy way to render all public attributes in script with webc:setup #1
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<img attr1="1" attr2="2">`);
+	t.assert.strictEqual(html.trim(), `<img attr1="1" attr2="2">`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Missing props #85", async t => {
@@ -8,5 +8,5 @@ test("Missing props #85", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<a href="undefined">Your image didn’t have an alt so you get this link instead.</a>`);
+	t.assert.strictEqual(html.trim(), `<a href="undefined">Your image didn’t have an alt so you get this link instead.</a>`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 function getComponent(content) {
@@ -14,7 +14,7 @@ test("Nested default slot passes content through #111", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<p>Hello</p>
+	t.assert.strictEqual(html.trim(), `<p>Hello</p>
 <div class="with-wrapper"><p>Wrapped</p></div>`);
 });
 
@@ -23,7 +23,7 @@ test("Forwarded named slot #111", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<article><header><b>Title</b></header>Body</article>`);
+	t.assert.strictEqual(html.trim(), `<article><header><b>Title</b></header>Body</article>`);
 });
 
 test("Forwarded slot uses its own fallback content #111", async t => {
@@ -31,7 +31,7 @@ test("Forwarded slot uses its own fallback content #111", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<article><header></header>Forwarded fallback</article>`);
+	t.assert.strictEqual(html.trim(), `<article><header></header>Forwarded fallback</article>`);
 });
 
 test("Slots forwarded through multiple components #111", async t => {
@@ -39,7 +39,7 @@ test("Slots forwarded through multiple components #111", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<section><article><header><i>Title</i></header>Body</article></section>`);
+	t.assert.strictEqual(html.trim(), `<section><article><header><i>Title</i></header>Body</article></section>`);
 });
 
 test("Slot in page content renders its fallback #111", async t => {
@@ -47,5 +47,5 @@ test("Slot in page content renders its fallback #111", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<article><header>No title</header>Page fallback</article>`);
+	t.assert.strictEqual(html.trim(), `<article><header>No title</header>Page fallback</article>`);
 });

@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("New line at beginning issue #115", async t => {
@@ -8,7 +8,7 @@ test("New line at beginning issue #115", async t => {
 
 	let { html } = await component.compile();
 
-	t.is(html.trim(), `<!doctype html>
+	t.assert.strictEqual(html.trim(), `<!doctype html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">

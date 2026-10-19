@@ -1,4 +1,4 @@
-import test from "ava";
+import test from "node:test";
 import { WebC } from "../webc.js";
 
 test("Issue #3 slot inconsistency", async t => {
@@ -9,10 +9,10 @@ test("Issue #3 slot inconsistency", async t => {
 
 	let { html, css, js, components } = await component.compile();
 
-	t.deepEqual(components, [
+	t.assert.deepStrictEqual(components, [
 		"./test/stubs/issue-98/page.webc",
 		"./test/stubs/issue-98/component.webc",
 	]);
 
-	t.is(html, `<div id="hahaha"></div>`);
+	t.assert.strictEqual(html, `<div id="hahaha"></div>`);
 });
