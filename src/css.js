@@ -1,4 +1,4 @@
-import { generate, parse, walk } from "css-tree";
+import { List, generate, parse, walk } from "css-tree";
 
 class CssPrefixer {
 	constructor(prefix) {
@@ -27,6 +27,42 @@ class CssPrefixer {
 		})
 	}
 
+	hasHostPseudoClass(selectorNode) {
+		return selectorNode.children.some(child => child.type === "PseudoClassSelector" && child.name === "host");
+	}
+
+	// Replaces `:host` pseudo classes that are not the first part of a selector (e.g. `:host + :host`)
+	// with the prefix class. See https://github.com/11ty/webc/issues/198
+	replaceHostPseudoClasses(selectorNode, list) {
+		let children = [];
+		selectorNode.children.forEach((child, item) => {
+			children.push({ child, item });
+		});
+
+		for(let { child, item } of children) {
+			if(child.type !== "PseudoClassSelector" || child.name !== "host") {
+				continue;
+			}
+
+			let replacement = new List();
+			replacement.appendData({
+				type: "ClassSelector",
+				name: this.prefix,
+			});
+
+			// Any param children of a :host() functional pseudo class should be moved up to
+			// be directly after the prefix class
+			// ie, :host(.foo) -> .prefix.foo
+			if(child.children) {
+				for(let paramChild of child.children.first.children.toArray()) {
+					replacement.appendData(paramChild);
+				}
+			}
+
+			list.replace(item, replacement);
+		}
+	}
+
 	process(cssString) {
 		let ast = this.parse(cssString);
 
@@ -48,6 +84,8 @@ class CssPrefixer {
 				if (shouldSkip) {
 					// do nothing
 				} else if (
+					// list won’t exist for `@supports selector(*)` (but we don’t want to prefix that anyway)
+					list &&
 					first.type === "PseudoClassSelector" &&
 					(first.name === "host" || first.name === "host-context")
 				) {
@@ -100,24 +138,26 @@ class CssPrefixer {
 							);
 						}
 					}
-				} else {
-					// list won’t exist for `@supports selector(*)` (but we don’t want to prefix that anyway)
-					if(list) {
-						// Prepand the prefix class in front of all selectors
-						// which don't include :host or :host-context
-						node.children.prepend(
-							list.createItem({
-								type: "Combinator",
-								name: " ",
-							})
-						);
-						node.children.prepend(
-							list.createItem({
-								type: "ClassSelector",
-								name: this.prefix,
-							})
-						);
-					}
+				} else if(list && !this.hasHostPseudoClass(node)) {
+					// Prepand the prefix class in front of all selectors
+					// which don’t include :host or :host-context
+					node.children.prepend(
+						list.createItem({
+							type: "Combinator",
+							name: " ",
+						})
+					);
+					node.children.prepend(
+						list.createItem({
+							type: "ClassSelector",
+							name: this.prefix,
+						})
+					);
+				}
+
+				if(!shouldSkip && list) {
+					// `:host` can appear beyond the first part of a selector, e.g. `:host + :host`
+					this.replaceHostPseudoClasses(node, node.children);
 				}
 
 				node.children.forEach((node, item, list) => {
