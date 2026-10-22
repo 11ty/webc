@@ -1418,6 +1418,17 @@ test.skip("Scoped styles with :host and :defined (no root element)", async t => 
 This will be green at first and then switch to red when JS has registered the component.`);
 });
 
+test("Scoped styles with multiple `:host` selectors, Issue #198", async t => {
+	let { html, css, js, components } = await testGetResultFor("./test/stubs/scoped-host-sibling.webc");
+
+	t.assert.deepStrictEqual(js, []);
+	t.assert.deepStrictEqual(css, [`.wpyd_lli4+.wpyd_lli4{margin-block-start:1rem}`]);
+	t.assert.deepStrictEqual(components, [
+		"./test/stubs/scoped-host-sibling.webc",
+	]);
+	t.assert.strictEqual(html.trim(), `<div class="scoped-host-sibling wpyd_lli4">Content</div>`);
+});
+
 test("Scoped styles with :host and :defined (child component)", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/nested.webc", {
 		"web-component": "./test/stubs/defined-style.webc"
