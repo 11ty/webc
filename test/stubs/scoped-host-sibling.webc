@@ -1,0 +1,6 @@
+<style webc:scoped>
+:host + :host {
+	margin-block-start: 1rem;
+}
+</style>
+<div class="scoped-host-sibling">Content</div>

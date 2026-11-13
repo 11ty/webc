@@ -90,6 +90,30 @@ test("Pseudo classes", t => {
 	);
 });
 
+test("Multiple `:host` selectors, Issue #198", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.assert.strictEqual(c.process(`:host + :host {}`), `.my-prefix+.my-prefix{}`);
+	t.assert.strictEqual(c.process(`:host ~ :host {}`), `.my-prefix~.my-prefix{}`);
+	t.assert.strictEqual(c.process(`:host + :host .inner {}`), `.my-prefix+.my-prefix .inner{}`);
+	t.assert.strictEqual(c.process(`:host + :host(.footer) {}`), `.my-prefix+.my-prefix.footer{}`);
+	t.assert.strictEqual(c.process(`:host + :host:hover {}`), `.my-prefix+.my-prefix:hover{}`);
+
+	// `:host` in any other position does not need the extra prefix
+	t.assert.strictEqual(c.process(`div :host {}`), `div .my-prefix{}`);
+	t.assert.strictEqual(c.process(`div :host(.footer) {}`), `div .my-prefix.footer{}`);
+	t.assert.strictEqual(c.process(`div :host:not(p) {}`), `div .my-prefix:not(p){}`);
+});
+
+test("`:host` in a complex selector, Issue #124", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	t.assert.strictEqual(
+		c.process(`@media (min-height:50em) { html:not(:has(:focus-visible)) :host {} }`),
+		`@media (min-height:50em){html:not(:has(:focus-visible)) .my-prefix{}}`
+	);
+});
+
 test("Pseudo elements", t => {
 	let c = new CssPrefixer("my-prefix");
 
@@ -141,4 +165,21 @@ test("@supports selector(*) issue #232", t => {
 	t.assert.strictEqual(c.process(`@supports selector(*) {
 	div { color: red; }
 }`), `@supports selector(*){.my-prefix div{color:red}}`);
+});
+
+test("@supports selector(:host) issue #232", t => {
+	let c = new CssPrefixer("my-prefix");
+
+	// The feature query itself must not be prefixed
+	t.assert.strictEqual(c.process(`@supports selector(:host) {
+	div { color: red; }
+}`), `@supports selector(:host){.my-prefix div{color:red}}`);
+
+	t.assert.strictEqual(c.process(`@supports selector(:host + :host) {
+	div { color: red; }
+}`), `@supports selector(:host+:host){.my-prefix div{color:red}}`);
+
+	t.assert.strictEqual(c.process(`@supports selector(:host-context(.dark)) {
+	div { color: red; }
+}`), `@supports selector(:host-context(.dark)){.my-prefix div{color:red}}`);
 });
