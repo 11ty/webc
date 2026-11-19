@@ -1,0 +1,1 @@
+<div>Some padding</div><capture-slot><b>Bold</b> text</capture-slot>

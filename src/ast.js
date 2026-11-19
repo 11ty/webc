@@ -948,8 +948,8 @@ class AstSerializer {
 		}
 
 		let component;
-		if(options.useHostComponentMarkup && options.authoredInComponent) {
-			component = this.componentManager.get(options.authoredInComponent)
+		if(options.useHostComponentMarkup && options.hostComponentFilePath) {
+			component = this.componentManager.get(options.hostComponentFilePath)
 		} else {
 			component = this.getAuthoredInComponent(options);
 		}
@@ -1274,6 +1274,8 @@ class AstSerializer {
 
 		// Component content (foreshadow dom)
 		if(!options.rawMode && component) {
+			// Capture before addComponentDependency resets closestParentComponent.
+			let hostComponentFilePath = this.getAuthoredInComponentFilePath(options);
 			this.addComponentDependency(component, tagName, options);
 
 			options.componentChain = {
@@ -1288,6 +1290,7 @@ class AstSerializer {
 			// for attribute sharing (from renderStartTag)
 			options.hostComponentNode = node;
 			options.hostComponentData = attrs;
+			options.hostComponentFilePath = hostComponentFilePath;
 
 			let componentSlots = this.getSlottedContentNodes(node, defaultSlotNodesFromProp, slots);
 			componentSlots[PARENT_DATA] = parentData;
