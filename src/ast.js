@@ -1307,7 +1307,7 @@ class AstSerializer {
 
 		// Skip the remaining if we have shadow dom in the component definition
 		if(!componentDefinitionHasContent) {
-			let externalSource = AstQuery.getExternalSource(tagName, node);
+			let externalSource = AstQuery.getExternalSource(tagName, node, attrs);
 
 			if(!options.rawMode && tagName === "slot") { // <slot> node
 				options.isSlottableContent = true;

@@ -59,14 +59,38 @@ class AstQuery {
 		return tagName === "script" && !AstQuery.hasAttribute(node, AstSerializer.attrs.SETUP);
 	}
 
-	static getExternalSource(tagName, node) {
+	static getExternalSourceAttributeName(tagName, node) {
 		if(AstQuery.isLinkStylesheetNode(tagName, node)) {
-			return AstQuery.getAttributeValue(node, "href");
+			return "href";
 		}
 
 		if(AstQuery.isScriptNode(tagName, node)) {
-			return AstQuery.getAttributeValue(node, "src");
+			return "src";
 		}
+	}
+
+	// Pass evaluated attributes to resolve dynamic `:href` and `:src`.
+	static getExternalSource(tagName, node, evaluatedAttributes) {
+		let name = AstQuery.getExternalSourceAttributeName(tagName, node);
+		if(!name) {
+			return;
+		}
+
+		if(evaluatedAttributes) {
+			return evaluatedAttributes[name];
+		}
+
+		return AstQuery.getAttributeValue(node, name);
+	}
+
+	// Dynamic attributes can’t be evaluated before render, so only check for their presence.
+	static hasExternalSource(tagName, node) {
+		let name = AstQuery.getExternalSourceAttributeName(tagName, node);
+		if(!name) {
+			return false;
+		}
+
+		return !!AstQuery.getAttributeValue(node, name) || AstQuery.hasAttribute(node, `:${name}`);
 	}
 
 	/* Attributes */

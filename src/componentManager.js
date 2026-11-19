@@ -63,7 +63,7 @@ class ComponentManager {
 			}
 
 			// <script src=""> or <link rel="stylesheet" href="">
-			if(AstQuery.getExternalSource(tagName, child)) {
+			if(AstQuery.hasExternalSource(tagName, child)) {
 				return false; // use parent tag if script/link have external file refs
 			}
 		}

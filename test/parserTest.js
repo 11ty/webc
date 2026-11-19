@@ -1935,7 +1935,7 @@ test("External script src and stylesheet", async t => {
 `);
 });
 
-test.skip("External script src and stylesheet via dynamic attribute, issue #65", async t => {
+test("External script src and stylesheet via dynamic attribute, issue #65", async t => {
 	let { html, css, js, components } = await testGetResultFor("./test/stubs/externals/externals-dynamic.webc");
 
 	t.assert.deepStrictEqual(js, [`/* This is the external script */`]);
