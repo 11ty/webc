@@ -163,9 +163,7 @@ export function alwaysBlue() {
 	t.assert.strictEqual(html.trim(), `<div>This is imported!</div>`);
 });
 
-// TODO swap `export` to `import`
-// probably a bug in `import-module-string`
-test.skip("webc:setup with import combo export", async t => {
+test("webc:setup with import combo export", async t => {
 	let component = new WebC();
 
 	// Absolute path used here
